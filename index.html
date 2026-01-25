@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Portfolio Tracker</title>
+
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
+
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Inter', sans-serif;
+      background: #eef2f7;
+    }
+
+    .container {
+      max-width: 960px;
+      margin: 30px auto;
+      background: white;
+      border-radius: 10px;
+      padding: 25px 30px;
+      box-shadow: 0 3px 12px rgba(0, 0, 0, 0.12);
+    }
+
+    h1 {
+      text-align: center;
+      font-size: 2.2rem;
+      color: #2d3e50;
+      margin-bottom: 5px;
+    }
+
+    .total-box {
+      margin-top: 10px;
+      font-size: 1.3rem;
+      text-align: center;
+      font-weight: 600;
+      color: #0b3d91;
+    }
+
+    .inputs {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr auto;
+      gap: 12px;
+      margin: 15px 0;
+    }
+
+    input {
+      padding: 12px;
+      font-size: 1rem;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+      transition: 0.2s;
+    }
+
+    input:focus {
+      outline: none;
+      border-color: #4a90e2;
+      box-shadow: 0 0 6px rgba(74, 144, 226, 0.25);
+    }
+
+    button {
+      padding: 12px;
+      background: #4a90e2;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+
+    button:hover {
+      background: #3578d4;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+
+    th {
+      background: #4a90e2;
+      color: white;
+      padding: 12px;
+      font-size: 1rem;
+    }
+
+    td {
+      border-bottom: 1px solid #ddd;
+      padding: 10px;
+      font-size: 0.95rem;
+      text-align: center;
+    }
+
+    .del-btn {
+      padding: 6px 9px;
+      background: #e94e4e;
+      border-radius: 5px;
+      color: white;
+      cursor: pointer;
+      border: none;
+      font-size: 0.9rem;
+    }
+
+    .del-btn:hover {
+      background: #c43f3f;
+    }
+
+    @media (max-width: 650px) {
+      .inputs {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <h1>📈 My Stock Portfolio</h1>
+
+    <div class="inputs">
+      <input id="stock" placeholder="Stock Name (e.g., TCS)" />
+      <input id="price" type="number" placeholder="Buy Price (₹)" />
+      <input id="qty" type="number" placeholder="Quantity" />
+      <button onclick="addStock()">Add</button>
+    </div>
+
+    <div class="total-box">
+      Total Invested: ₹<span id="total">0</span>
+    </div>
+
+    <table id="portfolio">
+      <tr>
+        <th>Stock</th>
+        <th>Buy Price</th>
+        <th>Qty</th>
+        <th>Total Value</th>
+        <th>Action</th>
+      </tr>
+    </table>
+  </div>
+
+  <script>
+    let portfolio = JSON.parse(localStorage.getItem("portfolio")) || [];
+
+    function saveData() {
+      localStorage.setItem("portfolio", JSON.stringify(portfolio));
+    }
+
+    function renderTable() {
+      let table = document.getElementById("portfolio");
+      let total = 0;
+
+      table.innerHTML = `
+        <tr>
+          <th>Stock</th>
+          <th>Buy Price</th>
+          <th>Qty</th>
+          <th>Total Value</th>
+          <th>Action</th>
+        </tr>
+      `;
+
+      portfolio.forEach((stock, index) => {
+        let invested = stock.price * stock.qty;
+        total += invested;
+
+        let row = table.insertRow();
+        row.insertCell(0).innerText = stock.name;
+        row.insertCell(1).innerText = stock.price;
+        row.insertCell(2).innerText = stock.qty;
+        row.insertCell(3).innerText = invested;
+
+        let delBtn = document.createElement("button");
+        delBtn.className = "del-btn";
+        delBtn.innerText = "Delete";
+        delBtn.onclick = () => deleteStock(index);
+        row.insertCell(4).appendChild(delBtn);
+      });
+
+      document.getElementById("total").innerText = total;
+    }
+
+    function addStock() {
+      let stockName = document.getElementById("stock").value.trim();
+      let price = document.getElementById("price").value;
+      let qty = document.getElementById("qty").value;
+
+      if (stockName === "" || price === "" || qty === "") {
+        alert("Please fill all fields.");
+        return;
+      }
+
+      portfolio.push({
+        name: stockName,
+        price: Number(price),
+        qty: Number(qty)
+      });
+
+      saveData();
+      renderTable();
+
+      document.getElementById("stock").value = "";
+      document.getElementById("price").value = "";
+      document.getElementById("qty").value = "";
+    }
+
+    function deleteStock(index) {
+      portfolio.splice(index, 1);
+      saveData();
+      renderTable();
+    }
+
+    renderTable();
+  </script>
+</body>
+
+</html>
