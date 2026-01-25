@@ -77,7 +77,7 @@ th,td{padding:8px;border-bottom:1px solid #e5e7eb;text-align:center}
 </div>
 
 <div class="search">
-<input id="searchInput" placeholder="Search stocks (TCS, INFY)" onkeyup="searchStock()">
+<input id="searchInput" placeholder="Search Nifty 50 / Sensex stocks" onkeyup="searchStock()">
 </div>
 
 <div class="profile" onclick="toggleProfile()">👤</div>
@@ -108,90 +108,103 @@ th,td{padding:8px;border-bottom:1px solid #e5e7eb;text-align:center}
 </div>
 
 <script>
-const auth=firebase.auth();
-const stockNames=["TCS","INFY","RELIANCE","HDFC","ICICI","SBIN"];
-let holdings=JSON.parse(localStorage.getItem("holdings"))||[];
+const auth = firebase.auth();
 
-function loginGoogle(){auth.signInWithPopup(new firebase.auth.GoogleAuthProvider())}
+/* ✅ NIFTY 50 + SENSEX (COMMON MAJOR COMPANIES) */
+const stockNames = [
+  "ADANI ENTERPRISES","ADANI PORTS","APOLLO HOSPITALS","ASIAN PAINTS",
+  "AXIS BANK","BAJAJ AUTO","BAJAJ FINANCE","BAJAJ FINSERV",
+  "BHARTI AIRTEL","BPCL","BRITANNIA","CIPLA","COAL INDIA",
+  "DIVIS LAB","DR REDDYS","EICHER MOTORS","GRASIM",
+  "HCL TECHNOLOGIES","HDFC BANK","HDFC LIFE","HERO MOTOCORP",
+  "HINDALCO","HINDUSTAN UNILEVER","ICICI BANK","INDUSIND BANK",
+  "INFOSYS","ITC","JSW STEEL","KOTAK MAHINDRA BANK",
+  "LARSEN & TOUBRO","LTIMINDTREE","MARUTI SUZUKI",
+  "NESTLE INDIA","NTPC","ONGC","POWER GRID",
+  "RELIANCE INDUSTRIES","SBIN","SUN PHARMA","TATA CONSUMER",
+  "TATA MOTORS","TATA STEEL","TCS","TECH MAHINDRA",
+  "TITAN","ULTRATECH CEMENT","UPL","WIPRO"
+];
+
+let holdings = JSON.parse(localStorage.getItem("holdings")) || [];
+
+function loginGoogle(){
+  auth.signInWithPopup(new firebase.auth.GoogleAuthProvider());
+}
+
 function loginEmail(){
-auth.signInWithEmailAndPassword(email.value,password.value)
-.catch(()=>auth.createUserWithEmailAndPassword(email.value,password.value))
+  auth.signInWithEmailAndPassword(email.value,password.value)
+    .catch(()=>auth.createUserWithEmailAndPassword(email.value,password.value));
 }
 
 auth.onAuthStateChanged(u=>{
-if(u){
-loginBox.style.display="none";
-app.style.display="block";
-userEmail.innerText=u.email;
-renderStocks();
-renderHoldings();
-}
+  if(u){
+    loginBox.style.display="none";
+    app.style.display="block";
+    userEmail.innerText = u.email;
+    renderStocks();
+    renderHoldings();
+  }
 });
 
-function logout(){auth.signOut();location.reload()}
-function toggleProfile(){profileMenu.style.display=profileMenu.style.display==="block"?"none":"block"}
+function logout(){ auth.signOut(); location.reload(); }
+function toggleProfile(){ profileMenu.style.display = profileMenu.style.display==="block"?"none":"block"; }
 
 function showTab(id,el){
-["stocks","holdings","mf"].forEach(t=>document.getElementById(t).style.display="none");
-document.getElementById(id).style.display="block";
-document.querySelectorAll(".tabs span").forEach(s=>s.classList.remove("active"));
-el.classList.add("active");
+  ["stocks","holdings","mf"].forEach(t=>document.getElementById(t).style.display="none");
+  document.getElementById(id).style.display="block";
+  document.querySelectorAll(".tabs span").forEach(s=>s.classList.remove("active"));
+  el.classList.add("active");
 }
 
-function renderStocks(){
-stockList.innerHTML="";
-stockNames.forEach(s=>{
-let d=document.createElement("div");
-d.className="stock";
-d.innerHTML=`<strong>${s}</strong><br><small>Add</small>`;
-d.onclick=()=>addStock(s);
-stockList.appendChild(d);
-});
-}
-
-function addStock(name){
-let price=prompt("Buy price");
-let qty=prompt("Quantity");
-if(!price||!qty)return;
-holdings.push({name,price:+price,qty:+qty});
-localStorage.setItem("holdings",JSON.stringify(holdings));
-renderHoldings();
-showTab("holdings",document.querySelectorAll(".tabs span")[1]);
-}
-
-function renderHoldings(){
-holdingsTable.innerHTML="<tr><th>Stock</th><th>Price</th><th>Qty</th><th>Total</th><th></th></tr>";
-holdings.forEach((h,i)=>{
-holdingsTable.innerHTML+=`
-<tr>
-<td>${h.name}</td>
-<td>${h.price}</td>
-<td>${h.qty}</td>
-<td>${h.price*h.qty}</td>
-<td><button class="del" onclick="del(${i})">Delete</button></td>
-</tr>`;
-});
-}
-
-function del(i){
-holdings.splice(i,1);
-localStorage.setItem("holdings",JSON.stringify(holdings));
-renderHoldings();
+function renderStocks(list = stockNames){
+  stockList.innerHTML="";
+  list.forEach(s=>{
+    const d = document.createElement("div");
+    d.className="stock";
+    d.innerHTML=`<strong>${s}</strong><br><small>Add</small>`;
+    d.onclick=()=>addStock(s);
+    stockList.appendChild(d);
+  });
 }
 
 function searchStock(){
-let q=searchInput.value.toUpperCase();
-stockList.innerHTML="";
-stockNames.filter(s=>s.includes(q)).forEach(s=>{
-let d=document.createElement("div");
-d.className="stock";
-d.innerHTML=`<strong>${s}</strong>`;
-d.onclick=()=>addStock(s);
-stockList.appendChild(d);
-});
+  const q = searchInput.value.toUpperCase();
+  const filtered = stockNames.filter(s => s.includes(q));
+  renderStocks(filtered);
+}
+
+function addStock(name){
+  const price = prompt("Buy price for " + name);
+  const qty = prompt("Quantity");
+  if(!price || !qty) return;
+  holdings.push({name,price:+price,qty:+qty});
+  localStorage.setItem("holdings",JSON.stringify(holdings));
+  renderHoldings();
+  showTab("holdings",document.querySelectorAll(".tabs span")[1]);
+}
+
+function renderHoldings(){
+  holdingsTable.innerHTML =
+    "<tr><th>Stock</th><th>Price</th><th>Qty</th><th>Total</th><th></th></tr>";
+  holdings.forEach((h,i)=>{
+    holdingsTable.innerHTML += `
+      <tr>
+        <td>${h.name}</td>
+        <td>${h.price}</td>
+        <td>${h.qty}</td>
+        <td>${h.price * h.qty}</td>
+        <td><button class="del" onclick="del(${i})">Delete</button></td>
+      </tr>`;
+  });
+}
+
+function del(i){
+  holdings.splice(i,1);
+  localStorage.setItem("holdings",JSON.stringify(holdings));
+  renderHoldings();
 }
 </script>
 
 </body>
 </html>
-
