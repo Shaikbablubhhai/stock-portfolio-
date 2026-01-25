@@ -1,15 +1,16 @@
-<!DOCTYPE html>
+<!DOCTYPE html><!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Investify – Portfolio Tracker</title>
+  <title>FinzoTalk – Talk. Track. Grow.</title>
 
   <!-- Firebase SDKs (DO NOT CHANGE) -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 
   <script>
+    // 🔐 Firebase Config (unchanged & correct)
     const firebaseConfig = {
       apiKey: "AIzaSyDKWlkEcCskaGVMU4BZbE1LMR6HlhkCnz8",
       authDomain: "stock-portfolio-web-final.firebaseapp.com",
@@ -27,8 +28,8 @@
     body {
       margin: 0;
       font-family: 'Inter', sans-serif;
-      background: linear-gradient(135deg,#0f2027,#203a43,#2c5364);
-      color: #fff;
+      background: linear-gradient(135deg,#0f172a,#020617);
+      color: #e5e7eb;
     }
 
     .login-box, .app {
@@ -38,31 +39,53 @@
     }
 
     .login-box {
-      max-width: 400px;
-      margin-top: 80px;
-      background: #ffffff;
-      color: #000;
-      border-radius: 12px;
+      max-width: 420px;
+      margin-top: 90px;
+      background: #020617;
+      border: 1px solid #1e293b;
+      border-radius: 14px;
       text-align: center;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.6);
+    }
+
+    h1, h2 {
+      margin-bottom: 10px;
+    }
+
+    .tagline {
+      font-size: 0.9rem;
+      color: #94a3b8;
+      margin-bottom: 20px;
     }
 
     input, button {
       width: 100%;
       padding: 12px;
-      margin-top: 10px;
-      border-radius: 8px;
-      border: 1px solid #ccc;
+      margin-top: 12px;
+      border-radius: 10px;
       font-size: 1rem;
+    }
+
+    input {
+      background: #020617;
+      border: 1px solid #334155;
+      color: #e5e7eb;
     }
 
     button {
       background: #2563eb;
-      color: white;
       border: none;
+      color: white;
       cursor: pointer;
+      font-weight: 600;
     }
 
-    button:hover { background:#1e40af; }
+    button:hover { background: #1d4ed8; }
+
+    .google-btn {
+      background: #0f172a;
+      border: 1px solid #334155;
+    }
 
     .app { display:none; }
 
@@ -70,38 +93,46 @@
       display:flex;
       justify-content:space-between;
       align-items:center;
-      margin-bottom:20px;
+      margin-bottom:25px;
+    }
+
+    .logout {
+      background:#dc2626;
+      width:auto;
+      padding:10px 16px;
     }
 
     .inputs {
       display:grid;
       grid-template-columns:1fr 1fr 1fr auto;
-      gap:10px;
-      margin-bottom:20px;
+      gap:12px;
+      margin-bottom:25px;
     }
 
     .cards {
       display:grid;
-      grid-template-columns:repeat(auto-fit,minmax(250px,1fr));
-      gap:15px;
+      grid-template-columns:repeat(auto-fit,minmax(260px,1fr));
+      gap:18px;
     }
 
     .card {
-      background:#ffffff;
-      color:#000;
-      border-radius:12px;
-      padding:15px;
+      background:#020617;
+      border:1px solid #1e293b;
+      border-radius:16px;
+      padding:16px;
     }
+
+    .card h3 { margin: 0 0 6px 0; }
 
     .card img {
       width:100%;
-      border-radius:8px;
+      border-radius:10px;
       margin-top:10px;
     }
 
     .del-btn {
       background:#dc2626;
-      margin-top:10px;
+      margin-top:12px;
     }
 
     @media(max-width:700px){
@@ -114,23 +145,26 @@
 
 <!-- LOGIN -->
 <div class="login-box" id="loginBox">
-  <h2>Welcome to Investify</h2>
+  <h2>FinzoTalk</h2>
+  <div class="tagline">Talk. Track. Grow.</div>
+
   <input id="email" placeholder="Email">
   <input id="password" type="password" placeholder="Password">
-  <button onclick="loginEmail()">Login / Signup</button>
-  <button onclick="loginGoogle()">Login with Google</button>
+
+  <button id="emailLoginBtn">Login / Signup</button>
+  <button class="google-btn" id="googleLoginBtn">Continue with Google</button>
 </div>
 
 <!-- APP -->
 <div class="app" id="app">
   <div class="topbar">
     <h2 id="welcome"></h2>
-    <button onclick="logout()">Logout</button>
+    <button class="logout" onclick="logout()">Logout</button>
   </div>
 
   <div class="inputs">
-    <input id="stock" placeholder="Stock Name (TCS)">
-    <input id="price" type="number" placeholder="Buy Price">
+    <input id="stock" placeholder="Stock name (TCS)">
+    <input id="price" type="number" placeholder="Buy price">
     <input id="qty" type="number" placeholder="Quantity">
     <button onclick="addStock()">Add</button>
   </div>
@@ -144,24 +178,26 @@
   let portfolio = [];
 
   function loginGoogle(){
-    auth.signInWithPopup(new firebase.auth.GoogleAuthProvider());
+    auth.signInWithPopup(new firebase.auth.GoogleAuthProvider())
+      .catch(e => alert(e.message));
   }
 
   function loginEmail(){
-    auth.signInWithEmailAndPassword(email.value,password.value)
-      .catch(()=>auth.createUserWithEmailAndPassword(email.value,password.value));
+    auth.signInWithEmailAndPassword(email.value, password.value)
+      .catch(() =>
+        auth.createUserWithEmailAndPassword(email.value, password.value)
+          .catch(e => alert(e.message))
+      );
   }
 
-  function logout(){
-    auth.signOut();
-  }
+  function logout(){ auth.signOut(); }
 
   auth.onAuthStateChanged(user=>{
     if(user){
       currentUserId = user.uid;
       loginBox.style.display="none";
       app.style.display="block";
-      welcome.innerText = "Hello, " + (user.displayName || user.email);
+      welcome.innerText = "Welcome, " + (user.displayName || user.email);
       loadData();
     } else {
       app.style.display="none";
@@ -179,6 +215,7 @@
   function save(){ localStorage.setItem(key(),JSON.stringify(portfolio)); }
 
   function addStock(){
+    if(!stock.value || !price.value || !qty.value) return;
     portfolio.push({name:stock.value,price:+price.value,qty:+qty.value});
     save(); render();
     stock.value=price.value=qty.value="";
@@ -194,8 +231,21 @@
       cards.innerHTML+=`
         <div class="card">
           <h3>${s.name}</h3>
-          <p>Price: ₹${s.price}</p>
-          <p>Qty: ${s.qty}</p>
-          <p>Total: ₹${s.price*s.qty}</p>
-          <img src="https://quickchart.io/chart?c={type:'l
+          <div>Buy: ₹${s.price}</div>
+          <div>Qty: ${s.qty}</div>
+          <div>Total: ₹${s.price*s.qty}</div>
+          <img src="https://quickchart.io/chart?c={type:'line',data:{labels:[1,2,3,4],datasets:[{data:[10,18,14,22]}]}}">
+          <button class="del-btn" onclick="del(${i})">Delete</button>
+        </div>`;
+    });
+  }
+
+  // 🔗 BUTTON WIRING (fixes your issue)
+  document.getElementById("emailLoginBtn").addEventListener("click", loginEmail);
+  document.getElementById("googleLoginBtn").addEventListener("click", loginGoogle);
+</script>
+
+</body>
+</html>
+
 
