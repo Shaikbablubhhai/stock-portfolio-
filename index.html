@@ -3,201 +3,199 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Portfolio Tracker</title>
+  <title>Investify – Portfolio Tracker</title>
 
-  <!-- Firebase SDKs (COMPAT – correct for GitHub Pages & plain HTML) -->
+  <!-- Firebase SDKs (DO NOT CHANGE) -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 
   <script>
-    // ✅ CORRECT Firebase Config (API key fixed: 1 not l)
-   const firebaseConfig = {
-  apiKey: "AIzaSyDKWlkEcCskaGVMU4BZbE1LMR6HlhkCnz8",
-  authDomain: "stock-portfolio-web-final.firebaseapp.com",
-  projectId: "stock-portfolio-web-final",
-  storageBucket: "stock-portfolio-web-final.firebasestorage.app",
-  messagingSenderId: "804419033716",
-  appId: "1:804419033716:web:ad50c042cc663acb528f21"
-};
-    // Initialize Firebase (ONLY ONCE)
+    const firebaseConfig = {
+      apiKey: "AIzaSyDKWlkEcCskaGVMU4BZbE1LMR6HlhkCnz8",
+      authDomain: "stock-portfolio-web-final.firebaseapp.com",
+      projectId: "stock-portfolio-web-final",
+      storageBucket: "stock-portfolio-web-final.firebasestorage.app",
+      messagingSenderId: "804419033716",
+      appId: "1:804419033716:web:ad50c042cc663acb528f21"
+    };
     firebase.initializeApp(firebaseConfig);
   </script>
 
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
 
     body {
       margin: 0;
-      padding: 0;
       font-family: 'Inter', sans-serif;
-      background: #eef2f7;
+      background: linear-gradient(135deg,#0f2027,#203a43,#2c5364);
+      color: #fff;
     }
 
-    .container {
-      max-width: 960px;
-      margin: 30px auto;
+    .login-box, .app {
+      max-width: 1000px;
+      margin: auto;
+      padding: 20px;
+    }
+
+    .login-box {
+      max-width: 400px;
+      margin-top: 80px;
       background: #ffffff;
-      border-radius: 10px;
-      padding: 25px 30px;
-      box-shadow: 0 3px 12px rgba(0,0,0,0.12);
-      display: none;
-    }
-
-    h1 {
+      color: #000;
+      border-radius: 12px;
       text-align: center;
-      color: #2d3e50;
     }
 
-    .inputs {
-      display: grid;
-      grid-template-columns: 1fr 1fr 1fr auto;
-      gap: 12px;
-      margin: 20px 0;
-    }
-
-    input {
+    input, button {
+      width: 100%;
       padding: 12px;
-      border-radius: 6px;
+      margin-top: 10px;
+      border-radius: 8px;
       border: 1px solid #ccc;
+      font-size: 1rem;
     }
 
     button {
-      padding: 12px;
-      background: #4a90e2;
+      background: #2563eb;
       color: white;
       border: none;
-      border-radius: 6px;
       cursor: pointer;
     }
 
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 20px;
+    button:hover { background:#1e40af; }
+
+    .app { display:none; }
+
+    .topbar {
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      margin-bottom:20px;
     }
 
-    th {
-      background: #4a90e2;
-      color: white;
-      padding: 10px;
+    .inputs {
+      display:grid;
+      grid-template-columns:1fr 1fr 1fr auto;
+      gap:10px;
+      margin-bottom:20px;
     }
 
-    td {
-      padding: 10px;
-      border-bottom: 1px solid #ddd;
-      text-align: center;
+    .cards {
+      display:grid;
+      grid-template-columns:repeat(auto-fit,minmax(250px,1fr));
+      gap:15px;
+    }
+
+    .card {
+      background:#ffffff;
+      color:#000;
+      border-radius:12px;
+      padding:15px;
+    }
+
+    .card img {
+      width:100%;
+      border-radius:8px;
+      margin-top:10px;
     }
 
     .del-btn {
-      background: #e94e4e;
-      color: white;
-      border: none;
-      border-radius: 5px;
-      padding: 6px 10px;
-      cursor: pointer;
+      background:#dc2626;
+      margin-top:10px;
+    }
+
+    @media(max-width:700px){
+      .inputs{grid-template-columns:1fr;}
     }
   </style>
 </head>
 
 <body>
 
-  <!-- LOGIN BOX -->
-  <div id="loginBox" style="max-width:400px;margin:40px auto;padding:20px;background:#fff;border-radius:8px;text-align:center;">
-    <h2>Login</h2>
-    <input id="email" placeholder="Email" style="width:100%;padding:10px;margin-bottom:10px;">
-    <input id="password" type="password" placeholder="Password" style="width:100%;padding:10px;margin-bottom:10px;">
-    <button onclick="loginEmail()" style="width:100%;margin-bottom:10px;">Login / Signup with Email</button>
-    <button onclick="loginGoogle()" style="width:100%;">Login with Google</button>
+<!-- LOGIN -->
+<div class="login-box" id="loginBox">
+  <h2>Welcome to Investify</h2>
+  <input id="email" placeholder="Email">
+  <input id="password" type="password" placeholder="Password">
+  <button onclick="loginEmail()">Login / Signup</button>
+  <button onclick="loginGoogle()">Login with Google</button>
+</div>
+
+<!-- APP -->
+<div class="app" id="app">
+  <div class="topbar">
+    <h2 id="welcome"></h2>
+    <button onclick="logout()">Logout</button>
   </div>
 
-  <!-- APP -->
-  <div class="container" id="app">
-    <h1>📈 My Stock Portfolio</h1>
-
-    <div class="inputs">
-      <input id="stock" placeholder="Stock Name">
-      <input id="price" type="number" placeholder="Buy Price">
-      <input id="qty" type="number" placeholder="Quantity">
-      <button onclick="addStock()">Add</button>
-    </div>
-
-    <table id="portfolio"></table>
+  <div class="inputs">
+    <input id="stock" placeholder="Stock Name (TCS)">
+    <input id="price" type="number" placeholder="Buy Price">
+    <input id="qty" type="number" placeholder="Quantity">
+    <button onclick="addStock()">Add</button>
   </div>
 
-  <!-- AUTH LOGIC -->
-  <script>
-    const auth = firebase.auth();
+  <div class="cards" id="cards"></div>
+</div>
 
-    function loginGoogle() {
-      const provider = new firebase.auth.GoogleAuthProvider();
-      auth.signInWithPopup(provider).catch(err => alert(err.message));
+<script>
+  const auth = firebase.auth();
+  let currentUserId = null;
+  let portfolio = [];
+
+  function loginGoogle(){
+    auth.signInWithPopup(new firebase.auth.GoogleAuthProvider());
+  }
+
+  function loginEmail(){
+    auth.signInWithEmailAndPassword(email.value,password.value)
+      .catch(()=>auth.createUserWithEmailAndPassword(email.value,password.value));
+  }
+
+  function logout(){
+    auth.signOut();
+  }
+
+  auth.onAuthStateChanged(user=>{
+    if(user){
+      currentUserId = user.uid;
+      loginBox.style.display="none";
+      app.style.display="block";
+      welcome.innerText = "Hello, " + (user.displayName || user.email);
+      loadData();
+    } else {
+      app.style.display="none";
+      loginBox.style.display="block";
     }
+  });
 
-    function loginEmail() {
-      const email = document.getElementById("email").value;
-      const password = document.getElementById("password").value;
+  function key(){ return "portfolio_"+currentUserId; }
 
-      auth.signInWithEmailAndPassword(email, password)
-        .catch(() => {
-          auth.createUserWithEmailAndPassword(email, password)
-            .catch(err => alert(err.message));
-        });
-    }
+  function loadData(){
+    portfolio = JSON.parse(localStorage.getItem(key())) || [];
+    render();
+  }
 
-    auth.onAuthStateChanged(user => {
-      if (user) {
-        document.getElementById("loginBox").style.display = "none";
-        document.getElementById("app").style.display = "block";
-      }
-    });
-  </script>
+  function save(){ localStorage.setItem(key(),JSON.stringify(portfolio)); }
 
-  <!-- PORTFOLIO LOGIC -->
-  <script>
-    let portfolio = JSON.parse(localStorage.getItem("portfolio")) || [];
+  function addStock(){
+    portfolio.push({name:stock.value,price:+price.value,qty:+qty.value});
+    save(); render();
+    stock.value=price.value=qty.value="";
+  }
 
-    function renderTable() {
-      const table = document.getElementById("portfolio");
-      table.innerHTML = `
-        <tr>
-          <th>Stock</th>
-          <th>Price</th>
-          <th>Qty</th>
-          <th>Total</th>
-          <th>Action</th>
-        </tr>
-      `;
+  function del(i){
+    portfolio.splice(i,1); save(); render();
+  }
 
-      portfolio.forEach((s, i) => {
-        table.insertRow().innerHTML = `
-          <td>${s.name}</td>
-          <td>${s.price}</td>
-          <td>${s.qty}</td>
-          <td>${s.price * s.qty}</td>
-          <td><button class="del-btn" onclick="deleteStock(${i})">Delete</button></td>
-        `;
-      });
-    }
-
-    function addStock() {
-      portfolio.push({
-        name: stock.value,
-        price: Number(price.value),
-        qty: Number(qty.value)
-      });
-      localStorage.setItem("portfolio", JSON.stringify(portfolio));
-      renderTable();
-    }
-
-    function deleteStock(i) {
-      portfolio.splice(i, 1);
-      localStorage.setItem("portfolio", JSON.stringify(portfolio));
-      renderTable();
-    }
-
-    renderTable();
-  </script>
-
-</body>
-</html>
+  function render(){
+    cards.innerHTML="";
+    portfolio.forEach((s,i)=>{
+      cards.innerHTML+=`
+        <div class="card">
+          <h3>${s.name}</h3>
+          <p>Price: ₹${s.price}</p>
+          <p>Qty: ${s.qty}</p>
+          <p>Total: ₹${s.price*s.qty}</p>
+          <img src="https://quickchart.io/chart?c={type:'l
 
