@@ -1,12 +1,11 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Portfolio Tracker</title>
 
-  <!-- Firebase SDKs (COMPAT) -->
+  <!-- Firebase SDKs (COMPAT – correct for GitHub Pages) -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 
@@ -107,7 +106,7 @@
     <h2>Login</h2>
     <input id="email" placeholder="Email" style="width:100%;padding:10px;margin-bottom:10px;" />
     <input id="password" type="password" placeholder="Password" style="width:100%;padding:10px;margin-bottom:10px;" />
-    <button onclick="loginEmail()" style="width:100%;margin-bottom:10px;">Login with Email</button>
+    <button onclick="loginEmail()" style="width:100%;margin-bottom:10px;">Login / Signup with Email</button>
     <button onclick="loginGoogle()" style="width:100%;">Login with Google</button>
   </div>
 
@@ -125,7 +124,7 @@
     <table id="portfolio"></table>
   </div>
 
-  <!-- LOGIN LOGIC -->
+  <!-- AUTH LOGIC -->
   <script>
     const auth = firebase.auth();
 
@@ -135,10 +134,14 @@
     }
 
     function loginEmail() {
-      auth.signInWithEmailAndPassword(
-        document.getElementById("email").value,
-        document.getElementById("password").value
-      ).catch(err => alert(err.message));
+      const email = document.getElementById("email").value;
+      const password = document.getElementById("password").value;
+
+      auth.signInWithEmailAndPassword(email, password)
+        .catch(() => {
+          auth.createUserWithEmailAndPassword(email, password)
+            .catch(err => alert(err.message));
+        });
     }
 
     auth.onAuthStateChanged(user => {
@@ -166,8 +169,7 @@
       `;
 
       portfolio.forEach((s, i) => {
-        const row = table.insertRow();
-        row.innerHTML = `
+        table.insertRow().innerHTML = `
           <td>${s.name}</td>
           <td>${s.price}</td>
           <td>${s.qty}</td>
@@ -197,4 +199,5 @@
   </script>
 
 </body>
+</html>
 </html>
