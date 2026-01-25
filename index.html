@@ -5,20 +5,22 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Portfolio Tracker</title>
 
-  <!-- Firebase SDKs (COMPAT – correct for GitHub Pages) -->
+  <!-- Firebase SDKs (COMPAT – correct for GitHub Pages & plain HTML) -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 
   <script>
+    // ✅ CORRECT Firebase Config (API key fixed: 1 not l)
     const firebaseConfig = {
       apiKey: "AIzaSyDprOfG-I5WPxhoFZRt0-PGH1JxFo6RwPM",
       authDomain: "stock-portfolio-b07b9.firebaseapp.com",
       projectId: "stock-portfolio-b07b9",
       storageBucket: "stock-portfolio-b07b9.appspot.com",
       messagingSenderId: "872671158927",
-      appId: "1:872671158927:web:8963aa58a14b88047146fa"
+      appId: "1:872671158927:web:3a8c327f3ea0e6837146fa"
     };
 
+    // Initialize Firebase (ONLY ONCE)
     firebase.initializeApp(firebaseConfig);
   </script>
 
@@ -35,16 +37,15 @@
     .container {
       max-width: 960px;
       margin: 30px auto;
-      background: white;
+      background: #ffffff;
       border-radius: 10px;
       padding: 25px 30px;
-      box-shadow: 0 3px 12px rgba(0, 0, 0, 0.12);
+      box-shadow: 0 3px 12px rgba(0,0,0,0.12);
       display: none;
     }
 
     h1 {
       text-align: center;
-      font-size: 2.2rem;
       color: #2d3e50;
     }
 
@@ -52,7 +53,7 @@
       display: grid;
       grid-template-columns: 1fr 1fr 1fr auto;
       gap: 12px;
-      margin: 15px 0;
+      margin: 20px 0;
     }
 
     input {
@@ -83,17 +84,17 @@
     }
 
     td {
-      border-bottom: 1px solid #ddd;
       padding: 10px;
+      border-bottom: 1px solid #ddd;
       text-align: center;
     }
 
     .del-btn {
       background: #e94e4e;
-      border-radius: 5px;
-      padding: 6px 10px;
       color: white;
       border: none;
+      border-radius: 5px;
+      padding: 6px 10px;
       cursor: pointer;
     }
   </style>
@@ -104,8 +105,8 @@
   <!-- LOGIN BOX -->
   <div id="loginBox" style="max-width:400px;margin:40px auto;padding:20px;background:#fff;border-radius:8px;text-align:center;">
     <h2>Login</h2>
-    <input id="email" placeholder="Email" style="width:100%;padding:10px;margin-bottom:10px;" />
-    <input id="password" type="password" placeholder="Password" style="width:100%;padding:10px;margin-bottom:10px;" />
+    <input id="email" placeholder="Email" style="width:100%;padding:10px;margin-bottom:10px;">
+    <input id="password" type="password" placeholder="Password" style="width:100%;padding:10px;margin-bottom:10px;">
     <button onclick="loginEmail()" style="width:100%;margin-bottom:10px;">Login / Signup with Email</button>
     <button onclick="loginGoogle()" style="width:100%;">Login with Google</button>
   </div>
@@ -115,9 +116,9 @@
     <h1>📈 My Stock Portfolio</h1>
 
     <div class="inputs">
-      <input id="stock" placeholder="Stock Name" />
-      <input id="price" type="number" placeholder="Buy Price" />
-      <input id="qty" type="number" placeholder="Quantity" />
+      <input id="stock" placeholder="Stock Name">
+      <input id="price" type="number" placeholder="Buy Price">
+      <input id="qty" type="number" placeholder="Quantity">
       <button onclick="addStock()">Add</button>
     </div>
 
@@ -199,5 +200,4 @@
   </script>
 
 </body>
-</html>
 </html>
