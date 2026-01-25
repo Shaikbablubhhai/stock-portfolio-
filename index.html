@@ -6,6 +6,23 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Portfolio Tracker</title>
 
+  <!-- Firebase SDKs (COMPAT) -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyDprOfG-I5WPxhoFZRt0-PGH1JxFo6RwPM",
+      authDomain: "stock-portfolio-b07b9.firebaseapp.com",
+      projectId: "stock-portfolio-b07b9",
+      storageBucket: "stock-portfolio-b07b9.appspot.com",
+      messagingSenderId: "872671158927",
+      appId: "1:872671158927:web:8963aa58a14b88047146fa"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+  </script>
+
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
 
@@ -23,21 +40,13 @@
       border-radius: 10px;
       padding: 25px 30px;
       box-shadow: 0 3px 12px rgba(0, 0, 0, 0.12);
+      display: none;
     }
 
     h1 {
       text-align: center;
       font-size: 2.2rem;
       color: #2d3e50;
-      margin-bottom: 5px;
-    }
-
-    .total-box {
-      margin-top: 10px;
-      font-size: 1.3rem;
-      text-align: center;
-      font-weight: 600;
-      color: #0b3d91;
     }
 
     .inputs {
@@ -49,16 +58,8 @@
 
     input {
       padding: 12px;
-      font-size: 1rem;
       border-radius: 6px;
       border: 1px solid #ccc;
-      transition: 0.2s;
-    }
-
-    input:focus {
-      outline: none;
-      border-color: #4a90e2;
-      box-shadow: 0 0 6px rgba(74, 144, 226, 0.25);
     }
 
     button {
@@ -67,13 +68,7 @@
       color: white;
       border: none;
       border-radius: 6px;
-      font-size: 1rem;
       cursor: pointer;
-      transition: 0.2s;
-    }
-
-    button:hover {
-      background: #3578d4;
     }
 
     table {
@@ -85,138 +80,121 @@
     th {
       background: #4a90e2;
       color: white;
-      padding: 12px;
-      font-size: 1rem;
+      padding: 10px;
     }
 
     td {
       border-bottom: 1px solid #ddd;
       padding: 10px;
-      font-size: 0.95rem;
       text-align: center;
     }
 
     .del-btn {
-      padding: 6px 9px;
       background: #e94e4e;
       border-radius: 5px;
+      padding: 6px 10px;
       color: white;
-      cursor: pointer;
       border: none;
-      font-size: 0.9rem;
-    }
-
-    .del-btn:hover {
-      background: #c43f3f;
-    }
-
-    @media (max-width: 650px) {
-      .inputs {
-        grid-template-columns: 1fr;
-      }
+      cursor: pointer;
     }
   </style>
 </head>
 
 <body>
-  <div class="container">
+
+  <!-- LOGIN BOX -->
+  <div id="loginBox" style="max-width:400px;margin:40px auto;padding:20px;background:#fff;border-radius:8px;text-align:center;">
+    <h2>Login</h2>
+    <input id="email" placeholder="Email" style="width:100%;padding:10px;margin-bottom:10px;" />
+    <input id="password" type="password" placeholder="Password" style="width:100%;padding:10px;margin-bottom:10px;" />
+    <button onclick="loginEmail()" style="width:100%;margin-bottom:10px;">Login with Email</button>
+    <button onclick="loginGoogle()" style="width:100%;">Login with Google</button>
+  </div>
+
+  <!-- APP -->
+  <div class="container" id="app">
     <h1>📈 My Stock Portfolio</h1>
 
     <div class="inputs">
-      <input id="stock" placeholder="Stock Name (e.g., TCS)" />
-      <input id="price" type="number" placeholder="Buy Price (₹)" />
+      <input id="stock" placeholder="Stock Name" />
+      <input id="price" type="number" placeholder="Buy Price" />
       <input id="qty" type="number" placeholder="Quantity" />
       <button onclick="addStock()">Add</button>
     </div>
 
-    <div class="total-box">
-      Total Invested: ₹<span id="total">0</span>
-    </div>
-
-    <table id="portfolio">
-      <tr>
-        <th>Stock</th>
-        <th>Buy Price</th>
-        <th>Qty</th>
-        <th>Total Value</th>
-        <th>Action</th>
-      </tr>
-    </table>
+    <table id="portfolio"></table>
   </div>
 
+  <!-- LOGIN LOGIC -->
+  <script>
+    const auth = firebase.auth();
+
+    function loginGoogle() {
+      const provider = new firebase.auth.GoogleAuthProvider();
+      auth.signInWithPopup(provider).catch(err => alert(err.message));
+    }
+
+    function loginEmail() {
+      auth.signInWithEmailAndPassword(
+        document.getElementById("email").value,
+        document.getElementById("password").value
+      ).catch(err => alert(err.message));
+    }
+
+    auth.onAuthStateChanged(user => {
+      if (user) {
+        document.getElementById("loginBox").style.display = "none";
+        document.getElementById("app").style.display = "block";
+      }
+    });
+  </script>
+
+  <!-- PORTFOLIO LOGIC -->
   <script>
     let portfolio = JSON.parse(localStorage.getItem("portfolio")) || [];
 
-    function saveData() {
-      localStorage.setItem("portfolio", JSON.stringify(portfolio));
-    }
-
     function renderTable() {
-      let table = document.getElementById("portfolio");
-      let total = 0;
-
+      const table = document.getElementById("portfolio");
       table.innerHTML = `
         <tr>
           <th>Stock</th>
-          <th>Buy Price</th>
+          <th>Price</th>
           <th>Qty</th>
-          <th>Total Value</th>
+          <th>Total</th>
           <th>Action</th>
         </tr>
       `;
 
-      portfolio.forEach((stock, index) => {
-        let invested = stock.price * stock.qty;
-        total += invested;
-
-        let row = table.insertRow();
-        row.insertCell(0).innerText = stock.name;
-        row.insertCell(1).innerText = stock.price;
-        row.insertCell(2).innerText = stock.qty;
-        row.insertCell(3).innerText = invested;
-
-        let delBtn = document.createElement("button");
-        delBtn.className = "del-btn";
-        delBtn.innerText = "Delete";
-        delBtn.onclick = () => deleteStock(index);
-        row.insertCell(4).appendChild(delBtn);
+      portfolio.forEach((s, i) => {
+        const row = table.insertRow();
+        row.innerHTML = `
+          <td>${s.name}</td>
+          <td>${s.price}</td>
+          <td>${s.qty}</td>
+          <td>${s.price * s.qty}</td>
+          <td><button class="del-btn" onclick="deleteStock(${i})">Delete</button></td>
+        `;
       });
-
-      document.getElementById("total").innerText = total;
     }
 
     function addStock() {
-      let stockName = document.getElementById("stock").value.trim();
-      let price = document.getElementById("price").value;
-      let qty = document.getElementById("qty").value;
-
-      if (stockName === "" || price === "" || qty === "") {
-        alert("Please fill all fields.");
-        return;
-      }
-
       portfolio.push({
-        name: stockName,
-        price: Number(price),
-        qty: Number(qty)
+        name: stock.value,
+        price: Number(price.value),
+        qty: Number(qty.value)
       });
-
-      saveData();
+      localStorage.setItem("portfolio", JSON.stringify(portfolio));
       renderTable();
-
-      document.getElementById("stock").value = "";
-      document.getElementById("price").value = "";
-      document.getElementById("qty").value = "";
     }
 
-    function deleteStock(index) {
-      portfolio.splice(index, 1);
-      saveData();
+    function deleteStock(i) {
+      portfolio.splice(i, 1);
+      localStorage.setItem("portfolio", JSON.stringify(portfolio));
       renderTable();
     }
 
     renderTable();
   </script>
-</body>
 
+</body>
 </html>
