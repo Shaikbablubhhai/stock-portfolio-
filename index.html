@@ -1,264 +1,197 @@
-<!DOCTYPE html><!DOCTYPE html><!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>FinzoTalk</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FinzoTalk</title>
 
-  <!-- Firebase (COMPAT – GitHub Pages safe) -->
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<!-- Firebase (UNCHANGED) -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 
-  <script>
-    const firebaseConfig = {
-      apiKey: "AIzaSyDKWlkEcCskaGVMU4BZbE1LMR6HlhkCnz8",
-      authDomain: "stock-portfolio-web-final.firebaseapp.com",
-      projectId: "stock-portfolio-web-final",
-      storageBucket: "stock-portfolio-web-final.firebasestorage.app",
-      messagingSenderId: "804419033716",
-      appId: "1:804419033716:web:ad50c042cc663acb528f21"
-    };
-    firebase.initializeApp(firebaseConfig);
-  </script>
+<script>
+const firebaseConfig = {
+  apiKey: "AIzaSyDKWlkEcCskaGVMU4BZbE1LMR6HlhkCnz8",
+  authDomain: "stock-portfolio-web-final.firebaseapp.com",
+  projectId: "stock-portfolio-web-final",
+  storageBucket: "stock-portfolio-web-final.firebasestorage.app",
+  messagingSenderId: "804419033716",
+  appId: "1:804419033716:web:ad50c042cc663acb528f21"
+};
+firebase.initializeApp(firebaseConfig);
+</script>
 
-  <style>
-    * { box-sizing: border-box; }
-    body {
-      margin: 0;
-      font-family: Inter, system-ui, sans-serif;
-      background: #f6f8fb;
-      color: #1e293b;
-    }
+<style>
+body{margin:0;font-family:Inter,system-ui;background:#f6f8fb;color:#1e293b}
+.nav{display:flex;align-items:center;gap:20px;padding:14px 20px;background:#fff;border-bottom:1px solid #e5e7eb}
+.logo{font-size:22px;font-weight:700;color:#2563eb}
+.tabs span{margin-right:14px;cursor:pointer}
+.tabs span.active{color:#2563eb;border-bottom:2px solid #2563eb;padding-bottom:4px}
+.search{flex:1}
+.search input{width:100%;padding:8px;border:1px solid #cbd5e1;border-radius:6px}
+.profile{cursor:pointer}
+.dropdown{display:none;position:absolute;right:20px;top:60px;background:#fff;border:1px solid #e5e7eb;border-radius:8px;width:200px}
+.dropdown div,.dropdown button{padding:12px}
+.dropdown button{border:none;background:#ef4444;color:#fff;width:100%;cursor:pointer}
 
-    /* NAVBAR */
-    .nav {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 14px 24px;
-      background: #ffffff;
-      border-bottom: 1px solid #e5e7eb;
-    }
+#loginBox{max-width:400px;margin:80px auto;background:#fff;padding:24px;border-radius:10px;text-align:center}
+#loginBox input,#loginBox button{width:100%;padding:12px;margin-top:10px}
 
-    .logo {
-      font-size: 22px;
-      font-weight: 700;
-      color: #2563eb;
-    }
+.content{padding:20px}
+.card{background:#fff;border-radius:10px;padding:16px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}
 
-    .nav-links {
-      display: flex;
-      gap: 20px;
-      font-weight: 500;
-    }
+.stock{border:1px solid #e5e7eb;border-radius:8px;padding:10px;cursor:pointer}
+table{width:100%;border-collapse:collapse}
+th,td{padding:8px;border-bottom:1px solid #e5e7eb;text-align:center}
+.del{background:#ef4444;color:#fff;border:none;padding:6px 10px;border-radius:6px;cursor:pointer}
 
-    .nav-links span {
-      cursor: pointer;
-      color: #475569;
-    }
-
-    .nav-links span.active {
-      color: #2563eb;
-      border-bottom: 2px solid #2563eb;
-      padding-bottom: 4px;
-    }
-
-    .profile {
-      position: relative;
-      cursor: pointer;
-      font-weight: 600;
-    }
-
-    .dropdown {
-      position: absolute;
-      right: 0;
-      top: 38px;
-      background: white;
-      border: 1px solid #e5e7eb;
-      border-radius: 8px;
-      width: 220px;
-      display: none;
-      box-shadow: 0 10px 25px rgba(0,0,0,0.08);
-    }
-
-    .dropdown div {
-      padding: 12px;
-      border-bottom: 1px solid #f1f5f9;
-      font-size: 14px;
-    }
-
-    .dropdown button {
-      width: 100%;
-      padding: 10px;
-      border: none;
-      background: #ef4444;
-      color: white;
-      cursor: pointer;
-      border-radius: 0 0 8px 8px;
-    }
-
-    /* LOGIN */
-    #loginBox {
-      max-width: 420px;
-      margin: 80px auto;
-      background: white;
-      padding: 24px;
-      border-radius: 12px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.08);
-      text-align: center;
-    }
-
-    #loginBox input, #loginBox button {
-      width: 100%;
-      padding: 12px;
-      margin-top: 12px;
-      border-radius: 6px;
-      border: 1px solid #cbd5e1;
-    }
-
-    #loginBox button {
-      background: #2563eb;
-      color: white;
-      border: none;
-      cursor: pointer;
-      font-weight: 600;
-    }
-
-    /* DASHBOARD */
-    #app { display: none; }
-
-    .content {
-      padding: 24px;
-      display: grid;
-      grid-template-columns: 3fr 1.2fr;
-      gap: 24px;
-    }
-
-    .card {
-      background: white;
-      border-radius: 12px;
-      padding: 16px;
-      box-shadow: 0 6px 20px rgba(0,0,0,0.06);
-    }
-
-    .stock-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(160px,1fr));
-      gap: 16px;
-    }
-
-    .stock {
-      border: 1px solid #e5e7eb;
-      border-radius: 10px;
-      padding: 12px;
-    }
-
-    .stock h4 {
-      margin: 0;
-      font-size: 15px;
-    }
-
-    .green { color: #16a34a; }
-    .red { color: #dc2626; }
-
-    .mutual-funds {
-      text-align: center;
-      color: #64748b;
-      padding: 40px;
-    }
-
-    @media(max-width:900px){
-      .content { grid-template-columns: 1fr; }
-    }
-  </style>
+@media(max-width:768px){
+  .nav{flex-wrap:wrap}
+  .search{width:100%}
+}
+</style>
 </head>
 
 <body>
 
 <!-- LOGIN -->
 <div id="loginBox">
-  <h2>Welcome to FinzoTalk</h2>
-  <input id="email" placeholder="Email">
-  <input id="password" type="password" placeholder="Password">
-  <button onclick="loginEmail()">Login / Signup</button>
-  <button onclick="loginGoogle()">Continue with Google</button>
+<h2>FinzoTalk Login</h2>
+<input id="email" placeholder="Email">
+<input id="password" type="password" placeholder="Password">
+<button onclick="loginEmail()">Login / Signup</button>
+<button onclick="loginGoogle()">Continue with Google</button>
 </div>
 
 <!-- APP -->
-<div id="app">
-  <div class="nav">
-    <div class="logo">FinzoTalk</div>
+<div id="app" style="display:none">
 
-    <div class="nav-links">
-      <span class="active" onclick="showStocks()">Stocks</span>
-      <span onclick="showMF()">Mutual Funds</span>
-    </div>
+<div class="nav">
+<div class="logo">FinzoTalk</div>
 
-    <div class="profile" onclick="toggleProfile()">
-      👤
-      <div class="dropdown" id="profileMenu">
-        <div><strong id="userName">User</strong></div>
-        <div id="userEmail">email</div>
-        <button onclick="logout()">Logout</button>
-      </div>
-    </div>
-  </div>
+<div class="tabs">
+<span class="active" onclick="showTab('stocks',this)">Stocks</span>
+<span onclick="showTab('holdings',this)">Holdings</span>
+<span onclick="showTab('mf',this)">Mutual Funds</span>
+</div>
 
-  <div class="content">
-    <div class="card" id="stocksSection">
-      <h3>Most Traded Stocks</h3>
-      <div class="stock-grid">
-        <div class="stock"><h4>TCS</h4><p class="green">+1.2%</p></div>
-        <div class="stock"><h4>INFY</h4><p class="red">-0.6%</p></div>
-        <div class="stock"><h4>HDFC</h4><p class="green">+0.9%</p></div>
-        <div class="stock"><h4>RELIANCE</h4><p class="red">-0.3%</p></div>
-      </div>
-    </div>
+<div class="search">
+<input id="searchInput" placeholder="Search stocks (TCS, INFY)" onkeyup="searchStock()">
+</div>
 
-    <div class="card" id="mfSection" style="display:none">
-      <div class="mutual-funds">
-        Mutual Funds coming soon 🚀
-      </div>
-    </div>
+<div class="profile" onclick="toggleProfile()">👤</div>
+<div class="dropdown" id="profileMenu">
+<div id="userEmail"></div>
+<button onclick="logout()">Logout</button>
+</div>
+</div>
 
-    <div class="card">
-      <h3>Your Investments</h3>
-      <p><strong>Current:</strong> ₹15,585</p>
-      <p class="red">1D Returns: -₹347</p>
-      <p><strong>Invested:</strong> ₹21,738</p>
-    </div>
-  </div>
+<div class="content">
+
+<div class="card" id="stocks">
+<h3>Stocks</h3>
+<div class="grid" id="stockList"></div>
+</div>
+
+<div class="card" id="holdings" style="display:none">
+<h3>Your Holdings</h3>
+<table id="holdingsTable"></table>
+</div>
+
+<div class="card" id="mf" style="display:none">
+<h3>Mutual Funds</h3>
+<p>Coming soon 🚀</p>
+</div>
+
+</div>
 </div>
 
 <script>
-  const auth = firebase.auth();
+const auth=firebase.auth();
+const stockNames=["TCS","INFY","RELIANCE","HDFC","ICICI","SBIN"];
+let holdings=JSON.parse(localStorage.getItem("holdings"))||[];
 
-  function loginGoogle() {
-    auth.signInWithPopup(new firebase.auth.GoogleAuthProvider());
-  }
+function loginGoogle(){auth.signInWithPopup(new firebase.auth.GoogleAuthProvider())}
+function loginEmail(){
+auth.signInWithEmailAndPassword(email.value,password.value)
+.catch(()=>auth.createUserWithEmailAndPassword(email.value,password.value))
+}
 
-  function loginEmail() {
-    const e = email.value, p = password.value;
-    auth.signInWithEmailAndPassword(e,p)
-      .catch(()=>auth.createUserWithEmailAndPassword(e,p));
-  }
+auth.onAuthStateChanged(u=>{
+if(u){
+loginBox.style.display="none";
+app.style.display="block";
+userEmail.innerText=u.email;
+renderStocks();
+renderHoldings();
+}
+});
 
-  auth.onAuthStateChanged(u=>{
-    if(u){
-      loginBox.style.display="none";
-      app.style.display="block";
-      userName.innerText = u.displayName || "Finzo User";
-      userEmail.innerText = u.email;
-    }
-  });
+function logout(){auth.signOut();location.reload()}
+function toggleProfile(){profileMenu.style.display=profileMenu.style.display==="block"?"none":"block"}
 
-  function logout(){ auth.signOut(); location.reload(); }
-  function toggleProfile(){ profileMenu.style.display = profileMenu.style.display==="block"?"none":"block"; }
-  function showStocks(){ stocksSection.style.display="block"; mfSection.style.display="none"; }
-  function showMF(){ stocksSection.style.display="none"; mfSection.style.display="block"; }
+function showTab(id,el){
+["stocks","holdings","mf"].forEach(t=>document.getElementById(t).style.display="none");
+document.getElementById(id).style.display="block";
+document.querySelectorAll(".tabs span").forEach(s=>s.classList.remove("active"));
+el.classList.add("active");
+}
+
+function renderStocks(){
+stockList.innerHTML="";
+stockNames.forEach(s=>{
+let d=document.createElement("div");
+d.className="stock";
+d.innerHTML=`<strong>${s}</strong><br><small>Add</small>`;
+d.onclick=()=>addStock(s);
+stockList.appendChild(d);
+});
+}
+
+function addStock(name){
+let price=prompt("Buy price");
+let qty=prompt("Quantity");
+if(!price||!qty)return;
+holdings.push({name,price:+price,qty:+qty});
+localStorage.setItem("holdings",JSON.stringify(holdings));
+renderHoldings();
+showTab("holdings",document.querySelectorAll(".tabs span")[1]);
+}
+
+function renderHoldings(){
+holdingsTable.innerHTML="<tr><th>Stock</th><th>Price</th><th>Qty</th><th>Total</th><th></th></tr>";
+holdings.forEach((h,i)=>{
+holdingsTable.innerHTML+=`
+<tr>
+<td>${h.name}</td>
+<td>${h.price}</td>
+<td>${h.qty}</td>
+<td>${h.price*h.qty}</td>
+<td><button class="del" onclick="del(${i})">Delete</button></td>
+</tr>`;
+});
+}
+
+function del(i){
+holdings.splice(i,1);
+localStorage.setItem("holdings",JSON.stringify(holdings));
+renderHoldings();
+}
+
+function searchStock(){
+let q=searchInput.value.toUpperCase();
+stockList.innerHTML="";
+stockNames.filter(s=>s.includes(q)).forEach(s=>{
+let d=document.createElement("div");
+d.className="stock";
+d.innerHTML=`<strong>${s}</strong>`;
+d.onclick=()=>addStock(s);
+stockList.appendChild(d);
+});
+}
 </script>
 
 </body>
 </html>
-
 
