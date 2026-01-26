@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>FinzoTalk</title>
 
-<!-- Firebase (UNCHANGED) -->
+<!-- Firebase -->
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 
@@ -41,14 +41,21 @@ body{margin:0;font-family:Inter,system-ui;background:#f6f8fb;color:#1e293b}
 .card{background:#fff;border-radius:10px;padding:16px}
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}
 
-.stock{border:1px solid #e5e7eb;border-radius:8px;padding:10px;cursor:pointer}
+.stock{border:1px solid #e5e7eb;border-radius:8px;padding:10px}
+.inline-form{margin-top:8px}
+.inline-form input{width:48%;padding:6px;margin-right:4%}
+.inline-form button{margin-top:6px;margin-right:6px}
+
 table{width:100%;border-collapse:collapse}
 th,td{padding:8px;border-bottom:1px solid #e5e7eb;text-align:center}
 .del{background:#ef4444;color:#fff;border:none;padding:6px 10px;border-radius:6px;cursor:pointer}
 
+.hidden{display:none}
+
 @media(max-width:768px){
   .nav{flex-wrap:wrap}
   .search{width:100%}
+  .inline-form input{width:100%;margin:4px 0}
 }
 </style>
 </head>
@@ -110,36 +117,18 @@ th,td{padding:8px;border-bottom:1px solid #e5e7eb;text-align:center}
 <script>
 const auth = firebase.auth();
 
-/* FULL STOCK LIST */
 const stockNames = [
-  "ADANI ENTERPRISES","ADANI PORTS","APOLLO HOSPITALS","ASIAN PAINTS",
-  "AXIS BANK","BAJAJ AUTO","BAJAJ FINANCE","BAJAJ FINSERV",
-  "BHARTI AIRTEL","BPCL","BRITANNIA","CIPLA","COAL INDIA",
-  "DIVIS LAB","DR REDDYS","EICHER MOTORS","GRASIM",
-  "HCL TECHNOLOGIES","HDFC BANK","HDFC LIFE","HERO MOTOCORP",
-  "HINDALCO","HINDUSTAN UNILEVER","ICICI BANK","INDUSIND BANK",
-  "INFOSYS","ITC","JSW STEEL","KOTAK MAHINDRA BANK",
-  "LARSEN & TOUBRO","LTIMINDTREE","MARUTI SUZUKI",
-  "NESTLE INDIA","NTPC","ONGC","POWER GRID",
-  "RELIANCE INDUSTRIES","SBIN","SUN PHARMA","TATA CONSUMER",
-  "TATA MOTORS","TATA STEEL","TCS","TECH MAHINDRA",
-  "TITAN","ULTRATECH CEMENT","UPL","WIPRO"
+  "RELIANCE INDUSTRIES","TCS","HDFC BANK","INFOSYS",
+  "ICICI BANK","SBIN","ITC","AXIS BANK","KOTAK MAHINDRA BANK"
 ];
 
-/* ONLY 4 STOCKS ON HOME */
 const topStocks = [
-  "RELIANCE INDUSTRIES",
-  "TCS",
-  "HDFC BANK",
-  "INFOSYS"
+  "RELIANCE INDUSTRIES","TCS","HDFC BANK","INFOSYS"
 ];
 
 let holdings = JSON.parse(localStorage.getItem("holdings")) || [];
 
-function loginGoogle(){
-  auth.signInWithPopup(new firebase.auth.GoogleAuthProvider());
-}
-
+function loginGoogle(){ auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()); }
 function loginEmail(){
   auth.signInWithEmailAndPassword(email.value,password.value)
     .catch(()=>auth.createUserWithEmailAndPassword(email.value,password.value));
@@ -168,44 +157,51 @@ function showTab(id,el){
 function renderStocks(list){
   stockList.innerHTML="";
   list.forEach(s=>{
-    const d = document.createElement("div");
+    const d=document.createElement("div");
     d.className="stock";
-    d.innerHTML=`<strong>${s}</strong><br><small>Add</small>`;
-    d.onclick=()=>addStock(s);
+    d.innerHTML=`
+      <strong>${s}</strong><br>
+      <button onclick="toggleForm('${s}')">Add</button>
+      <div id="form-${s}" class="inline-form hidden">
+        <input id="price-${s}" placeholder="Buy Price">
+        <input id="qty-${s}" placeholder="Quantity">
+        <br>
+        <button onclick="saveStock('${s}')">Save</button>
+        <button onclick="toggleForm('${s}')">Cancel</button>
+      </div>`;
     stockList.appendChild(d);
   });
 }
 
-function searchStock(){
-  const q = searchInput.value.toUpperCase().trim();
-  if(q === ""){
-    renderStocks(topStocks);
-  } else {
-    const filtered = stockNames.filter(s => s.includes(q));
-    renderStocks(filtered);
-  }
+function toggleForm(s){
+  document.getElementById("form-"+s).classList.toggle("hidden");
 }
 
-function addStock(name){
-  const price = prompt("Buy price for " + name);
-  const qty = prompt("Quantity");
-  if(!price || !qty) return;
-  holdings.push({name,price:+price,qty:+qty});
+function searchStock(){
+  const q=searchInput.value.toUpperCase().trim();
+  if(q==="") renderStocks(topStocks);
+  else renderStocks(stockNames.filter(s=>s.includes(q)));
+}
+
+function saveStock(s){
+  const price=+document.getElementById("price-"+s).value;
+  const qty=+document.getElementById("qty-"+s).value;
+  if(!price||!qty) return;
+  holdings.push({name:s,price,qty});
   localStorage.setItem("holdings",JSON.stringify(holdings));
   renderHoldings();
   showTab("holdings",document.querySelectorAll(".tabs span")[1]);
 }
 
 function renderHoldings(){
-  holdingsTable.innerHTML =
-    "<tr><th>Stock</th><th>Price</th><th>Qty</th><th>Total</th><th></th></tr>";
+  holdingsTable.innerHTML="<tr><th>Stock</th><th>Price</th><th>Qty</th><th>Total</th><th></th></tr>";
   holdings.forEach((h,i)=>{
-    holdingsTable.innerHTML += `
+    holdingsTable.innerHTML+=`
       <tr>
         <td>${h.name}</td>
         <td>${h.price}</td>
         <td>${h.qty}</td>
-        <td>${h.price * h.qty}</td>
+        <td>${h.price*h.qty}</td>
         <td><button class="del" onclick="del(${i})">Delete</button></td>
       </tr>`;
   });
