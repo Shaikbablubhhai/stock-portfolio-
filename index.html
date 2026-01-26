@@ -39,9 +39,9 @@ body{
   box-shadow:0 20px 40px rgba(0,0,0,.15);
   text-align:center;
 }
-#loginBox h2{margin:0;font-size:28px}
+#loginBox h2{margin:0 0 10px}
 #loginBox input{
-  width:100%;padding:14px;margin-bottom:14px;
+  width:100%;padding:14px;margin-bottom:12px;
   border:1px solid #cbd5e1;border-radius:10px
 }
 .primary-btn{
@@ -54,7 +54,12 @@ body{
   background:#f1f5f9;border:1px solid #cbd5e1;
   border-radius:10px;cursor:pointer
 }
-.error-text{color:#dc2626;font-size:13px;height:16px}
+.error-text{
+  color:#dc2626;
+  font-size:13px;
+  margin-top:10px;
+  min-height:18px;
+}
 
 /* APP */
 #app{display:none;background:#f6f8fb;min-height:100vh}
@@ -74,41 +79,27 @@ body{
 }
 
 /* PROFILE */
-.profile{
-  position:relative;
-  cursor:pointer;
-  font-size:22px;
-}
+.profile{position:relative;cursor:pointer;font-size:22px}
 .dropdown{
-  display:none;
-  position:absolute;
-  right:0;
-  top:34px;
-  background:#fff;
-  border:1px solid #e5e7eb;
-  border-radius:12px;
-  width:220px;
+  display:none;position:absolute;right:0;top:36px;
+  background:#fff;border:1px solid #e5e7eb;
+  border-radius:12px;width:230px;
   box-shadow:0 10px 30px rgba(0,0,0,.15);
   z-index:10;
 }
-.dropdown div, .dropdown button{
-  padding:12px 14px;
-  border-bottom:1px solid #f1f5f9;
-  text-align:left;
-}
-.dropdown button{
-  border:none;
-  background:#ef4444;
-  color:#fff;
-  width:100%;
-  cursor:pointer;
+.dropdown div,.dropdown button{
+  padding:12px 14px;border-bottom:1px solid #f1f5f9
 }
 .dropdown input{
-  width:100%;
-  padding:8px;
-  margin-top:6px;
-  border:1px solid #cbd5e1;
-  border-radius:6px;
+  width:100%;padding:8px;margin-top:6px;
+  border:1px solid #cbd5e1;border-radius:6px
+}
+.dropdown button{
+  width:100%;border:none;cursor:pointer;
+  background:#ef4444;color:#fff
+}
+.save-btn{
+  background:#2563eb!important;margin-top:6px
 }
 
 .content{padding:20px}
@@ -148,12 +139,12 @@ th,td{
 
 <!-- LOGIN -->
 <div id="loginBox">
-  <h2>FinzoTalk</h2><br>
+  <h2>FinzoTalk Login</h2>
   <input id="email" placeholder="Email">
   <input id="password" type="password" placeholder="Password">
   <button class="primary-btn" onclick="loginEmail()">Login / Signup</button>
   <button class="google-btn" onclick="loginGoogle()">Continue with Google</button>
-  <p id="loginError" class="error-text"></p>
+  <div id="loginError" class="error-text"></div>
 </div>
 
 <!-- APP -->
@@ -174,11 +165,14 @@ th,td{
 
   <div class="profile" onclick="toggleProfile()">⚙️
     <div class="dropdown" id="profileMenu">
-      <div><strong id="userName">User</strong><br><small id="userEmail"></small></div>
+      <div>
+        <strong id="userName">User</strong><br>
+        <small id="userEmail"></small>
+      </div>
       <div>
         <small>Edit name</small>
-        <input id="nameInput" placeholder="New name">
-        <button onclick="saveName()" style="margin-top:6px;background:#2563eb">Save</button>
+        <input id="nameInput" placeholder="Enter new name">
+        <button class="save-btn" onclick="saveName()">Save</button>
       </div>
       <button onclick="logout()">Logout</button>
     </div>
@@ -215,15 +209,35 @@ const stockNames = [
 
 let holdings = JSON.parse(localStorage.getItem("holdings")) || [];
 
+/* ---------- LOGIN ---------- */
+function loginEmail(){
+  loginError.innerText = "";
+
+  if(!email.value){
+    loginError.innerText = "Please enter email";
+    return;
+  }
+  if(!password.value){
+    loginError.innerText = "Please enter password";
+    return;
+  }
+
+  auth.signInWithEmailAndPassword(email.value,password.value)
+  .catch(err=>{
+    if(err.code === "auth/user-not-found"){
+      auth.createUserWithEmailAndPassword(email.value,password.value)
+      .catch(e=>loginError.innerText = e.message);
+    } else {
+      loginError.innerText = "Invalid email or password";
+    }
+  });
+}
+
 function loginGoogle(){
   auth.signInWithPopup(new firebase.auth.GoogleAuthProvider());
 }
 
-function loginEmail(){
-  auth.signInWithEmailAndPassword(email.value,password.value)
-  .catch(()=>auth.createUserWithEmailAndPassword(email.value,password.value));
-}
-
+/* ---------- AUTH STATE ---------- */
 auth.onAuthStateChanged(u=>{
   if(u){
     loginBox.style.display="none";
@@ -235,6 +249,7 @@ auth.onAuthStateChanged(u=>{
   }
 });
 
+/* ---------- PROFILE ---------- */
 function toggleProfile(){
   profileMenu.style.display =
     profileMenu.style.display === "block" ? "none" : "block";
@@ -243,8 +258,13 @@ function toggleProfile(){
 function saveName(){
   const name = nameInput.value.trim();
   if(!name) return;
-  auth.currentUser.updateProfile({ displayName: name })
-  .then(()=>{ userName.innerText = name; nameInput.value=""; });
+
+  const user = auth.currentUser;
+  user.updateProfile({ displayName: name })
+  .then(()=>{
+    userName.innerText = name;
+    nameInput.value = "";
+  });
 }
 
 function logout(){
@@ -252,6 +272,7 @@ function logout(){
   location.reload();
 }
 
+/* ---------- TABS ---------- */
 function showTab(id,el){
   ["stocks","holdings","mf"].forEach(t=>document.getElementById(t).style.display="none");
   document.getElementById(id).style.display="block";
@@ -259,6 +280,7 @@ function showTab(id,el){
   el.classList.add("active");
 }
 
+/* ---------- STOCKS ---------- */
 function renderStocks(list){
   stockList.innerHTML="";
   list.forEach(s=>{
@@ -275,6 +297,7 @@ function searchStock(){
   renderStocks(stockNames.filter(s=>s.includes(q)));
 }
 
+/* ---------- HOLDINGS ---------- */
 function addStock(name){
   const price=prompt("Buy price for "+name);
   const qty=prompt("Quantity");
