@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>FinzoTalk</title>
 
-<!-- Firebase (DO NOT CHANGE) -->
+<!-- Firebase (DO NOT TOUCH) -->
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 
@@ -22,97 +22,83 @@ firebase.initializeApp(firebaseConfig);
 </script>
 
 <style>
-body{
-  margin:0;
-  font-family:Inter,system-ui;
-  background:#f6f8fb;
-  color:#1e293b;
-}
+*{box-sizing:border-box}
+body{margin:0;font-family:Inter,system-ui;background:#f6f8fb;color:#1e293b}
 
 /* LOGIN */
-.login-card{
-  max-width:380px;
-  margin:90px auto;
-  background:#fff;
-  padding:32px;
-  border-radius:14px;
+#loginBox{
+  max-width:420px;margin:80px auto;
+  background:#fff;padding:32px;border-radius:14px;
   box-shadow:0 10px 30px rgba(0,0,0,.08);
-  text-align:center;
+  text-align:center
 }
-.login-card h2{margin:0;font-size:26px}
-.subtitle{color:#64748b;font-size:14px;margin:6px 0 24px}
-.login-card input{
-  width:100%;padding:12px;margin-bottom:14px;
-  border:1px solid #cbd5e1;border-radius:8px;
+#loginBox h2{margin-bottom:20px}
+#loginBox input,#loginBox button{
+  width:100%;padding:12px;margin-top:12px;
+  border-radius:8px;font-size:15px
 }
-.primary-btn{
-  width:100%;padding:12px;
-  background:#2563eb;color:#fff;
-  border:none;border-radius:8px;
-  font-weight:600;cursor:pointer;
+#loginBox input{border:1px solid #cbd5e1}
+#loginBox button{
+  border:none;cursor:pointer;font-weight:600
 }
-.google-btn{
-  width:100%;padding:12px;margin-top:10px;
-  border:1px solid #cbd5e1;border-radius:8px;
-  background:#f1f5f9;cursor:pointer;
-}
-.divider{margin:18px 0;font-size:12px;color:#94a3b8}
-.error-text{color:#dc2626;font-size:13px}
+.btn-main{background:#2563eb;color:#fff}
+.btn-google{background:#f1f5f9}
 
-/* APP */
+/* NAV */
 .nav{
-  display:flex;gap:20px;align-items:center;
+  display:flex;align-items:center;gap:16px;
   padding:14px 20px;background:#fff;
-  border-bottom:1px solid #e5e7eb;
+  border-bottom:1px solid #e5e7eb
 }
 .logo{font-size:22px;font-weight:700;color:#2563eb}
 .tabs span{margin-right:14px;cursor:pointer}
 .tabs span.active{
-  color:#2563eb;
-  border-bottom:2px solid #2563eb;
-  padding-bottom:4px;
+  color:#2563eb;border-bottom:2px solid #2563eb;padding-bottom:4px
 }
 .search{flex:1}
 .search input{
-  width:100%;padding:8px;
-  border:1px solid #cbd5e1;border-radius:6px;
+  width:100%;padding:10px;border:1px solid #cbd5e1;border-radius:8px
 }
-.profile{cursor:pointer}
+.profile{cursor:pointer;font-size:18px}
 .dropdown{
   display:none;position:absolute;right:20px;top:60px;
   background:#fff;border:1px solid #e5e7eb;
-  border-radius:8px;width:200px;
+  border-radius:10px;width:220px;z-index:10
 }
-.dropdown div,.dropdown button{padding:12px}
+.dropdown div,.dropdown button{
+  padding:12px;font-size:14px
+}
 .dropdown button{
-  border:none;background:#ef4444;color:#fff;width:100%;cursor:pointer;
+  border:none;background:#ef4444;color:#fff;
+  width:100%;cursor:pointer;border-radius:0 0 10px 10px
 }
+
+/* CONTENT */
 .content{padding:20px}
 .card{
-  background:#fff;border-radius:10px;padding:16px;
+  background:#fff;border-radius:12px;
+  padding:16px;margin-bottom:20px
 }
 .grid{
-  display:grid;
-  grid-template-columns:repeat(auto-fill,minmax(160px,1fr));
-  gap:12px;
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));
+  gap:12px
 }
 .stock{
-  border:1px solid #e5e7eb;
-  border-radius:8px;padding:10px;cursor:pointer;
+  border:1px solid #e5e7eb;border-radius:10px;
+  padding:14px;cursor:pointer
 }
+.stock small{color:#2563eb}
+
 table{width:100%;border-collapse:collapse}
-th,td{
-  padding:8px;border-bottom:1px solid #e5e7eb;
-  text-align:center;
-}
+th,td{padding:10px;border-bottom:1px solid #e5e7eb;text-align:center}
 .del{
   background:#ef4444;color:#fff;border:none;
-  padding:6px 10px;border-radius:6px;cursor:pointer;
+  padding:6px 10px;border-radius:6px;cursor:pointer
 }
+
 @media(max-width:768px){
   .nav{flex-wrap:wrap}
   .search{width:100%}
-  .login-card{margin:40px 16px}
 }
 </style>
 </head>
@@ -120,15 +106,12 @@ th,td{
 <body>
 
 <!-- LOGIN -->
-<div id="loginBox" class="login-card">
-  <h2>FinzoTalk</h2>
-  <p class="subtitle">Track • Share • Grow</p>
-  <input id="email" type="email" placeholder="Email">
+<div id="loginBox">
+  <h2>FinzoTalk Login</h2>
+  <input id="email" placeholder="Email">
   <input id="password" type="password" placeholder="Password">
-  <button class="primary-btn" onclick="loginEmail()">Login / Signup</button>
-  <div class="divider">OR</div>
-  <button class="google-btn" onclick="loginGoogle()">Continue with Google</button>
-  <p id="loginError" class="error-text"></p>
+  <button class="btn-main" onclick="loginEmail()">Login / Signup</button>
+  <button class="btn-google" onclick="loginGoogle()">Continue with Google</button>
 </div>
 
 <!-- APP -->
@@ -136,17 +119,23 @@ th,td{
 
 <div class="nav">
   <div class="logo">FinzoTalk</div>
+
   <div class="tabs">
     <span class="active" onclick="showTab('stocks',this)">Stocks</span>
     <span onclick="showTab('holdings',this)">Holdings</span>
     <span onclick="showTab('mf',this)">Mutual Funds</span>
   </div>
+
   <div class="search">
     <input id="searchInput" placeholder="Search stocks" onkeyup="searchStock()">
   </div>
+
   <div class="profile" onclick="toggleProfile()">👤</div>
+
   <div class="dropdown" id="profileMenu">
+    <div><strong id="userName"></strong></div>
     <div id="userEmail"></div>
+    <div style="cursor:pointer" onclick="editName()">✏️ Edit Name</div>
     <button onclick="logout()">Logout</button>
   </div>
 </div>
@@ -154,18 +143,18 @@ th,td{
 <div class="content">
 
 <div class="card" id="stocks">
-  <h3>Stocks</h3>
-  <div class="grid" id="stockList"></div>
+<h3>Top Stocks</h3>
+<div class="grid" id="stockList"></div>
 </div>
 
 <div class="card" id="holdings" style="display:none">
-  <h3>Your Holdings</h3>
-  <table id="holdingsTable"></table>
+<h3>Your Holdings</h3>
+<table id="holdingsTable"></table>
 </div>
 
 <div class="card" id="mf" style="display:none">
-  <h3>Mutual Funds</h3>
-  <p>Coming soon 🚀</p>
+<h3>Mutual Funds</h3>
+<p>Coming soon 🚀</p>
 </div>
 
 </div>
@@ -174,30 +163,20 @@ th,td{
 <script>
 const auth = firebase.auth();
 
-const allStocks = [
-  "RELIANCE INDUSTRIES","TCS","INFOSYS","HDFC BANK",
-  "ICICI BANK","ITC","HINDUSTAN UNILEVER","SBIN",
-  "AXIS BANK","BAJAJ FINANCE","ASIAN PAINTS","TATA MOTORS"
+const allStocks=[
+"RELIANCE INDUSTRIES","TCS","HDFC BANK","INFOSYS",
+"ICICI BANK","ITC","SBIN","BHARTI AIRTEL"
 ];
-
-const defaultStocks = allStocks.slice(0,4);
-let holdings = JSON.parse(localStorage.getItem("holdings")) || [];
+const topStocks=allStocks.slice(0,4);
+let holdings=JSON.parse(localStorage.getItem("holdings"))||[];
 
 function loginGoogle(){
   auth.signInWithPopup(new firebase.auth.GoogleAuthProvider());
 }
 
 function loginEmail(){
-  const e=email.value.trim(), p=password.value.trim();
-  loginError.innerText="";
-  if(!e||!p){loginError.innerText="Enter email & password";return;}
-  auth.signInWithEmailAndPassword(e,p)
-    .catch(err=>{
-      if(err.code==="auth/user-not-found"){
-        auth.createUserWithEmailAndPassword(e,p)
-          .catch(er=>loginError.innerText=er.message);
-      } else loginError.innerText=err.message;
-    });
+  auth.signInWithEmailAndPassword(email.value,password.value)
+  .catch(()=>auth.createUserWithEmailAndPassword(email.value,password.value));
 }
 
 auth.onAuthStateChanged(u=>{
@@ -205,14 +184,24 @@ auth.onAuthStateChanged(u=>{
     loginBox.style.display="none";
     app.style.display="block";
     userEmail.innerText=u.email;
-    renderStocks(defaultStocks);
+    userName.innerText=u.displayName||"Set your name";
+    renderStocks(topStocks);
     renderHoldings();
   }
 });
 
+function editName(){
+  const n=prompt("Enter your name");
+  if(!n) return;
+  auth.currentUser.updateProfile({displayName:n}).then(()=>{
+    userName.innerText=n;
+  });
+}
+
 function logout(){auth.signOut();location.reload();}
 function toggleProfile(){
-  profileMenu.style.display=profileMenu.style.display==="block"?"none":"block";
+  profileMenu.style.display=
+    profileMenu.style.display==="block"?"none":"block";
 }
 
 function showTab(id,el){
@@ -235,15 +224,14 @@ function renderStocks(list){
 
 function searchStock(){
   const q=searchInput.value.toUpperCase();
-  if(!q){renderStocks(defaultStocks);return;}
   renderStocks(allStocks.filter(s=>s.includes(q)));
 }
 
 function addStock(name){
-  const price=prompt("Buy price for "+name);
-  const qty=prompt("Quantity");
-  if(!price||!qty)return;
-  holdings.push({name,price:+price,qty:+qty});
+  const p=prompt("Buy price");
+  const q=prompt("Quantity");
+  if(!p||!q) return;
+  holdings.push({name,price:+p,qty:+q});
   localStorage.setItem("holdings",JSON.stringify(holdings));
   renderHoldings();
   showTab("holdings",document.querySelectorAll(".tabs span")[1]);
