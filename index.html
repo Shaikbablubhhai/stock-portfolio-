@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>FinzoTalk</title>
 
-<!-- Firebase (UNCHANGED & WORKING) -->
+<!-- Firebase -->
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 
@@ -22,17 +22,11 @@ firebase.initializeApp(firebaseConfig);
 </script>
 
 <style>
-/* ===== YOUR DESIGN (IMPROVED, NO LOGIC CHANGED) ===== */
-
-body {
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  margin: 0;
-  background: #f5f7fa;
-  color: #333;
-  min-height: 100vh;
+body{
+  font-family:'Segoe UI',sans-serif;
+  margin:0;
+  background:#f5f7fa;
 }
-
-/* LOGIN PAGE */
 #loginBox{
   max-width:420px;
   margin:80px auto;
@@ -43,117 +37,87 @@ body {
   text-align:center;
 }
 #loginBox input{
-  width:100%;
-  padding:14px;
-  margin-bottom:12px;
-  border:1px solid #ddd;
-  border-radius:8px;
+  width:100%;padding:14px;margin-bottom:12px;
+  border:1px solid #ddd;border-radius:8px
 }
 #loginBox button{
-  width:100%;
-  padding:14px;
-  margin-top:8px;
-  border:none;
-  border-radius:8px;
-  cursor:pointer;
+  width:100%;padding:14px;border:none;
+  border-radius:8px;margin-top:8px;cursor:pointer
 }
 .primary-btn{background:#9B59B6;color:#fff}
 .google-btn{background:#f1f1f1}
 .error{color:#e74c3c;font-size:14px;height:18px}
 
-/* DASHBOARD */
 #app{display:none}
 
-/* TOP BAR */
 .top-bar{
-  display:flex;
-  align-items:center;
-  gap:16px;
-  padding:12px 20px;
-  background:#9B59B6;
-  color:#fff;
+  display:flex;align-items:center;gap:16px;
+  padding:12px 20px;background:#9B59B6;color:#fff
 }
 .logo{font-size:22px;font-weight:700}
-.tabs span{
-  margin-right:12px;
-  cursor:pointer;
-}
+.tabs span{margin-right:12px;cursor:pointer}
 .tabs .active{
   background:rgba(255,255,255,.2);
-  padding:6px 10px;
-  border-radius:6px;
+  padding:6px 10px;border-radius:6px
 }
 .search-container{flex:1}
 .search-container input{
-  width:100%;
-  padding:8px;
-  border-radius:6px;
-  border:none;
+  width:100%;padding:8px;border-radius:6px;border:none
 }
 
-/* PROFILE */
 .profile{cursor:pointer;position:relative}
 .dropdown{
-  display:none;
-  position:absolute;
-  right:0;
-  top:36px;
-  background:#fff;
-  color:#333;
-  border-radius:10px;
-  width:220px;
-  box-shadow:0 10px 25px rgba(0,0,0,.15);
+  display:none;position:absolute;right:0;top:36px;
+  background:#fff;color:#333;border-radius:10px;
+  width:220px;box-shadow:0 10px 25px rgba(0,0,0,.15)
 }
 .dropdown div,.dropdown button{
-  padding:12px;
-  border-bottom:1px solid #eee;
+  padding:12px;border-bottom:1px solid #eee
 }
-.dropdown input{
-  width:100%;
-  padding:8px;
-  margin-top:6px;
-}
+.dropdown input{width:100%;padding:8px;margin-top:6px}
 .dropdown button{
-  background:#e74c3c;
-  color:#fff;
-  border:none;
-  cursor:pointer;
+  background:#e74c3c;color:#fff;border:none;cursor:pointer
 }
 
-/* CONTENT */
 main{padding:20px}
 .card{
-  background:#fff;
-  padding:16px;
-  border-radius:10px;
-  margin-bottom:20px;
+  background:#fff;padding:16px;border-radius:10px;margin-bottom:20px
 }
 .grid{
   display:grid;
   grid-template-columns:repeat(auto-fill,minmax(160px,1fr));
-  gap:16px;
+  gap:16px
 }
 .stock-card{
-  border:1px solid #ddd;
-  border-radius:8px;
-  padding:14px;
-  cursor:pointer;
+  border:1px solid #ddd;border-radius:8px;padding:14px
 }
 .stock-card button{
-  margin-top:8px;
-  background:#9B59B6;
-  color:#fff;
-  border:none;
-  padding:6px 10px;
-  border-radius:6px;
+  margin-top:8px;background:#9B59B6;color:#fff;
+  border:none;padding:6px 10px;border-radius:6px
 }
 
-/* TABLE */
 table{width:100%;border-collapse:collapse}
 th,td{padding:10px;border-bottom:1px solid #ddd}
 .del{background:#e74c3c;color:#fff;border:none;padding:6px 10px;border-radius:6px}
 
-/* MOBILE */
+/* MODAL */
+.modal{
+  display:none;position:fixed;top:0;left:0;
+  width:100%;height:100%;background:rgba(0,0,0,.4)
+}
+.modal-content{
+  background:#fff;padding:20px;border-radius:10px;
+  max-width:320px;margin:120px auto
+}
+.modal-content input{
+  width:100%;padding:10px;margin-bottom:10px
+}
+.modal-content button{
+  width:48%;padding:10px;border:none;border-radius:6px
+}
+.cancel-btn{background:#ddd}
+.save-btn{background:#9B59B6;color:#fff}
+
 @media(max-width:768px){
   .top-bar{flex-direction:column}
 }
@@ -221,39 +185,42 @@ th,td{padding:10px;border-bottom:1px solid #ddd}
 </main>
 </div>
 
+<!-- ADD STOCK MODAL -->
+<div class="modal" id="stockModal">
+  <div class="modal-content">
+    <h3>Add Stock</h3>
+    <input id="modalStock" readonly>
+    <input id="modalPrice" placeholder="Buy Price">
+    <input id="modalQty" placeholder="Quantity">
+    <button class="save-btn" onclick="saveStock()">Save</button>
+    <button class="cancel-btn" onclick="closeModal()">Cancel</button>
+  </div>
+</div>
+
 <script>
 const auth = firebase.auth();
 
-/* FULL NIFTY / SENSEX LIST */
-const allStocks = [
-"RELIANCE","TCS","INFOSYS","HDFC BANK","ICICI BANK",
-"ITC","SBIN","AXIS BANK","KOTAK BANK","ASIAN PAINTS"
-];
-
+const allStocks=["RELIANCE","TCS","INFOSYS","HDFC BANK","ICICI BANK","ITC","SBIN","AXIS BANK","KOTAK BANK"];
 let holdings = JSON.parse(localStorage.getItem("holdings")) || [];
+let selectedStock="";
 
-/* LOGIN */
 function loginEmail(){
   loginError.innerText="";
-  if(!email.value || !password.value){
-    loginError.innerText="Please enter email and password";
-    return;
+  if(!email.value||!password.value){
+    loginError.innerText="Please enter email and password";return;
   }
   auth.signInWithEmailAndPassword(email.value,password.value)
   .catch(e=>{
     if(e.code==="auth/user-not-found"){
       auth.createUserWithEmailAndPassword(email.value,password.value)
       .catch(err=>loginError.innerText=err.message);
-    }else{
-      loginError.innerText="Invalid email or password";
-    }
+    }else loginError.innerText="Invalid email or password";
   });
 }
 function loginGoogle(){
   auth.signInWithPopup(new firebase.auth.GoogleAuthProvider());
 }
 
-/* AUTH */
 auth.onAuthStateChanged(u=>{
   if(u){
     loginBox.style.display="none";
@@ -265,20 +232,17 @@ auth.onAuthStateChanged(u=>{
   }
 });
 
-/* PROFILE */
 function toggleProfile(){
   profileMenu.style.display = profileMenu.style.display==="block"?"none":"block";
 }
 function saveName(){
-  const user=auth.currentUser;
   if(nameInput.value){
-    user.updateProfile({displayName:nameInput.value})
+    auth.currentUser.updateProfile({displayName:nameInput.value})
     .then(()=>userName.innerText=nameInput.value);
   }
 }
 function logout(){auth.signOut();location.reload();}
 
-/* TABS */
 function showTab(id,el){
   ["stocks","holdings","mf"].forEach(t=>document.getElementById(t).style.display="none");
   document.getElementById(id).style.display="block";
@@ -286,14 +250,13 @@ function showTab(id,el){
   el.classList.add("active");
 }
 
-/* STOCKS */
 function renderStocks(list){
   stockList.innerHTML="";
   list.forEach(s=>{
     const d=document.createElement("div");
     d.className="stock-card";
     d.innerHTML=`<strong>${s}</strong><br><button>Add</button>`;
-    d.onclick=()=>addStock(s);
+    d.querySelector("button").onclick=()=>openModal(s);
     stockList.appendChild(d);
   });
 }
@@ -302,15 +265,27 @@ function searchStock(){
   renderStocks(allStocks.filter(s=>s.includes(q)));
 }
 
-/* HOLDINGS */
-function addStock(name){
-  const price=prompt("Buy price for "+name);
-  const qty=prompt("Quantity");
-  if(!price||!qty)return;
-  holdings.push({name,price:+price,qty:+qty});
-  localStorage.setItem("holdings",JSON.stringify(holdings));
-  renderHoldings();
+/* MODAL LOGIC */
+function openModal(stock){
+  selectedStock=stock;
+  modalStock.value=stock;
+  modalPrice.value="";
+  modalQty.value="";
+  stockModal.style.display="block";
 }
+function closeModal(){
+  stockModal.style.display="none";
+}
+function saveStock(){
+  if(!modalPrice.value||!modalQty.value) return;
+  holdings.push({name:selectedStock,price:+modalPrice.value,qty:+modalQty.value});
+  localStorage.setItem("holdings",JSON.stringify(holdings));
+  closeModal();
+  renderHoldings();
+  showTab("holdings",document.querySelectorAll(".tabs span")[1]);
+}
+
+/* HOLDINGS */
 function renderHoldings(){
   holdingsTable.innerHTML="<tr><th>Stock</th><th>Price</th><th>Qty</th><th>Total</th><th></th></tr>";
   holdings.forEach((h,i)=>{
