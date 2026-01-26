@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>FinzoTalk</title>
 
 <!-- Firebase -->
@@ -14,64 +14,128 @@
 const firebaseConfig = {
   apiKey: "AIzaSyDKWlkEcCskaGVMU4BZbE1LMR6HlhkCnz8",
   authDomain: "stock-portfolio-web-final.firebaseapp.com",
-  projectId: "stock-portfolio-web-final",
-  storageBucket: "stock-portfolio-web-final.appspot.com",
-  messagingSenderId: "804419033716",
-  appId: "1:804419033716:web:ad50c042cc663acb528f21"
+  projectId: "stock-portfolio-web-final"
 };
 firebase.initializeApp(firebaseConfig);
+
+const auth = firebase.auth();
+const db = firebase.firestore();
 </script>
 
 <style>
-body{margin:0;font-family:Inter,system-ui;background:#eef2ff}
-.hidden{display:none}
-
-/* LOGIN */
-#loginBox{
-  max-width:420px;margin:80px auto;background:#fff;
-  padding:30px;border-radius:14px;text-align:center;
-  box-shadow:0 10px 30px rgba(0,0,0,.1)
+body{
+  margin:0;
+  font-family: Inter, system-ui;
+  background: linear-gradient(135deg,#eef2ff,#f8fafc);
 }
-#loginBox h2{margin-bottom:20px}
-#loginBox input,#loginBox button{
-  width:100%;padding:12px;margin-top:12px;
-  border-radius:8px;border:1px solid #c7d2fe
-}
-#loginBox button{
-  background:#6366f1;color:#fff;border:none;cursor:pointer
-}
-#errorMsg{color:#dc2626;margin-top:10px}
 
 /* NAV */
 .nav{
-  display:flex;align-items:center;gap:20px;
-  padding:14px 20px;background:#5b5ce2;color:#fff
+  background:#4f46e5;
+  color:#fff;
+  display:flex;
+  align-items:center;
+  padding:12px 20px;
+  gap:20px;
 }
-.tabs span{cursor:pointer;padding:6px 10px}
-.tabs span.active{background:rgba(255,255,255,.2);border-radius:6px}
-.search input{padding:8px;border-radius:6px;border:none}
-.profile{margin-left:auto;cursor:pointer}
+.logo{font-size:22px;font-weight:700}
+.tabs span{
+  margin-right:15px;
+  cursor:pointer;
+  opacity:.85;
+}
+.tabs span.active{
+  opacity:1;
+  border-bottom:2px solid #fff;
+}
+.search input{
+  padding:8px;
+  border-radius:6px;
+  border:none;
+  width:220px;
+}
+.settings-btn{
+  margin-left:auto;
+  cursor:pointer;
+  font-size:20px;
+}
 
 /* CONTENT */
 .content{padding:20px}
-.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:14px}
-.stock{background:#fff;padding:14px;border-radius:10px;text-align:center}
-.stock button{margin-top:8px;padding:6px 12px;border:none;border-radius:6px;background:#6366f1;color:#fff}
+.grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(160px,1fr));
+  gap:15px;
+}
+.stock{
+  background:#fff;
+  border-radius:10px;
+  padding:15px;
+  box-shadow:0 4px 10px rgba(0,0,0,.08);
+}
+.stock button{
+  margin-top:10px;
+  width:100%;
+  padding:8px;
+  border:none;
+  border-radius:6px;
+  background:#4f46e5;
+  color:#fff;
+  cursor:pointer;
+}
 
-/* SETTINGS MODAL */
-#overlay{
-  position:fixed;inset:0;background:rgba(0,0,0,.4);
-  display:none;align-items:center;justify-content:center
+/* TABLE */
+table{
+  width:100%;
+  background:#fff;
+  border-radius:10px;
+  border-collapse:collapse;
 }
-#settings{
-  background:#fff;padding:24px;border-radius:14px;
-  width:320px
+th,td{
+  padding:12px;
+  border-bottom:1px solid #e5e7eb;
+  text-align:center;
 }
-#settings input{width:100%;padding:10px;margin-top:8px}
-#settings button{width:100%;margin-top:10px;padding:10px;border:none;border-radius:6px}
-.save{background:#6366f1;color:#fff}
-.logout{background:#ef4444;color:#fff}
-.close{background:#e5e7eb}
+
+/* MODALS */
+.overlay{
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,.4);
+  display:none;
+  align-items:center;
+  justify-content:center;
+  z-index:10;
+}
+.modal{
+  background:#fff;
+  padding:20px;
+  width:320px;
+  border-radius:12px;
+}
+.modal input,.modal button{
+  width:100%;
+  padding:10px;
+  margin-top:10px;
+}
+.save-btn{background:#4f46e5;color:#fff;border:none}
+.logout-btn{background:#ef4444;color:#fff;border:none}
+.close-btn{background:#e5e7eb;border:none}
+
+/* LOGIN */
+#loginBox{
+  max-width:400px;
+  margin:100px auto;
+  background:#fff;
+  padding:25px;
+  border-radius:12px;
+  box-shadow:0 10px 30px rgba(0,0,0,.15);
+}
+#loginBox input,#loginBox button{
+  width:100%;
+  padding:12px;
+  margin-top:10px;
+}
 </style>
 </head>
 
@@ -79,145 +143,220 @@ body{margin:0;font-family:Inter,system-ui;background:#eef2ff}
 
 <!-- LOGIN -->
 <div id="loginBox">
-<h2>FinzoTalk Login</h2>
-<input id="email" placeholder="Email"/>
-<input id="password" type="password" placeholder="Password"/>
-<button onclick="loginEmail()">Login / Signup</button>
-<button onclick="loginGoogle()">Continue with Google</button>
-<div id="errorMsg"></div>
+  <h2>FinzoTalk Login</h2>
+  <input id="email" placeholder="Email">
+  <input id="password" type="password" placeholder="Password">
+  <button onclick="loginEmail()">Login / Signup</button>
+  <button onclick="loginGoogle()">Continue with Google</button>
+  <p id="loginError" style="color:red"></p>
 </div>
 
 <!-- APP -->
-<div id="app" class="hidden">
+<div id="app" style="display:none">
 
 <div class="nav">
-  <strong>FinzoTalk</strong>
+  <div class="logo">FinzoTalk</div>
   <div class="tabs">
     <span class="active" onclick="showTab('stocks',this)">Stocks</span>
     <span onclick="showTab('holdings',this)">Holdings</span>
     <span onclick="showTab('mf',this)">Mutual Funds</span>
   </div>
   <div class="search">
-    <input id="searchInput" placeholder="Search NIFTY / SENSEX" onkeyup="searchStock()"/>
+    <input placeholder="Search NIFTY / SENSEX" onkeyup="searchStock(this.value)">
   </div>
-  <div class="profile" onclick="openSettings()">⚙️</div>
+  <div class="settings-btn" onclick="openSettings()">⚙️</div>
 </div>
 
 <div class="content">
-  <div id="stocks">
-    <h3>Top Stocks</h3>
-    <div class="grid" id="stockList"></div>
-  </div>
-  <div id="holdings" class="hidden"><h3>Your Holdings</h3></div>
-  <div id="mf" class="hidden"><h3>Mutual Funds</h3></div>
+  <div id="stocks" class="grid"></div>
+  <div id="holdings" style="display:none"></div>
+  <div id="mf" style="display:none">Coming Soon 🚀</div>
 </div>
 </div>
 
-<!-- SETTINGS -->
-<div id="overlay">
-<div id="settings">
-<h3>Settings</h3>
-<p>Email: <span id="setEmail"></span></p>
-<p>User ID: <b id="setCode"></b></p>
-<input id="setName" placeholder="Your name"/>
-<button class="save" onclick="saveName()">Save Name</button>
-<button class="logout" onclick="logout()">Logout</button>
-<button class="close" onclick="closeSettings()">Close</button>
+<!-- ADD STOCK MODAL -->
+<div class="overlay" id="addOverlay">
+  <div class="modal">
+    <h3 id="addTitle"></h3>
+    <input id="buyPrice" type="number" placeholder="Buy Price">
+    <input id="qty" type="number" placeholder="Quantity">
+    <button class="save-btn" onclick="saveStock()">Save</button>
+    <button class="close-btn" onclick="closeAdd()">Cancel</button>
+  </div>
 </div>
+
+<!-- SETTINGS MODAL -->
+<div class="overlay" id="settingsOverlay">
+  <div class="modal">
+    <h3>Settings</h3>
+    <p>Email: <span id="setEmail"></span></p>
+    <p>User ID: <b id="setCode"></b></p>
+    <input id="setName" placeholder="Your name">
+    <button class="save-btn" onclick="saveName()">Save Name</button>
+    <button class="logout-btn" onclick="logout()">Logout</button>
+    <button class="close-btn" onclick="closeSettings()">Close</button>
+  </div>
 </div>
 
 <script>
-const auth=firebase.auth();
-const db=firebase.firestore();
-
-const ALL_STOCKS=[
-"RELIANCE","TCS","INFOSYS","HDFC BANK","ICICI BANK",
-"SBIN","AXIS BANK","ITC","HUL","BAJAJ FINANCE",
-"KOTAK BANK","LT","MARUTI","ASIAN PAINTS","SUN PHARMA"
+/* ================= DATA ================= */
+const stockList = [
+"RELIANCE","TCS","INFOSYS","HDFC BANK","ICICI BANK","SBIN",
+"AXIS BANK","ITC","HUL","LT","BHARTI AIRTEL","KOTAK BANK",
+"TATA MOTORS","TATA STEEL","SUN PHARMA","MARUTI",
+"ASIAN PAINTS","BAJAJ FINANCE","WIPRO","NTPC","ONGC","POWER GRID"
 ];
 
-const TOP5=ALL_STOCKS.slice(0,5);
-let currentUser=null;
+let holdings = JSON.parse(localStorage.getItem("holdings")) || [];
+let selectedStock = "";
+let currentUserData = null;
 
-function loginEmail(){
-  errorMsg.innerText="";
-  if(!email.value)return errorMsg.innerText="Enter email";
-  if(!password.value)return errorMsg.innerText="Enter password";
-  auth.signInWithEmailAndPassword(email.value,password.value)
-  .catch(err=>{
-    auth.createUserWithEmailAndPassword(email.value,password.value)
-    .catch(e=>errorMsg.innerText=e.message);
-  });
-}
-
+/* ================= AUTH ================= */
 function loginGoogle(){
   auth.signInWithPopup(new firebase.auth.GoogleAuthProvider());
 }
 
-auth.onAuthStateChanged(async u=>{
-  if(!u)return;
-  currentUser=u;
-  loginBox.classList.add("hidden");
-  app.classList.remove("hidden");
-
-  const ref=db.collection("users").doc(u.uid);
-  const snap=await ref.get();
-
-  if(!snap.exists){
-    const code=Math.floor(10000+Math.random()*90000).toString();
-    await ref.set({
-      email:u.email,
-      name:"",
-      usercode:code,
-      createdAt:new Date()
-    });
+function loginEmail(){
+  if(!email.value || !password.value){
+    loginError.innerText="Enter email & password";
+    return;
   }
+  auth.signInWithEmailAndPassword(email.value,password.value)
+    .catch(()=>auth.createUserWithEmailAndPassword(email.value,password.value));
+}
 
-  loadSettings();
-  renderStocks(TOP5);
+auth.onAuthStateChanged(async user=>{
+  if(user){
+    loginBox.style.display="none";
+    app.style.display="block";
+
+    const ref = db.collection("users").doc(user.uid);
+    const snap = await ref.get();
+
+    if(!snap.exists){
+      const code = Math.floor(10000+Math.random()*90000).toString();
+      await ref.set({
+        email:user.email,
+        name:"",
+        usercode:code
+      });
+    }
+
+    currentUserData = (await ref.get()).data();
+    renderStocks(stockList.slice(0,5));
+    renderHoldings();
+  }
 });
 
+/* ================= STOCKS ================= */
 function renderStocks(list){
-  stockList.innerHTML="";
+  stocks.innerHTML="";
   list.forEach(s=>{
-    stockList.innerHTML+=`
+    stocks.innerHTML+=`
       <div class="stock">
-        <b>${s}</b><br/>
-        <button>Add</button>
+        <b>${s}</b>
+        <button onclick="openAdd('${s}')">Add</button>
       </div>`;
   });
 }
 
-function searchStock(){
-  const q=searchInput.value.toUpperCase();
-  renderStocks(ALL_STOCKS.filter(s=>s.includes(q)));
+function searchStock(q){
+  const f = stockList.filter(s=>s.toLowerCase().includes(q.toLowerCase()));
+  renderStocks(f);
 }
 
+/* ================= ADD STOCK ================= */
+function openAdd(stock){
+  selectedStock = stock;
+  addTitle.innerText = "Add " + stock;
+  buyPrice.value = "";
+  qty.value = "";
+  addOverlay.style.display="flex";
+}
+
+function closeAdd(){
+  addOverlay.style.display="none";
+}
+
+function saveStock(){
+  if(!selectedStock){
+    alert("No stock selected");
+    return;
+  }
+  if(!buyPrice.value || !qty.value){
+    alert("Enter price and quantity");
+    return;
+  }
+
+  holdings.push({
+    name: selectedStock,
+    price: Number(buyPrice.value),
+    qty: Number(qty.value)
+  });
+
+  localStorage.setItem("holdings", JSON.stringify(holdings));
+  closeAdd();
+  renderHoldings();
+  showTab('holdings', document.querySelectorAll('.tabs span')[1]);
+}
+
+/* ================= HOLDINGS ================= */
+function renderHoldings(){
+  holdings.innerHTML="";
+  let html = `
+  <table>
+    <tr>
+      <th>Stock</th><th>Price</th><th>Qty</th><th>Total</th><th></th>
+    </tr>`;
+  holdings.forEach((h,i)=>{
+    html+=`
+    <tr>
+      <td>${h.name}</td>
+      <td>${h.price}</td>
+      <td>${h.qty}</td>
+      <td>${h.price*h.qty}</td>
+      <td><button onclick="del(${i})">Delete</button></td>
+    </tr>`;
+  });
+  html+="</table>";
+  document.getElementById("holdings").innerHTML = html;
+}
+
+function del(i){
+  holdings.splice(i,1);
+  localStorage.setItem("holdings", JSON.stringify(holdings));
+  renderHoldings();
+}
+
+/* ================= TABS ================= */
 function showTab(id,el){
-  ["stocks","holdings","mf"].forEach(t=>document.getElementById(t).classList.add("hidden"));
-  document.getElementById(id).classList.remove("hidden");
+  ["stocks","holdings","mf"].forEach(t=>document.getElementById(t).style.display="none");
+  document.getElementById(id).style.display="block";
   document.querySelectorAll(".tabs span").forEach(s=>s.classList.remove("active"));
   el.classList.add("active");
 }
 
-async function loadSettings(){
-  const doc=await db.collection("users").doc(currentUser.uid).get();
-  const d=doc.data();
-  setEmail.innerText=d.email;
-  setCode.innerText=d.usercode;
-  setName.value=d.name||"";
+/* ================= SETTINGS ================= */
+function openSettings(){
+  setEmail.innerText = auth.currentUser.email;
+  setCode.innerText = currentUserData.usercode;
+  setName.value = currentUserData.name || "";
+  settingsOverlay.style.display="flex";
 }
 
-function openSettings(){overlay.style.display="flex"}
-function closeSettings(){overlay.style.display="none"}
+function closeSettings(){
+  settingsOverlay.style.display="none";
+}
 
 function saveName(){
-  db.collection("users").doc(currentUser.uid).update({name:setName.value});
+  db.collection("users").doc(auth.currentUser.uid)
+    .update({name:setName.value});
   alert("Name saved");
 }
 
 function logout(){
-  auth.signOut();location.reload();
+  auth.signOut();
+  location.reload();
 }
 </script>
 
