@@ -22,104 +22,234 @@ firebase.initializeApp(firebaseConfig);
 </script>
 
 <style>
-body{
-  font-family:'Segoe UI',sans-serif;
-  margin:0;
-  background:#f5f7fa;
-}
-#loginBox{
-  max-width:420px;
-  margin:80px auto;
-  background:#fff;
-  padding:32px;
-  border-radius:12px;
-  box-shadow:0 10px 30px rgba(0,0,0,.15);
-  text-align:center;
-}
-#loginBox input{
-  width:100%;padding:14px;margin-bottom:12px;
-  border:1px solid #ddd;border-radius:8px
-}
-#loginBox button{
-  width:100%;padding:14px;border:none;
-  border-radius:8px;margin-top:8px;cursor:pointer
-}
-.primary-btn{background:#9B59B6;color:#fff}
-.google-btn{background:#f1f1f1}
-.error{color:#e74c3c;font-size:14px;height:18px}
-
-#app{display:none}
-
-.top-bar{
-  display:flex;align-items:center;gap:16px;
-  padding:12px 20px;background:#9B59B6;color:#fff
-}
-.logo{font-size:22px;font-weight:700}
-.tabs span{margin-right:12px;cursor:pointer}
-.tabs .active{
-  background:rgba(255,255,255,.2);
-  padding:6px 10px;border-radius:6px
-}
-.search-container{flex:1}
-.search-container input{
-  width:100%;padding:8px;border-radius:6px;border:none
+* {
+  box-sizing: border-box;
 }
 
-.profile{cursor:pointer;position:relative}
-.dropdown{
-  display:none;position:absolute;right:0;top:36px;
-  background:#fff;color:#333;border-radius:10px;
-  width:220px;box-shadow:0 10px 25px rgba(0,0,0,.15)
-}
-.dropdown div,.dropdown button{
-  padding:12px;border-bottom:1px solid #eee
-}
-.dropdown input{width:100%;padding:8px;margin-top:6px}
-.dropdown button{
-  background:#e74c3c;color:#fff;border:none;cursor:pointer
+body {
+  margin: 0;
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  background: #f5f7fa;
+  color: #1e293b;
 }
 
-main{padding:20px}
-.card{
-  background:#fff;padding:16px;border-radius:10px;margin-bottom:20px
-}
-.grid{
-  display:grid;
-  grid-template-columns:repeat(auto-fill,minmax(160px,1fr));
-  gap:16px
-}
-.stock-card{
-  border:1px solid #ddd;border-radius:8px;padding:14px
-}
-.stock-card button{
-  margin-top:8px;background:#9B59B6;color:#fff;
-  border:none;padding:6px 10px;border-radius:6px
+/* ===== TOP BAR ===== */
+.top-bar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 20px;
+  background: #6d28d9;
+  color: white;
 }
 
-table{width:100%;border-collapse:collapse}
-th,td{padding:10px;border-bottom:1px solid #ddd}
-.del{background:#e74c3c;color:#fff;border:none;padding:6px 10px;border-radius:6px}
+.logo {
+  font-size: 22px;
+  font-weight: 700;
+}
 
-/* MODAL */
-.modal{
-  display:none;position:fixed;top:0;left:0;
-  width:100%;height:100%;background:rgba(0,0,0,.4)
+.tabs button {
+  background: transparent;
+  border: none;
+  color: white;
+  font-size: 15px;
+  cursor: pointer;
+  padding: 6px 10px;
+  border-radius: 6px;
 }
-.modal-content{
-  background:#fff;padding:20px;border-radius:10px;
-  max-width:320px;margin:120px auto
-}
-.modal-content input{
-  width:100%;padding:10px;margin-bottom:10px
-}
-.modal-content button{
-  width:48%;padding:10px;border:none;border-radius:6px
-}
-.cancel-btn{background:#ddd}
-.save-btn{background:#9B59B6;color:#fff}
 
-@media(max-width:768px){
-  .top-bar{flex-direction:column}
+.tabs button.active {
+  background: rgba(255,255,255,0.2);
+}
+
+.search-box {
+  flex: 1;
+}
+
+.search-box input {
+  width: 100%;
+  padding: 8px 12px;
+  border-radius: 6px;
+  border: none;
+}
+
+.settings {
+  cursor: pointer;
+  font-size: 20px;
+}
+
+/* ===== LOGIN ===== */
+#loginBox {
+  max-width: 420px;
+  margin: 100px auto;
+  background: white;
+  padding: 28px;
+  border-radius: 14px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+  text-align: center;
+}
+
+#loginBox h2 {
+  margin-bottom: 20px;
+}
+
+#loginBox input {
+  width: 100%;
+  padding: 12px;
+  margin-bottom: 12px;
+  border-radius: 8px;
+  border: 1px solid #cbd5e1;
+}
+
+#loginBox button {
+  width: 100%;
+  padding: 12px;
+  border-radius: 8px;
+  border: none;
+  margin-top: 10px;
+  cursor: pointer;
+  font-size: 15px;
+}
+
+.login-btn {
+  background: #6d28d9;
+  color: white;
+}
+
+.google-btn {
+  background: #f1f5f9;
+}
+
+/* ===== CONTENT ===== */
+#app {
+  display: none;
+}
+
+main {
+  padding: 20px;
+}
+
+.section {
+  display: none;
+}
+
+.section.active {
+  display: block;
+}
+
+/* ===== STOCK CARDS ===== */
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 16px;
+}
+
+.card {
+  background: white;
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
+
+.card button {
+  margin-top: 10px;
+  padding: 6px 10px;
+  background: #6d28d9;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+/* ===== HOLDINGS TABLE ===== */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  background: white;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+th, td {
+  padding: 12px;
+  border-bottom: 1px solid #e5e7eb;
+  text-align: center;
+}
+
+.del {
+  background: #ef4444;
+  color: white;
+  border: none;
+  padding: 6px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+/* ===== MODAL (FIXED) ===== */
+.modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.4);
+  display: none;
+  justify-content: center;
+  align-items: center;
+  z-index: 50;
+}
+
+.modal-content {
+  background: white;
+  width: 90%;
+  max-width: 420px;
+  padding: 24px;
+  border-radius: 14px;
+}
+
+.modal-content h3 {
+  margin-top: 0;
+}
+
+.modal-content input {
+  width: 100%;
+  padding: 10px 12px;
+  margin: 8px 0;
+  border-radius: 6px;
+  border: 1px solid #d1d5db;
+}
+
+.modal-content input:focus {
+  outline: none;
+  border-color: #6d28d9;
+  box-shadow: 0 0 0 2px rgba(109,40,217,0.15);
+}
+
+.modal-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.modal-actions button {
+  flex: 1;
+  padding: 10px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+}
+
+.save {
+  background: #6d28d9;
+  color: white;
+}
+
+.cancel {
+  background: #e5e7eb;
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 768px) {
+  .top-bar {
+    flex-wrap: wrap;
+  }
 }
 </style>
 </head>
@@ -131,161 +261,139 @@ th,td{padding:10px;border-bottom:1px solid #ddd}
   <h2>FinzoTalk Login</h2>
   <input id="email" placeholder="Email">
   <input id="password" type="password" placeholder="Password">
-  <button class="primary-btn" onclick="loginEmail()">Login / Signup</button>
+  <button class="login-btn" onclick="loginEmail()">Login / Signup</button>
   <button class="google-btn" onclick="loginGoogle()">Continue with Google</button>
-  <div class="error" id="loginError"></div>
 </div>
 
 <!-- APP -->
 <div id="app">
-
-<div class="top-bar">
-  <div class="logo">FinzoTalk</div>
-
-  <div class="tabs">
-    <span class="active" onclick="showTab('stocks',this)">Stocks</span>
-    <span onclick="showTab('holdings',this)">Holdings</span>
-    <span onclick="showTab('mf',this)">Mutual Funds</span>
-  </div>
-
-  <div class="search-container">
-    <input id="searchInput" placeholder="Search stocks" onkeyup="searchStock()">
-  </div>
-
-  <div class="profile" onclick="toggleProfile()">⚙️
-    <div class="dropdown" id="profileMenu">
-      <div><strong id="userName">User</strong><br><small id="userEmail"></small></div>
-      <div>
-        Edit Name
-        <input id="nameInput" placeholder="New name">
-        <button class="primary-btn" onclick="saveName()">Save</button>
-      </div>
-      <button onclick="logout()">Logout</button>
+  <div class="top-bar">
+    <div class="logo">FinzoTalk</div>
+    <div class="tabs">
+      <button class="active" onclick="showTab('stocks', this)">Stocks</button>
+      <button onclick="showTab('holdings', this)">Holdings</button>
+      <button onclick="showTab('mf', this)">Mutual Funds</button>
     </div>
+    <div class="search-box">
+      <input id="search" placeholder="Search stocks..." onkeyup="searchStocks()">
+    </div>
+    <div class="settings" onclick="logout()">⎋</div>
   </div>
+
+  <main>
+    <div id="stocks" class="section active">
+      <h3>Top Stocks</h3>
+      <div class="cards" id="stockCards"></div>
+    </div>
+
+    <div id="holdings" class="section">
+      <h3>Your Holdings</h3>
+      <table id="holdingsTable"></table>
+    </div>
+
+    <div id="mf" class="section">
+      <h3>Mutual Funds</h3>
+      <p>Coming soon 🚀</p>
+    </div>
+  </main>
 </div>
 
-<main>
-
-<div class="card" id="stocks">
-  <h3>Top Stocks</h3>
-  <div class="grid" id="stockList"></div>
-</div>
-
-<div class="card" id="holdings" style="display:none">
-  <h3>Your Holdings</h3>
-  <table id="holdingsTable"></table>
-</div>
-
-<div class="card" id="mf" style="display:none">
-  <h3>Mutual Funds</h3>
-  <p>Coming soon 🚀</p>
-</div>
-
-</main>
-</div>
-
-<!-- ADD STOCK MODAL -->
-<div class="modal" id="stockModal">
+<!-- MODAL -->
+<div class="modal" id="modal">
   <div class="modal-content">
     <h3>Add Stock</h3>
-    <input id="modalStock" readonly>
+    <input id="modalStock" disabled>
     <input id="modalPrice" placeholder="Buy Price">
     <input id="modalQty" placeholder="Quantity">
-    <button class="save-btn" onclick="saveStock()">Save</button>
-    <button class="cancel-btn" onclick="closeModal()">Cancel</button>
+    <div class="modal-actions">
+      <button class="save" onclick="saveStock()">Save</button>
+      <button class="cancel" onclick="closeModal()">Cancel</button>
+    </div>
   </div>
 </div>
 
 <script>
 const auth = firebase.auth();
 
-const allStocks=["RELIANCE","TCS","INFOSYS","HDFC BANK","ICICI BANK","ITC","SBIN","AXIS BANK","KOTAK BANK"];
+const stocks = ["RELIANCE","TCS","INFOSYS","HDFC BANK","ICICI BANK","SBIN"];
 let holdings = JSON.parse(localStorage.getItem("holdings")) || [];
-let selectedStock="";
+let selectedStock = "";
 
-function loginEmail(){
-  loginError.innerText="";
-  if(!email.value||!password.value){
-    loginError.innerText="Please enter email and password";return;
-  }
-  auth.signInWithEmailAndPassword(email.value,password.value)
-  .catch(e=>{
-    if(e.code==="auth/user-not-found"){
-      auth.createUserWithEmailAndPassword(email.value,password.value)
-      .catch(err=>loginError.innerText=err.message);
-    }else loginError.innerText="Invalid email or password";
-  });
-}
 function loginGoogle(){
   auth.signInWithPopup(new firebase.auth.GoogleAuthProvider());
 }
 
-auth.onAuthStateChanged(u=>{
-  if(u){
+function loginEmail(){
+  auth.signInWithEmailAndPassword(email.value,password.value)
+  .catch(err=>{
+    if(err.code==="auth/user-not-found"){
+      auth.createUserWithEmailAndPassword(email.value,password.value);
+    } else {
+      alert(err.message);
+    }
+  });
+}
+
+auth.onAuthStateChanged(user=>{
+  if(user){
     loginBox.style.display="none";
     app.style.display="block";
-    userEmail.innerText=u.email;
-    userName.innerText=u.displayName||"User";
-    renderStocks(allStocks.slice(0,4));
+    renderStocks(stocks.slice(0,4));
     renderHoldings();
   }
 });
 
-function toggleProfile(){
-  profileMenu.style.display = profileMenu.style.display==="block"?"none":"block";
+function logout(){
+  auth.signOut();
+  location.reload();
 }
-function saveName(){
-  if(nameInput.value){
-    auth.currentUser.updateProfile({displayName:nameInput.value})
-    .then(()=>userName.innerText=nameInput.value);
-  }
-}
-function logout(){auth.signOut();location.reload();}
 
-function showTab(id,el){
-  ["stocks","holdings","mf"].forEach(t=>document.getElementById(t).style.display="none");
-  document.getElementById(id).style.display="block";
-  document.querySelectorAll(".tabs span").forEach(s=>s.classList.remove("active"));
+function showTab(id, el){
+  document.querySelectorAll(".section").forEach(s=>s.classList.remove("active"));
+  document.getElementById(id).classList.add("active");
+  document.querySelectorAll(".tabs button").forEach(b=>b.classList.remove("active"));
   el.classList.add("active");
 }
 
 function renderStocks(list){
-  stockList.innerHTML="";
+  stockCards.innerHTML="";
   list.forEach(s=>{
-    const d=document.createElement("div");
-    d.className="stock-card";
-    d.innerHTML=`<strong>${s}</strong><br><button>Add</button>`;
-    d.querySelector("button").onclick=()=>openModal(s);
-    stockList.appendChild(d);
+    const c=document.createElement("div");
+    c.className="card";
+    c.innerHTML=`<strong>${s}</strong><br><button onclick="openModal('${s}')">Add</button>`;
+    stockCards.appendChild(c);
   });
 }
-function searchStock(){
-  const q=searchInput.value.toUpperCase();
-  renderStocks(allStocks.filter(s=>s.includes(q)));
+
+function searchStocks(){
+  const q=search.value.toUpperCase();
+  renderStocks(stocks.filter(s=>s.includes(q)));
 }
 
-/* MODAL LOGIC */
 function openModal(stock){
   selectedStock=stock;
   modalStock.value=stock;
+  modal.style.display="flex";
+}
+
+function closeModal(){
+  modal.style.display="none";
   modalPrice.value="";
   modalQty.value="";
-  stockModal.style.display="block";
 }
-function closeModal(){
-  stockModal.style.display="none";
-}
+
 function saveStock(){
-  if(!modalPrice.value||!modalQty.value) return;
-  holdings.push({name:selectedStock,price:+modalPrice.value,qty:+modalQty.value});
+  holdings.push({
+    name:selectedStock,
+    price:+modalPrice.value,
+    qty:+modalQty.value
+  });
   localStorage.setItem("holdings",JSON.stringify(holdings));
   closeModal();
   renderHoldings();
-  showTab("holdings",document.querySelectorAll(".tabs span")[1]);
+  showTab("holdings", document.querySelectorAll(".tabs button")[1]);
 }
 
-/* HOLDINGS */
 function renderHoldings(){
   holdingsTable.innerHTML="<tr><th>Stock</th><th>Price</th><th>Qty</th><th>Total</th><th></th></tr>";
   holdings.forEach((h,i)=>{
@@ -299,6 +407,7 @@ function renderHoldings(){
     </tr>`;
   });
 }
+
 function del(i){
   holdings.splice(i,1);
   localStorage.setItem("holdings",JSON.stringify(holdings));
