@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>FinzoTalk</title>
 
-<!-- Firebase (UNCHANGED) -->
+<!-- Firebase -->
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 
@@ -29,106 +29,78 @@ body{
   min-height:100vh;
 }
 
-/* LOGIN PAGE */
+/* LOGIN */
 #loginBox{
   max-width:420px;
   margin:90px auto;
-  background:#ffffff;
+  background:#fff;
   padding:36px;
   border-radius:16px;
   box-shadow:0 20px 40px rgba(0,0,0,.15);
   text-align:center;
 }
-
-#loginBox h2{
-  margin:0;
-  font-size:28px;
-  color:#1e293b;
-}
-
-.subtitle{
-  margin:6px 0 26px;
-  color:#64748b;
-  font-size:14px;
-}
-
+#loginBox h2{margin:0;font-size:28px}
 #loginBox input{
-  width:100%;
-  padding:14px;
-  margin-bottom:14px;
-  border:1px solid #cbd5e1;
-  border-radius:10px;
-  font-size:15px;
+  width:100%;padding:14px;margin-bottom:14px;
+  border:1px solid #cbd5e1;border-radius:10px
 }
-
-#loginBox input:focus{
-  outline:none;
-  border-color:#2563eb;
-}
-
 .primary-btn{
-  width:100%;
-  padding:14px;
-  background:#2563eb;
-  color:#fff;
-  border:none;
-  border-radius:10px;
-  font-size:15px;
-  font-weight:600;
-  cursor:pointer;
+  width:100%;padding:14px;
+  background:#2563eb;color:#fff;
+  border:none;border-radius:10px;cursor:pointer
 }
-
-.primary-btn:hover{
-  background:#1d4ed8;
-}
-
 .google-btn{
-  width:100%;
-  padding:14px;
-  margin-top:12px;
-  background:#f1f5f9;
-  border:1px solid #cbd5e1;
-  border-radius:10px;
-  font-size:14px;
-  cursor:pointer;
+  width:100%;padding:14px;margin-top:10px;
+  background:#f1f5f9;border:1px solid #cbd5e1;
+  border-radius:10px;cursor:pointer
 }
+.error-text{color:#dc2626;font-size:13px;height:16px}
 
-.divider{
-  margin:20px 0;
-  font-size:12px;
-  color:#94a3b8;
+/* APP */
+#app{display:none;background:#f6f8fb;min-height:100vh}
+
+.nav{
+  display:flex;gap:16px;align-items:center;
+  padding:14px 20px;background:#fff;
+  border-bottom:1px solid #e5e7eb
 }
-
-.error-text{
-  margin-top:12px;
-  color:#dc2626;
-  font-size:13px;
-  min-height:16px;
-}
-
-/* APP (UNCHANGED) */
-.nav{display:flex;gap:16px;align-items:center;padding:14px 20px;background:#fff;border-bottom:1px solid #e5e7eb}
 .logo{font-size:22px;font-weight:700;color:#2563eb}
 .tabs span{margin-right:14px;cursor:pointer}
-.tabs span.active{color:#2563eb;border-bottom:2px solid #2563eb;padding-bottom:4px}
+.tabs span.active{color:#2563eb;border-bottom:2px solid #2563eb}
 .search{flex:1}
-.search input{width:100%;padding:10px;border:1px solid #cbd5e1;border-radius:8px}
+.search input{
+  width:100%;padding:10px;
+  border:1px solid #cbd5e1;border-radius:8px
+}
 .profile{cursor:pointer}
-.dropdown{display:none;position:absolute;right:20px;top:60px;background:#fff;border:1px solid #e5e7eb;border-radius:10px;width:220px}
-.dropdown div,.dropdown button{padding:12px}
-.dropdown button{border:none;background:#ef4444;color:#fff;width:100%;cursor:pointer}
 
 .content{padding:20px}
-.card{background:#fff;border-radius:12px;padding:16px;margin-bottom:20px}
-.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px}
-.stock{border:1px solid #e5e7eb;border-radius:10px;padding:14px;cursor:pointer}
-
+.card{
+  background:#fff;border-radius:12px;
+  padding:16px;margin-bottom:20px
+}
+.grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(160px,1fr));
+  gap:12px
+}
+.stock{
+  border:1px solid #e5e7eb;
+  border-radius:10px;padding:14px;
+  cursor:pointer
+}
 table{width:100%;border-collapse:collapse}
-th,td{padding:10px;border-bottom:1px solid #e5e7eb;text-align:center}
-.del{background:#ef4444;color:#fff;border:none;padding:6px 10px;border-radius:6px;cursor:pointer}
+th,td{
+  padding:10px;border-bottom:1px solid #e5e7eb;
+  text-align:center
+}
+.del{
+  background:#ef4444;color:#fff;
+  border:none;padding:6px 10px;
+  border-radius:6px;cursor:pointer
+}
 
 @media(max-width:768px){
-  #loginBox{margin:40px 16px}
   .nav{flex-wrap:wrap}
   .search{width:100%}
 }
@@ -139,67 +111,129 @@ th,td{padding:10px;border-bottom:1px solid #e5e7eb;text-align:center}
 
 <!-- LOGIN -->
 <div id="loginBox">
-  <h2>FinzoTalk</h2>
-  <p class="subtitle">Track • Share • Grow</p>
-
-  <input id="email" type="email" placeholder="Email address">
+  <h2>FinzoTalk</h2><br>
+  <input id="email" placeholder="Email">
   <input id="password" type="password" placeholder="Password">
-
   <button class="primary-btn" onclick="loginEmail()">Login / Signup</button>
-
-  <div class="divider">OR</div>
-
   <button class="google-btn" onclick="loginGoogle()">Continue with Google</button>
-
   <p id="loginError" class="error-text"></p>
 </div>
 
 <!-- APP -->
-<div id="app" style="display:none">
-  <!-- YOUR EXISTING APP CODE CONTINUES UNCHANGED -->
+<div id="app">
+
+<div class="nav">
+  <div class="logo">FinzoTalk</div>
+  <div class="tabs">
+    <span class="active" onclick="showTab('stocks',this)">Stocks</span>
+    <span onclick="showTab('holdings',this)">Holdings</span>
+    <span onclick="showTab('mf',this)">Mutual Funds</span>
+  </div>
+  <div class="search">
+    <input id="searchInput" placeholder="Search stocks" onkeyup="searchStock()">
+  </div>
+</div>
+
+<div class="content">
+
+<div class="card" id="stocks">
+  <h3>Top Stocks</h3>
+  <div class="grid" id="stockList"></div>
+</div>
+
+<div class="card" id="holdings" style="display:none">
+  <h3>Your Holdings</h3>
+  <table id="holdingsTable"></table>
+</div>
+
+<div class="card" id="mf" style="display:none">
+  <h3>Mutual Funds</h3>
+  <p>Coming soon 🚀</p>
+</div>
+
+</div>
 </div>
 
 <script>
 const auth = firebase.auth();
+
+const stockNames = [
+  "RELIANCE INDUSTRIES","TCS","HDFC BANK","INFOSYS","ICICI BANK",
+  "ASIAN PAINTS","ITC","SBIN","AXIS BANK","TATA MOTORS"
+];
+
+let holdings = JSON.parse(localStorage.getItem("holdings")) || [];
 
 function loginGoogle(){
   auth.signInWithPopup(new firebase.auth.GoogleAuthProvider());
 }
 
 function loginEmail(){
-  const e = email.value.trim();
-  const p = password.value.trim();
-  loginError.innerText = "";
-
-  if(!e || !p){
-    loginError.innerText = "Email and password required";
-    return;
-  }
-
-  auth.signInWithEmailAndPassword(e,p)
-    .catch(err=>{
-      if(err.code === "auth/user-not-found"){
-        loginError.innerText = "Email not registered";
-      } 
-      else if(err.code === "auth/wrong-password"){
-        loginError.innerText = "Incorrect password";
-      }
-      else if(err.code === "auth/invalid-email"){
-        loginError.innerText = "Enter a valid email address";
-      }
-      else {
-        auth.createUserWithEmailAndPassword(e,p)
-          .catch(er=>loginError.innerText = er.message);
-      }
-    });
+  auth.signInWithEmailAndPassword(email.value,password.value)
+  .catch(()=>auth.createUserWithEmailAndPassword(email.value,password.value));
 }
 
 auth.onAuthStateChanged(u=>{
   if(u){
     loginBox.style.display="none";
     app.style.display="block";
+    renderStocks(stockNames.slice(0,4));
+    renderHoldings();
   }
 });
+
+function showTab(id,el){
+  ["stocks","holdings","mf"].forEach(t=>document.getElementById(t).style.display="none");
+  document.getElementById(id).style.display="block";
+  document.querySelectorAll(".tabs span").forEach(s=>s.classList.remove("active"));
+  el.classList.add("active");
+}
+
+function renderStocks(list){
+  stockList.innerHTML="";
+  list.forEach(s=>{
+    const d=document.createElement("div");
+    d.className="stock";
+    d.innerHTML=`<strong>${s}</strong><br><small>Add</small>`;
+    d.onclick=()=>addStock(s);
+    stockList.appendChild(d);
+  });
+}
+
+function searchStock(){
+  const q=searchInput.value.toUpperCase();
+  renderStocks(stockNames.filter(s=>s.includes(q)));
+}
+
+function addStock(name){
+  const price=prompt("Buy price for "+name);
+  const qty=prompt("Quantity");
+  if(!price||!qty)return;
+  holdings.push({name,price:+price,qty:+qty});
+  localStorage.setItem("holdings",JSON.stringify(holdings));
+  renderHoldings();
+  showTab("holdings",document.querySelectorAll(".tabs span")[1]);
+}
+
+function renderHoldings(){
+  holdingsTable.innerHTML="<tr><th>Stock</th><th>Price</th><th>Qty</th><th>Total</th><th></th></tr>";
+  holdings.forEach((h,i)=>{
+    holdingsTable.innerHTML+=`
+    <tr>
+      <td>${h.name}</td>
+      <td>${h.price}</td>
+      <td>${h.qty}</td>
+      <td>${h.price*h.qty}</td>
+      <td><button class="del" onclick="del(${i})">Delete</button></td>
+    </tr>`;
+  });
+}
+
+function del(i){
+  holdings.splice(i,1);
+  localStorage.setItem("holdings",JSON.stringify(holdings));
+  renderHoldings();
+}
 </script>
 
 </body>
