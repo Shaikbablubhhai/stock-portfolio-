@@ -1,11 +1,11 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>FinzoTalk</title>
 
-<!-- Firebase -->
+<!-- Firebase (COMPAT – stable for GitHub Pages) -->
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
@@ -24,61 +24,131 @@ const db = firebase.firestore();
 
 <style>
 *{box-sizing:border-box}
-body{margin:0;font-family:Inter,system-ui;background:#f5f7fb;color:#1e293b}
+body{
+  margin:0;
+  font-family:Inter,system-ui;
+  background:#f5f7fb;
+  color:#1e293b;
+}
 
-/* NAV */
+/* TOP BAR */
 .nav{
-  background:#4f46e5;color:#fff;
-  display:flex;align-items:center;gap:18px;
-  padding:14px 20px
+  display:flex;
+  align-items:center;
+  gap:20px;
+  padding:14px 20px;
+  background:#ffffff;
+  border-bottom:1px solid #e5e7eb;
 }
-.logo{font-size:22px;font-weight:700}
-.tabs span{margin-right:14px;cursor:pointer;padding-bottom:4px}
-.tabs span.active{border-bottom:2px solid #fff}
+.logo{
+  font-size:22px;
+  font-weight:700;
+  color:#2563eb;
+}
 .search input{
-  padding:8px 10px;border-radius:8px;border:none;width:240px
+  padding:10px 12px;
+  border:1px solid #cbd5e1;
+  border-radius:8px;
+  width:260px;
 }
-.settings-btn{margin-left:auto;font-size:20px;cursor:pointer}
+.settings-btn{
+  margin-left:auto;
+  cursor:pointer;
+  font-size:20px;
+}
 
 /* CONTENT */
-.content{padding:20px;max-width:1200px;margin:auto}
+.container{
+  max-width:1200px;
+  margin:20px auto;
+  padding:0 16px;
+}
 .grid{
   display:grid;
   grid-template-columns:repeat(auto-fill,minmax(180px,1fr));
-  gap:16px
+  gap:16px;
 }
 .card{
-  background:#fff;border-radius:14px;padding:16px;
-  box-shadow:0 4px 12px rgba(0,0,0,.08)
+  background:#fff;
+  border-radius:14px;
+  padding:16px;
+  box-shadow:0 6px 16px rgba(0,0,0,.08);
+  cursor:pointer;
 }
+.card:hover{transform:translateY(-2px)}
 
-/* CHAT */
-.chat-layout{display:grid;grid-template-columns:300px 1fr;gap:16px}
-.friend,.request{
-  padding:10px;border-bottom:1px solid #e5e7eb;cursor:pointer
+/* HOLDINGS */
+table{
+  width:100%;
+  border-collapse:collapse;
+  background:#fff;
+  border-radius:14px;
+  overflow:hidden;
 }
-.friend:hover,.request:hover{background:#f1f5f9}
-.chat-box{display:flex;flex-direction:column;height:420px}
-.messages{flex:1;overflow-y:auto;margin-bottom:10px}
-.msg{margin:6px 0}
-.me{color:#4f46e5;font-weight:600}
+th,td{
+  padding:12px;
+  text-align:center;
+  border-bottom:1px solid #e5e7eb;
+}
+th{
+  background:#2563eb;
+  color:#fff;
+}
 
 /* BUTTONS */
-button{padding:8px 12px;border:none;border-radius:8px;cursor:pointer}
-.primary{background:#4f46e5;color:#fff}
+button{
+  padding:10px 14px;
+  border:none;
+  border-radius:8px;
+  cursor:pointer;
+}
+.primary{background:#2563eb;color:#fff}
 .danger{background:#ef4444;color:#fff}
-.muted{background:#e5e7eb}
+
+/* MODALS */
+.modal{
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,.4);
+  display:none;
+  align-items:center;
+  justify-content:center;
+  z-index:20;
+}
+.modal-box{
+  background:#fff;
+  padding:22px;
+  border-radius:16px;
+  width:100%;
+  max-width:420px;
+}
+.modal-box input{
+  width:100%;
+  padding:12px;
+  margin:10px 0;
+  border-radius:8px;
+  border:1px solid #cbd5e1;
+}
 
 /* LOGIN */
 #loginBox{
-  max-width:420px;margin:90px auto;background:#fff;
-  padding:26px;border-radius:18px;
-  box-shadow:0 10px 30px rgba(0,0,0,.15)
+  max-width:420px;
+  margin:90px auto;
+  background:#fff;
+  padding:28px;
+  border-radius:18px;
+  box-shadow:0 10px 30px rgba(0,0,0,.15);
 }
 #loginBox input,#loginBox button{
-  width:100%;padding:12px;margin-top:12px;border-radius:10px
+  width:100%;
+  padding:12px;
+  margin-top:12px;
 }
-#loginError{color:#ef4444;margin-top:8px}
+#error{color:#ef4444;margin-top:8px}
+
+@media(max-width:768px){
+  .search input{width:100%}
+}
 </style>
 </head>
 
@@ -90,8 +160,8 @@ button{padding:8px 12px;border:none;border-radius:8px;cursor:pointer}
   <input id="email" placeholder="Email">
   <input id="password" type="password" placeholder="Password">
   <button class="primary" onclick="loginEmail()">Login / Signup</button>
-  <button class="muted" onclick="loginGoogle()">Continue with Google</button>
-  <div id="loginError"></div>
+  <button onclick="loginGoogle()">Continue with Google</button>
+  <div id="error"></div>
 </div>
 
 <!-- APP -->
@@ -99,58 +169,64 @@ button{padding:8px 12px;border:none;border-radius:8px;cursor:pointer}
 
 <div class="nav">
   <div class="logo">FinzoTalk</div>
-  <div class="tabs">
-    <span class="active" onclick="showTab('stocks',this)">Stocks</span>
-    <span onclick="showTab('holdings',this)">Holdings</span>
-    <span onclick="showTab('mf',this)">Mutual Funds</span>
-    <span onclick="showTab('chat',this)">Chat</span>
-  </div>
   <div class="search">
     <input id="searchBar" placeholder="Search stocks">
   </div>
   <div class="settings-btn" onclick="openSettings()">⚙️</div>
 </div>
 
-<div class="content">
-  <div id="stocks" class="grid card">Stocks unchanged</div>
-  <div id="holdings" style="display:none" class="card">Holdings unchanged</div>
-  <div id="mf" style="display:none" class="card">Mutual Funds coming soon 🚀</div>
+<div class="container">
+  <h3>Stocks</h3>
+  <div class="grid" id="stockList"></div>
 
-  <!-- CHAT -->
-  <div id="chat" style="display:none">
-    <div class="chat-layout">
-      <div class="card">
-        <h4>Find Friend</h4>
-        <div id="searchResult"></div>
+  <h3 style="margin-top:30px">Holdings</h3>
+  <table id="holdingsTable"></table>
+</div>
 
-        <h4 style="margin-top:14px">Requests</h4>
-        <div id="requestsList"></div>
+</div>
 
-        <h4 style="margin-top:14px">Friends</h4>
-        <div id="friendsList"></div>
-      </div>
-
-      <div class="card">
-        <h4 id="chatTitle">Select a friend</h4>
-        <div class="chat-box">
-          <div class="messages" id="messages"></div>
-          <input id="chatInput" placeholder="Type message">
-          <button class="primary" onclick="sendMessage()">Send</button>
-        </div>
-      </div>
-    </div>
+<!-- ADD STOCK MODAL -->
+<div class="modal" id="addModal">
+  <div class="modal-box">
+    <h3 id="modalStock"></h3>
+    <input id="buyPrice" placeholder="Buy Price">
+    <input id="quantity" placeholder="Quantity">
+    <button class="primary" onclick="saveStock()">Add</button>
+    <button onclick="closeAdd()">Cancel</button>
   </div>
 </div>
+
+<!-- SETTINGS MODAL -->
+<div class="modal" id="settingsModal">
+  <div class="modal-box">
+    <h3>Settings</h3>
+    <p id="userEmail"></p>
+    <p id="userCode"></p>
+    <input id="userName" placeholder="Your Name">
+    <button class="primary" onclick="saveName()">Save Name</button>
+    <button class="danger" onclick="logout()">Logout</button>
+    <button onclick="closeSettings()">Close</button>
+  </div>
 </div>
 
 <script>
-let currentUser,currentData,activeChat=null;
+const stocks=[
+"RELIANCE","TCS","INFOSYS","HDFC BANK","ICICI BANK","SBIN",
+"LT","AXIS BANK","KOTAK BANK","ITC","HUL","BHARTI AIRTEL",
+"TATA MOTORS","TATA STEEL","MARUTI","SUN PHARMA","ONGC",
+"NTPC","POWER GRID","ADANI PORTS","ASIAN PAINTS"
+];
+
+let currentUser,userData,selectedStock;
+let holdings=[];
 
 /* AUTH */
-function loginGoogle(){auth.signInWithPopup(new firebase.auth.GoogleAuthProvider());}
+function loginGoogle(){
+  auth.signInWithPopup(new firebase.auth.GoogleAuthProvider());
+}
 function loginEmail(){
   if(!email.value||!password.value){
-    loginError.innerText="Enter email & password";return;
+    error.innerText="Enter email & password";return;
   }
   auth.signInWithEmailAndPassword(email.value,password.value)
   .catch(()=>auth.createUserWithEmailAndPassword(email.value,password.value));
@@ -167,131 +243,88 @@ auth.onAuthStateChanged(async u=>{
     await ref.set({
       email:u.email,
       name:"",
-      usercode:Math.floor(10000+Math.random()*90000),
-      friends:[],
-      requests:[]
+      usercode:Math.floor(10000+Math.random()*90000)
     });
   }
-  currentData=(await ref.get()).data();
-  loadFriends();
-  loadRequests();
+  userData=(await ref.get()).data();
+  userEmail.innerText="Email: "+userData.email;
+  userCode.innerText="User ID: "+userData.usercode;
+  userName.value=userData.name||"";
+
+  renderStocks();
+  renderHoldings();
 });
 
-/* SEARCH BAR MODE */
-searchBar.onkeyup=async ()=>{
-  const tab=document.querySelector(".tabs span.active").innerText;
-  if(tab!=="Chat")return;
-  searchResult.innerHTML="";
-  if(searchBar.value.length!==5)return;
+/* STOCKS */
+function renderStocks(){
+  stockList.innerHTML="";
+  stocks.forEach(s=>{
+    const d=document.createElement("div");
+    d.className="card";
+    d.innerText=s;
+    d.onclick=()=>openAdd(s);
+    stockList.appendChild(d);
+  });
+}
 
-  const q=await db.collection("users")
-    .where("usercode","==",Number(searchBar.value)).get();
-
-  if(q.empty){
-    searchResult.innerHTML="<p>No user found</p>";
-    return;
-  }
-
-  q.forEach(doc=>{
-    if(doc.id===currentUser.uid)return;
-    const d=doc.data();
-    searchResult.innerHTML=`
-      <p><b>${d.name||d.email}</b> (${d.usercode})</p>
-      <button class="primary" onclick="sendRequest('${doc.id}')">Send Request</button>
-    `;
+searchBar.onkeyup=()=>{
+  const q=searchBar.value.toUpperCase();
+  document.querySelectorAll(".card").forEach(c=>{
+    c.style.display=c.innerText.includes(q)?"block":"none";
   });
 };
 
-/* REQUESTS */
-function sendRequest(uid){
-  db.collection("users").doc(uid).update({
-    requests:firebase.firestore.FieldValue.arrayUnion(currentUser.uid)
+/* ADD STOCK */
+function openAdd(name){
+  selectedStock=name;
+  modalStock.innerText=name;
+  addModal.style.display="flex";
+}
+function closeAdd(){addModal.style.display="none";}
+function saveStock(){
+  if(!buyPrice.value||!quantity.value)return;
+  holdings.push({
+    name:selectedStock,
+    price:Number(buyPrice.value),
+    qty:Number(quantity.value)
   });
-  searchResult.innerHTML="<p>Request sent</p>";
+  localStorage.setItem("holdings",JSON.stringify(holdings));
+  buyPrice.value="";quantity.value="";
+  closeAdd();renderHoldings();
 }
 
-async function loadRequests(){
-  requestsList.innerHTML="";
-  for(const uid of currentData.requests){
-    const d=(await db.collection("users").doc(uid).get()).data();
-    const div=document.createElement("div");
-    div.className="request";
-    div.innerHTML=`
-      ${d.name||d.email}
-      <button class="primary" onclick="acceptReq('${uid}')">Accept</button>
-      <button class="danger" onclick="deleteReq('${uid}')">Delete</button>
-    `;
-    requestsList.appendChild(div);
-  }
-}
-
-async function acceptReq(uid){
-  await db.collection("users").doc(currentUser.uid).update({
-    friends:firebase.firestore.FieldValue.arrayUnion(uid),
-    requests:firebase.firestore.FieldValue.arrayRemove(uid)
+/* HOLDINGS */
+function renderHoldings(){
+  holdings=JSON.parse(localStorage.getItem("holdings"))||[];
+  holdingsTable.innerHTML=
+    "<tr><th>Stock</th><th>Price</th><th>Qty</th><th>Total</th><th></th></tr>";
+  holdings.forEach((h,i)=>{
+    holdingsTable.innerHTML+=`
+    <tr>
+      <td>${h.name}</td>
+      <td>${h.price}</td>
+      <td>${h.qty}</td>
+      <td>${h.price*h.qty}</td>
+      <td><button class="danger" onclick="del(${i})">Delete</button></td>
+    </tr>`;
   });
-  await db.collection("users").doc(uid).update({
-    friends:firebase.firestore.FieldValue.arrayUnion(currentUser.uid)
-  });
-  location.reload();
+}
+function del(i){
+  holdings.splice(i,1);
+  localStorage.setItem("holdings",JSON.stringify(holdings));
+  renderHoldings();
 }
 
-function deleteReq(uid){
-  db.collection("users").doc(currentUser.uid).update({
-    requests:firebase.firestore.FieldValue.arrayRemove(uid)
-  });
-  location.reload();
+/* SETTINGS */
+function openSettings(){settingsModal.style.display="flex";}
+function closeSettings(){settingsModal.style.display="none";}
+function saveName(){
+  db.collection("users").doc(currentUser.uid)
+    .update({name:userName.value});
+  alert("Name updated");
 }
-
-/* FRIENDS */
-async function loadFriends(){
-  friendsList.innerHTML="";
-  for(const uid of currentData.friends){
-    const d=(await db.collection("users").doc(uid).get()).data();
-    const div=document.createElement("div");
-    div.className="friend";
-    div.innerText=d.name||d.email;
-    div.onclick=()=>openChat(uid);
-    friendsList.appendChild(div);
-  }
-}
-
-/* CHAT */
-function openChat(uid){
-  activeChat=[currentUser.uid,uid].sort().join("_");
-  chatTitle.innerText="Chat";
-  messages.innerHTML="";
-  db.collection("chats").doc(activeChat)
-    .collection("messages").orderBy("time")
-    .onSnapshot(s=>{
-      messages.innerHTML="";
-      s.forEach(m=>{
-        const p=document.createElement("div");
-        p.className="msg"+(m.data().sender===currentUser.uid?" me":"");
-        p.innerText=m.data().text;
-        messages.appendChild(p);
-      });
-    });
-}
-
-function sendMessage(){
-  if(!activeChat||!chatInput.value)return;
-  db.collection("chats").doc(activeChat)
-    .collection("messages").add({
-      text:chatInput.value,
-      sender:currentUser.uid,
-      time:firebase.firestore.FieldValue.serverTimestamp()
-    });
-  chatInput.value="";
-}
-
-/* UI */
-function showTab(id,el){
-  ["stocks","holdings","mf","chat"].forEach(t=>document.getElementById(t).style.display="none");
-  document.getElementById(id).style.display="block";
-  document.querySelectorAll(".tabs span").forEach(s=>s.classList.remove("active"));
-  el.classList.add("active");
-  searchBar.placeholder=id==="chat"?"Search User ID":"Search stocks";
+function logout(){
+  auth.signOut();location.reload();
 }
 </script>
 
