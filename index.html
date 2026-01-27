@@ -52,46 +52,22 @@ body{margin:0;font-family:Inter,system-ui;background:#f5f7fb;color:#1e293b}
   box-shadow:0 4px 12px rgba(0,0,0,.08)
 }
 
-/* STOCK */
-.stock button{
-  width:100%;margin-top:10px;padding:10px;
-  border:none;border-radius:10px;
-  background:#4f46e5;color:#fff;cursor:pointer
-}
-
-/* TABLE */
-.table-wrap{overflow-x:auto}
-table{width:100%;border-collapse:collapse;min-width:520px}
-th,td{padding:12px;border-bottom:1px solid #e5e7eb;text-align:center}
-th{background:#f1f5f9}
-
 /* CHAT */
-.chat-layout{display:grid;grid-template-columns:280px 1fr;gap:16px}
-.friend, .request{
+.chat-layout{display:grid;grid-template-columns:300px 1fr;gap:16px}
+.friend,.request{
   padding:10px;border-bottom:1px solid #e5e7eb;cursor:pointer
 }
 .friend:hover,.request:hover{background:#f1f5f9}
-.chat-box{
-  display:flex;flex-direction:column;height:400px
-}
-.messages{flex:1;overflow-y:auto}
+.chat-box{display:flex;flex-direction:column;height:420px}
+.messages{flex:1;overflow-y:auto;margin-bottom:10px}
 .msg{margin:6px 0}
 .me{color:#4f46e5;font-weight:600}
 
-/* MODALS */
-.overlay{
-  position:fixed;inset:0;background:rgba(0,0,0,.45);
-  display:none;align-items:center;justify-content:center;z-index:20
-}
-.modal{
-  background:#fff;padding:22px;width:320px;border-radius:16px
-}
-.modal input,.modal button{
-  width:100%;margin-top:10px;padding:10px;border-radius:10px
-}
-.save-btn{background:#4f46e5;color:#fff;border:none}
-.close-btn{background:#e5e7eb;border:none}
-.logout-btn{background:#ef4444;color:#fff;border:none}
+/* BUTTONS */
+button{padding:8px 12px;border:none;border-radius:8px;cursor:pointer}
+.primary{background:#4f46e5;color:#fff}
+.danger{background:#ef4444;color:#fff}
+.muted{background:#e5e7eb}
 
 /* LOGIN */
 #loginBox{
@@ -113,8 +89,8 @@ th{background:#f1f5f9}
   <h2>FinzoTalk Login</h2>
   <input id="email" placeholder="Email">
   <input id="password" type="password" placeholder="Password">
-  <button onclick="loginEmail()">Login / Signup</button>
-  <button onclick="loginGoogle()">Continue with Google</button>
+  <button class="primary" onclick="loginEmail()">Login / Signup</button>
+  <button class="muted" onclick="loginGoogle()">Continue with Google</button>
   <div id="loginError"></div>
 </div>
 
@@ -136,23 +112,22 @@ th{background:#f1f5f9}
 </div>
 
 <div class="content">
-  <div id="stocks" class="grid"></div>
-
-  <div id="holdings" style="display:none">
-    <div class="table-wrap card" id="holdingsTable"></div>
-  </div>
-
+  <div id="stocks" class="grid card">Stocks unchanged</div>
+  <div id="holdings" style="display:none" class="card">Holdings unchanged</div>
   <div id="mf" style="display:none" class="card">Mutual Funds coming soon 🚀</div>
 
   <!-- CHAT -->
   <div id="chat" style="display:none">
     <div class="chat-layout">
       <div class="card">
-        <h4>Friends</h4>
-        <div id="friendsList"></div>
+        <h4>Find Friend</h4>
+        <div id="searchResult"></div>
 
         <h4 style="margin-top:14px">Requests</h4>
         <div id="requestsList"></div>
+
+        <h4 style="margin-top:14px">Friends</h4>
+        <div id="friendsList"></div>
       </div>
 
       <div class="card">
@@ -160,7 +135,7 @@ th{background:#f1f5f9}
         <div class="chat-box">
           <div class="messages" id="messages"></div>
           <input id="chatInput" placeholder="Type message">
-          <button class="save-btn" onclick="sendMessage()">Send</button>
+          <button class="primary" onclick="sendMessage()">Send</button>
         </div>
       </div>
     </div>
@@ -168,26 +143,10 @@ th{background:#f1f5f9}
 </div>
 </div>
 
-<!-- SETTINGS -->
-<div class="overlay" id="settingsOverlay">
-  <div class="modal">
-    <h3>Settings</h3>
-    <p>Email: <span id="setEmail"></span></p>
-    <p>User ID: <b id="setCode"></b></p>
-    <input id="setName" placeholder="Your name">
-    <button class="save-btn" onclick="saveName()">Save Name</button>
-    <button class="logout-btn" onclick="logout()">Logout</button>
-    <button class="close-btn" onclick="closeSettings()">Close</button>
-  </div>
-</div>
-
 <script>
-/* ================= GLOBAL ================= */
-const stocksArr=["RELIANCE","TCS","INFOSYS","HDFC BANK","ICICI BANK","SBIN","AXIS BANK","ITC","HUL"];
-let holdings=JSON.parse(localStorage.getItem("holdings"))||[];
-let currentUser, currentData, activeChat=null;
+let currentUser,currentData,activeChat=null;
 
-/* ================= AUTH ================= */
+/* AUTH */
 function loginGoogle(){auth.signInWithPopup(new firebase.auth.GoogleAuthProvider());}
 function loginEmail(){
   if(!email.value||!password.value){
@@ -214,62 +173,56 @@ auth.onAuthStateChanged(async u=>{
     });
   }
   currentData=(await ref.get()).data();
-  renderStocks(stocksArr);
-  renderHoldings();
-  renderFriends();
-  renderRequests();
+  loadFriends();
+  loadRequests();
 });
 
-/* ================= SEARCH ================= */
-searchBar.onkeyup=()=>{
+/* SEARCH BAR MODE */
+searchBar.onkeyup=async ()=>{
   const tab=document.querySelector(".tabs span.active").innerText;
-  if(tab==="Stocks"){
-    renderStocks(stocksArr.filter(s=>s.toLowerCase().includes(searchBar.value.toLowerCase())));
+  if(tab!=="Chat")return;
+  searchResult.innerHTML="";
+  if(searchBar.value.length!==5)return;
+
+  const q=await db.collection("users")
+    .where("usercode","==",Number(searchBar.value)).get();
+
+  if(q.empty){
+    searchResult.innerHTML="<p>No user found</p>";
+    return;
   }
-  if(tab==="Chat"){
-    searchUID(searchBar.value);
-  }
+
+  q.forEach(doc=>{
+    if(doc.id===currentUser.uid)return;
+    const d=doc.data();
+    searchResult.innerHTML=`
+      <p><b>${d.name||d.email}</b> (${d.usercode})</p>
+      <button class="primary" onclick="sendRequest('${doc.id}')">Send Request</button>
+    `;
+  });
 };
 
-/* ================= CHAT ================= */
-async function searchUID(code){
-  if(code.length!==5)return;
-  const q=await db.collection("users").where("usercode","==",Number(code)).get();
-  q.forEach(doc=>{
-    if(doc.id!==currentUser.uid){
-      db.collection("users").doc(doc.id).update({
-        requests:firebase.firestore.FieldValue.arrayUnion(currentUser.uid)
-      });
-      alert("Request sent");
-    }
+/* REQUESTS */
+function sendRequest(uid){
+  db.collection("users").doc(uid).update({
+    requests:firebase.firestore.FieldValue.arrayUnion(currentUser.uid)
   });
+  searchResult.innerHTML="<p>Request sent</p>";
 }
 
-function renderFriends(){
-  friendsList.innerHTML="";
-  (currentData.friends||[]).forEach(uid=>{
-    db.collection("users").doc(uid).get().then(d=>{
-      const div=document.createElement("div");
-      div.className="friend";
-      div.innerText=d.data().name||d.data().email;
-      div.onclick=()=>openChat(uid);
-      friendsList.appendChild(div);
-    });
-  });
-}
-
-function renderRequests(){
+async function loadRequests(){
   requestsList.innerHTML="";
-  (currentData.requests||[]).forEach(uid=>{
-    db.collection("users").doc(uid).get().then(d=>{
-      const div=document.createElement("div");
-      div.className="request";
-      div.innerHTML=`${d.data().name||d.data().email}
-      <button onclick="acceptReq('${uid}')">Accept</button>
-      <button onclick="deleteReq('${uid}')">Delete</button>`;
-      requestsList.appendChild(div);
-    });
-  });
+  for(const uid of currentData.requests){
+    const d=(await db.collection("users").doc(uid).get()).data();
+    const div=document.createElement("div");
+    div.className="request";
+    div.innerHTML=`
+      ${d.name||d.email}
+      <button class="primary" onclick="acceptReq('${uid}')">Accept</button>
+      <button class="danger" onclick="deleteReq('${uid}')">Delete</button>
+    `;
+    requestsList.appendChild(div);
+  }
 }
 
 async function acceptReq(uid){
@@ -290,6 +243,20 @@ function deleteReq(uid){
   location.reload();
 }
 
+/* FRIENDS */
+async function loadFriends(){
+  friendsList.innerHTML="";
+  for(const uid of currentData.friends){
+    const d=(await db.collection("users").doc(uid).get()).data();
+    const div=document.createElement("div");
+    div.className="friend";
+    div.innerText=d.name||d.email;
+    div.onclick=()=>openChat(uid);
+    friendsList.appendChild(div);
+  }
+}
+
+/* CHAT */
 function openChat(uid){
   activeChat=[currentUser.uid,uid].sort().join("_");
   chatTitle.innerText="Chat";
@@ -300,8 +267,7 @@ function openChat(uid){
       messages.innerHTML="";
       s.forEach(m=>{
         const p=document.createElement("div");
-        p.className="msg";
-        if(m.data().sender===currentUser.uid)p.classList.add("me");
+        p.className="msg"+(m.data().sender===currentUser.uid?" me":"");
         p.innerText=m.data().text;
         messages.appendChild(p);
       });
@@ -319,7 +285,7 @@ function sendMessage(){
   chatInput.value="";
 }
 
-/* ================= UI ================= */
+/* UI */
 function showTab(id,el){
   ["stocks","holdings","mf","chat"].forEach(t=>document.getElementById(t).style.display="none");
   document.getElementById(id).style.display="block";
@@ -327,39 +293,6 @@ function showTab(id,el){
   el.classList.add("active");
   searchBar.placeholder=id==="chat"?"Search User ID":"Search stocks";
 }
-
-function renderStocks(arr){
-  stocks.innerHTML="";
-  arr.forEach(s=>{
-    stocks.innerHTML+=`
-    <div class="card stock">
-      <b>${s}</b>
-      <button>Add</button>
-    </div>`;
-  });
-}
-
-function renderHoldings(){
-  let html="<table><tr><th>Stock</th><th>Price</th><th>Qty</th><th>Total</th></tr>";
-  holdings.forEach(h=>{
-    html+=`<tr><td>${h.name}</td><td>${h.price}</td><td>${h.qty}</td><td>${h.price*h.qty}</td></tr>`;
-  });
-  html+="</table>";
-  holdingsTable.innerHTML=html;
-}
-
-function openSettings(){
-  setEmail.innerText=currentUser.email;
-  setCode.innerText=currentData.usercode;
-  setName.value=currentData.name||"";
-  settingsOverlay.style.display="flex";
-}
-function closeSettings(){settingsOverlay.style.display="none";}
-function saveName(){
-  db.collection("users").doc(currentUser.uid).update({name:setName.value});
-  alert("Saved");
-}
-function logout(){auth.signOut();location.reload();}
 </script>
 
 </body>
