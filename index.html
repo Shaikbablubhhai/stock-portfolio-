@@ -17,166 +17,92 @@ const firebaseConfig = {
   projectId: "stock-portfolio-web-final"
 };
 firebase.initializeApp(firebaseConfig);
+
 const auth = firebase.auth();
 const db = firebase.firestore();
 </script>
 
 <style>
 *{box-sizing:border-box}
-body{
-  margin:0;
-  font-family:Inter,system-ui;
-  background:#f5f7fb;
-  color:#1e293b;
-}
+body{margin:0;font-family:Inter,system-ui;background:#f5f7fb;color:#1e293b}
 
-/* NAVBAR */
+/* NAV */
 .nav{
-  background:#4f46e5;
-  color:#fff;
-  display:flex;
-  align-items:center;
-  gap:18px;
-  padding:14px 20px;
+  background:#4f46e5;color:#fff;
+  display:flex;align-items:center;gap:18px;
+  padding:14px 20px
 }
 .logo{font-size:22px;font-weight:700}
-.tabs span{
-  margin-right:14px;
-  cursor:pointer;
-  padding-bottom:4px;
-}
-.tabs span.active{
-  border-bottom:2px solid #fff;
-}
+.tabs span{margin-right:14px;cursor:pointer;padding-bottom:4px}
+.tabs span.active{border-bottom:2px solid #fff}
 .search input{
-  padding:8px 10px;
-  border-radius:8px;
-  border:none;
-  width:220px;
+  padding:8px 10px;border-radius:8px;border:none;width:240px
 }
-.settings-btn{
-  margin-left:auto;
-  font-size:20px;
-  cursor:pointer;
-}
+.settings-btn{margin-left:auto;font-size:20px;cursor:pointer}
 
 /* CONTENT */
-.content{
-  padding:20px;
-  max-width:1200px;
-  margin:auto;
-}
+.content{padding:20px;max-width:1200px;margin:auto}
 .grid{
   display:grid;
   grid-template-columns:repeat(auto-fill,minmax(180px,1fr));
-  gap:16px;
+  gap:16px
 }
-.stock{
-  background:#fff;
-  border-radius:14px;
-  padding:16px;
-  box-shadow:0 4px 12px rgba(0,0,0,.08);
+.card{
+  background:#fff;border-radius:14px;padding:16px;
+  box-shadow:0 4px 12px rgba(0,0,0,.08)
 }
+
+/* STOCK */
 .stock button{
-  margin-top:12px;
-  width:100%;
-  padding:10px;
-  border:none;
-  border-radius:10px;
-  background:#4f46e5;
-  color:#fff;
-  cursor:pointer;
+  width:100%;margin-top:10px;padding:10px;
+  border:none;border-radius:10px;
+  background:#4f46e5;color:#fff;cursor:pointer
 }
 
 /* TABLE */
-.table-wrap{
-  background:#fff;
-  border-radius:14px;
-  overflow-x:auto;
-  box-shadow:0 4px 12px rgba(0,0,0,.08);
-}
-table{
-  width:100%;
-  border-collapse:collapse;
-  min-width:520px;
-}
-th,td{
-  padding:12px;
-  border-bottom:1px solid #e5e7eb;
-  text-align:center;
-}
+.table-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;min-width:520px}
+th,td{padding:12px;border-bottom:1px solid #e5e7eb;text-align:center}
 th{background:#f1f5f9}
 
-/* BUTTONS */
-button{font-family:inherit}
-.del-btn{
-  background:#ef4444;
-  color:#fff;
-  border:none;
-  padding:6px 10px;
-  border-radius:8px;
-  cursor:pointer;
+/* CHAT */
+.chat-layout{display:grid;grid-template-columns:280px 1fr;gap:16px}
+.friend, .request{
+  padding:10px;border-bottom:1px solid #e5e7eb;cursor:pointer
 }
+.friend:hover,.request:hover{background:#f1f5f9}
+.chat-box{
+  display:flex;flex-direction:column;height:400px
+}
+.messages{flex:1;overflow-y:auto}
+.msg{margin:6px 0}
+.me{color:#4f46e5;font-weight:600}
 
 /* MODALS */
 .overlay{
-  position:fixed;
-  inset:0;
-  background:rgba(0,0,0,.45);
-  display:none;
-  align-items:center;
-  justify-content:center;
-  z-index:20;
+  position:fixed;inset:0;background:rgba(0,0,0,.45);
+  display:none;align-items:center;justify-content:center;z-index:20
 }
 .modal{
-  background:#fff;
-  padding:22px;
-  width:320px;
-  border-radius:16px;
+  background:#fff;padding:22px;width:320px;border-radius:16px
 }
-.modal h3{margin-top:0}
-.modal input{
-  width:100%;
-  padding:10px;
-  margin-top:10px;
-  border-radius:10px;
-  border:1px solid #cbd5e1;
+.modal input,.modal button{
+  width:100%;margin-top:10px;padding:10px;border-radius:10px
 }
-.modal button{
-  width:100%;
-  margin-top:12px;
-  padding:10px;
-  border-radius:10px;
-  border:none;
-  cursor:pointer;
-}
-.save-btn{background:#4f46e5;color:#fff}
-.close-btn{background:#e5e7eb}
-.logout-btn{background:#ef4444;color:#fff}
+.save-btn{background:#4f46e5;color:#fff;border:none}
+.close-btn{background:#e5e7eb;border:none}
+.logout-btn{background:#ef4444;color:#fff;border:none}
 
 /* LOGIN */
 #loginBox{
-  max-width:420px;
-  margin:90px auto;
-  background:#fff;
-  padding:26px;
-  border-radius:18px;
-  box-shadow:0 10px 30px rgba(0,0,0,.15);
+  max-width:420px;margin:90px auto;background:#fff;
+  padding:26px;border-radius:18px;
+  box-shadow:0 10px 30px rgba(0,0,0,.15)
 }
 #loginBox input,#loginBox button{
-  width:100%;
-  padding:12px;
-  margin-top:12px;
-  border-radius:10px;
+  width:100%;padding:12px;margin-top:12px;border-radius:10px
 }
-#loginBox input{border:1px solid #cbd5e1}
 #loginError{color:#ef4444;margin-top:8px}
-
-/* RESPONSIVE */
-@media(max-width:768px){
-  .nav{flex-wrap:wrap}
-  .search input{width:100%}
-}
 </style>
 </head>
 
@@ -201,9 +127,10 @@ button{font-family:inherit}
     <span class="active" onclick="showTab('stocks',this)">Stocks</span>
     <span onclick="showTab('holdings',this)">Holdings</span>
     <span onclick="showTab('mf',this)">Mutual Funds</span>
+    <span onclick="showTab('chat',this)">Chat</span>
   </div>
   <div class="search">
-    <input placeholder="Search stocks" onkeyup="searchStock(this.value)">
+    <input id="searchBar" placeholder="Search stocks">
   </div>
   <div class="settings-btn" onclick="openSettings()">⚙️</div>
 </div>
@@ -212,27 +139,36 @@ button{font-family:inherit}
   <div id="stocks" class="grid"></div>
 
   <div id="holdings" style="display:none">
-    <div class="table-wrap" id="holdingsTable"></div>
+    <div class="table-wrap card" id="holdingsTable"></div>
   </div>
 
-  <div id="mf" style="display:none">
-    <div class="stock">Mutual Funds coming soon 🚀</div>
+  <div id="mf" style="display:none" class="card">Mutual Funds coming soon 🚀</div>
+
+  <!-- CHAT -->
+  <div id="chat" style="display:none">
+    <div class="chat-layout">
+      <div class="card">
+        <h4>Friends</h4>
+        <div id="friendsList"></div>
+
+        <h4 style="margin-top:14px">Requests</h4>
+        <div id="requestsList"></div>
+      </div>
+
+      <div class="card">
+        <h4 id="chatTitle">Select a friend</h4>
+        <div class="chat-box">
+          <div class="messages" id="messages"></div>
+          <input id="chatInput" placeholder="Type message">
+          <button class="save-btn" onclick="sendMessage()">Send</button>
+        </div>
+      </div>
+    </div>
   </div>
 </div>
 </div>
 
-<!-- ADD STOCK MODAL -->
-<div class="overlay" id="addOverlay">
-  <div class="modal">
-    <h3 id="addTitle"></h3>
-    <input id="buyPrice" type="number" placeholder="Buy Price">
-    <input id="qty" type="number" placeholder="Quantity">
-    <button class="save-btn" onclick="saveStock()">Save</button>
-    <button class="close-btn" onclick="closeAdd()">Cancel</button>
-  </div>
-</div>
-
-<!-- SETTINGS MODAL -->
+<!-- SETTINGS -->
 <div class="overlay" id="settingsOverlay">
   <div class="modal">
     <h3>Settings</h3>
@@ -246,110 +182,182 @@ button{font-family:inherit}
 </div>
 
 <script>
-/* DATA */
-const stockList=[
-"RELIANCE","TCS","INFOSYS","HDFC BANK","ICICI BANK","SBIN",
-"AXIS BANK","ITC","HUL","LT","BHARTI AIRTEL","KOTAK BANK",
-"TATA MOTORS","TATA STEEL","SUN PHARMA","MARUTI",
-"ASIAN PAINTS","BAJAJ FINANCE","WIPRO","NTPC","ONGC","POWER GRID"
-];
+/* ================= GLOBAL ================= */
+const stocksArr=["RELIANCE","TCS","INFOSYS","HDFC BANK","ICICI BANK","SBIN","AXIS BANK","ITC","HUL"];
 let holdings=JSON.parse(localStorage.getItem("holdings"))||[];
-let selectedStock="", currentUserData=null;
+let currentUser, currentData, activeChat=null;
 
-/* AUTH */
+/* ================= AUTH ================= */
 function loginGoogle(){auth.signInWithPopup(new firebase.auth.GoogleAuthProvider());}
 function loginEmail(){
   if(!email.value||!password.value){
-    loginError.innerText="Enter email and password";
-    return;
+    loginError.innerText="Enter email & password";return;
   }
   auth.signInWithEmailAndPassword(email.value,password.value)
   .catch(()=>auth.createUserWithEmailAndPassword(email.value,password.value));
 }
+
 auth.onAuthStateChanged(async u=>{
-  if(u){
-    loginBox.style.display="none";
-    app.style.display="block";
-    const ref=db.collection("users").doc(u.uid);
-    if(!(await ref.get()).exists){
-      await ref.set({email:u.email,name:"",usercode:Math.floor(10000+Math.random()*90000)});
-    }
-    currentUserData=(await ref.get()).data();
-    renderStocks(stockList.slice(0,5));
-    renderHoldings();
+  if(!u)return;
+  currentUser=u;
+  loginBox.style.display="none";
+  app.style.display="block";
+
+  const ref=db.collection("users").doc(u.uid);
+  if(!(await ref.get()).exists){
+    await ref.set({
+      email:u.email,
+      name:"",
+      usercode:Math.floor(10000+Math.random()*90000),
+      friends:[],
+      requests:[]
+    });
   }
+  currentData=(await ref.get()).data();
+  renderStocks(stocksArr);
+  renderHoldings();
+  renderFriends();
+  renderRequests();
 });
 
-/* STOCKS */
-function renderStocks(list){
-  stocks.innerHTML="";
-  list.forEach(s=>{
-    stocks.innerHTML+=`
-      <div class="stock">
-        <b>${s}</b>
-        <button onclick="openAdd('${s}')">Add</button>
-      </div>`;
+/* ================= SEARCH ================= */
+searchBar.onkeyup=()=>{
+  const tab=document.querySelector(".tabs span.active").innerText;
+  if(tab==="Stocks"){
+    renderStocks(stocksArr.filter(s=>s.toLowerCase().includes(searchBar.value.toLowerCase())));
+  }
+  if(tab==="Chat"){
+    searchUID(searchBar.value);
+  }
+};
+
+/* ================= CHAT ================= */
+async function searchUID(code){
+  if(code.length!==5)return;
+  const q=await db.collection("users").where("usercode","==",Number(code)).get();
+  q.forEach(doc=>{
+    if(doc.id!==currentUser.uid){
+      db.collection("users").doc(doc.id).update({
+        requests:firebase.firestore.FieldValue.arrayUnion(currentUser.uid)
+      });
+      alert("Request sent");
+    }
   });
 }
-function searchStock(q){
-  renderStocks(stockList.filter(s=>s.toLowerCase().includes(q.toLowerCase())));
+
+function renderFriends(){
+  friendsList.innerHTML="";
+  (currentData.friends||[]).forEach(uid=>{
+    db.collection("users").doc(uid).get().then(d=>{
+      const div=document.createElement("div");
+      div.className="friend";
+      div.innerText=d.data().name||d.data().email;
+      div.onclick=()=>openChat(uid);
+      friendsList.appendChild(div);
+    });
+  });
 }
 
-/* ADD */
-function openAdd(s){
-  selectedStock=s;
-  addTitle.innerText="Add "+s;
-  buyPrice.value="";
-  qty.value="";
-  addOverlay.style.display="flex";
-}
-function closeAdd(){addOverlay.style.display="none";}
-function saveStock(){
-  if(!buyPrice.value||!qty.value){alert("Enter price & quantity");return;}
-  holdings.push({name:selectedStock,price:+buyPrice.value,qty:+qty.value});
-  localStorage.setItem("holdings",JSON.stringify(holdings));
-  closeAdd(); renderHoldings();
-  showTab("holdings",document.querySelectorAll(".tabs span")[1]);
+function renderRequests(){
+  requestsList.innerHTML="";
+  (currentData.requests||[]).forEach(uid=>{
+    db.collection("users").doc(uid).get().then(d=>{
+      const div=document.createElement("div");
+      div.className="request";
+      div.innerHTML=`${d.data().name||d.data().email}
+      <button onclick="acceptReq('${uid}')">Accept</button>
+      <button onclick="deleteReq('${uid}')">Delete</button>`;
+      requestsList.appendChild(div);
+    });
+  });
 }
 
-/* HOLDINGS */
+async function acceptReq(uid){
+  await db.collection("users").doc(currentUser.uid).update({
+    friends:firebase.firestore.FieldValue.arrayUnion(uid),
+    requests:firebase.firestore.FieldValue.arrayRemove(uid)
+  });
+  await db.collection("users").doc(uid).update({
+    friends:firebase.firestore.FieldValue.arrayUnion(currentUser.uid)
+  });
+  location.reload();
+}
+
+function deleteReq(uid){
+  db.collection("users").doc(currentUser.uid).update({
+    requests:firebase.firestore.FieldValue.arrayRemove(uid)
+  });
+  location.reload();
+}
+
+function openChat(uid){
+  activeChat=[currentUser.uid,uid].sort().join("_");
+  chatTitle.innerText="Chat";
+  messages.innerHTML="";
+  db.collection("chats").doc(activeChat)
+    .collection("messages").orderBy("time")
+    .onSnapshot(s=>{
+      messages.innerHTML="";
+      s.forEach(m=>{
+        const p=document.createElement("div");
+        p.className="msg";
+        if(m.data().sender===currentUser.uid)p.classList.add("me");
+        p.innerText=m.data().text;
+        messages.appendChild(p);
+      });
+    });
+}
+
+function sendMessage(){
+  if(!activeChat||!chatInput.value)return;
+  db.collection("chats").doc(activeChat)
+    .collection("messages").add({
+      text:chatInput.value,
+      sender:currentUser.uid,
+      time:firebase.firestore.FieldValue.serverTimestamp()
+    });
+  chatInput.value="";
+}
+
+/* ================= UI ================= */
+function showTab(id,el){
+  ["stocks","holdings","mf","chat"].forEach(t=>document.getElementById(t).style.display="none");
+  document.getElementById(id).style.display="block";
+  document.querySelectorAll(".tabs span").forEach(s=>s.classList.remove("active"));
+  el.classList.add("active");
+  searchBar.placeholder=id==="chat"?"Search User ID":"Search stocks";
+}
+
+function renderStocks(arr){
+  stocks.innerHTML="";
+  arr.forEach(s=>{
+    stocks.innerHTML+=`
+    <div class="card stock">
+      <b>${s}</b>
+      <button>Add</button>
+    </div>`;
+  });
+}
+
 function renderHoldings(){
-  let html=`<table><tr><th>Stock</th><th>Price</th><th>Qty</th><th>Total</th><th></th></tr>`;
-  holdings.forEach((h,i)=>{
-    html+=`<tr>
-      <td>${h.name}</td>
-      <td>${h.price}</td>
-      <td>${h.qty}</td>
-      <td>${h.price*h.qty}</td>
-      <td><button class="del-btn" onclick="del(${i})">Delete</button></td>
-    </tr>`;
+  let html="<table><tr><th>Stock</th><th>Price</th><th>Qty</th><th>Total</th></tr>";
+  holdings.forEach(h=>{
+    html+=`<tr><td>${h.name}</td><td>${h.price}</td><td>${h.qty}</td><td>${h.price*h.qty}</td></tr>`;
   });
   html+="</table>";
   holdingsTable.innerHTML=html;
 }
-function del(i){
-  holdings.splice(i,1);
-  localStorage.setItem("holdings",JSON.stringify(holdings));
-  renderHoldings();
-}
 
-/* UI */
-function showTab(id,el){
-  ["stocks","holdings","mf"].forEach(t=>document.getElementById(t).style.display="none");
-  document.getElementById(id).style.display="block";
-  document.querySelectorAll(".tabs span").forEach(s=>s.classList.remove("active"));
-  el.classList.add("active");
-}
 function openSettings(){
-  setEmail.innerText=auth.currentUser.email;
-  setCode.innerText=currentUserData.usercode;
-  setName.value=currentUserData.name||"";
+  setEmail.innerText=currentUser.email;
+  setCode.innerText=currentData.usercode;
+  setName.value=currentData.name||"";
   settingsOverlay.style.display="flex";
 }
 function closeSettings(){settingsOverlay.style.display="none";}
 function saveName(){
-  db.collection("users").doc(auth.currentUser.uid).update({name:setName.value});
-  alert("Name saved");
+  db.collection("users").doc(currentUser.uid).update({name:setName.value});
+  alert("Saved");
 }
 function logout(){auth.signOut();location.reload();}
 </script>
