@@ -17,124 +17,165 @@ const firebaseConfig = {
   projectId: "stock-portfolio-web-final"
 };
 firebase.initializeApp(firebaseConfig);
-
 const auth = firebase.auth();
 const db = firebase.firestore();
 </script>
 
 <style>
+*{box-sizing:border-box}
 body{
   margin:0;
-  font-family: Inter, system-ui;
-  background: linear-gradient(135deg,#eef2ff,#f8fafc);
+  font-family:Inter,system-ui;
+  background:#f5f7fb;
+  color:#1e293b;
 }
 
-/* NAV */
+/* NAVBAR */
 .nav{
   background:#4f46e5;
   color:#fff;
   display:flex;
   align-items:center;
-  padding:12px 20px;
-  gap:20px;
+  gap:18px;
+  padding:14px 20px;
 }
 .logo{font-size:22px;font-weight:700}
 .tabs span{
-  margin-right:15px;
+  margin-right:14px;
   cursor:pointer;
-  opacity:.85;
+  padding-bottom:4px;
 }
 .tabs span.active{
-  opacity:1;
   border-bottom:2px solid #fff;
 }
 .search input{
-  padding:8px;
-  border-radius:6px;
+  padding:8px 10px;
+  border-radius:8px;
   border:none;
   width:220px;
 }
 .settings-btn{
   margin-left:auto;
-  cursor:pointer;
   font-size:20px;
+  cursor:pointer;
 }
 
 /* CONTENT */
-.content{padding:20px}
+.content{
+  padding:20px;
+  max-width:1200px;
+  margin:auto;
+}
 .grid{
   display:grid;
-  grid-template-columns:repeat(auto-fill,minmax(160px,1fr));
-  gap:15px;
+  grid-template-columns:repeat(auto-fill,minmax(180px,1fr));
+  gap:16px;
 }
 .stock{
   background:#fff;
-  border-radius:10px;
-  padding:15px;
-  box-shadow:0 4px 10px rgba(0,0,0,.08);
+  border-radius:14px;
+  padding:16px;
+  box-shadow:0 4px 12px rgba(0,0,0,.08);
 }
 .stock button{
-  margin-top:10px;
+  margin-top:12px;
   width:100%;
-  padding:8px;
+  padding:10px;
   border:none;
-  border-radius:6px;
+  border-radius:10px;
   background:#4f46e5;
   color:#fff;
   cursor:pointer;
 }
 
 /* TABLE */
+.table-wrap{
+  background:#fff;
+  border-radius:14px;
+  overflow-x:auto;
+  box-shadow:0 4px 12px rgba(0,0,0,.08);
+}
 table{
   width:100%;
-  background:#fff;
-  border-radius:10px;
   border-collapse:collapse;
+  min-width:520px;
 }
 th,td{
   padding:12px;
   border-bottom:1px solid #e5e7eb;
   text-align:center;
 }
+th{background:#f1f5f9}
+
+/* BUTTONS */
+button{font-family:inherit}
+.del-btn{
+  background:#ef4444;
+  color:#fff;
+  border:none;
+  padding:6px 10px;
+  border-radius:8px;
+  cursor:pointer;
+}
 
 /* MODALS */
 .overlay{
   position:fixed;
   inset:0;
-  background:rgba(0,0,0,.4);
+  background:rgba(0,0,0,.45);
   display:none;
   align-items:center;
   justify-content:center;
-  z-index:10;
+  z-index:20;
 }
 .modal{
   background:#fff;
-  padding:20px;
+  padding:22px;
   width:320px;
-  border-radius:12px;
+  border-radius:16px;
 }
-.modal input,.modal button{
+.modal h3{margin-top:0}
+.modal input{
   width:100%;
   padding:10px;
   margin-top:10px;
+  border-radius:10px;
+  border:1px solid #cbd5e1;
 }
-.save-btn{background:#4f46e5;color:#fff;border:none}
-.logout-btn{background:#ef4444;color:#fff;border:none}
-.close-btn{background:#e5e7eb;border:none}
+.modal button{
+  width:100%;
+  margin-top:12px;
+  padding:10px;
+  border-radius:10px;
+  border:none;
+  cursor:pointer;
+}
+.save-btn{background:#4f46e5;color:#fff}
+.close-btn{background:#e5e7eb}
+.logout-btn{background:#ef4444;color:#fff}
 
 /* LOGIN */
 #loginBox{
-  max-width:400px;
-  margin:100px auto;
+  max-width:420px;
+  margin:90px auto;
   background:#fff;
-  padding:25px;
-  border-radius:12px;
+  padding:26px;
+  border-radius:18px;
   box-shadow:0 10px 30px rgba(0,0,0,.15);
 }
 #loginBox input,#loginBox button{
   width:100%;
   padding:12px;
-  margin-top:10px;
+  margin-top:12px;
+  border-radius:10px;
+}
+#loginBox input{border:1px solid #cbd5e1}
+#loginError{color:#ef4444;margin-top:8px}
+
+/* RESPONSIVE */
+@media(max-width:768px){
+  .nav{flex-wrap:wrap}
+  .search input{width:100%}
 }
 </style>
 </head>
@@ -148,7 +189,7 @@ th,td{
   <input id="password" type="password" placeholder="Password">
   <button onclick="loginEmail()">Login / Signup</button>
   <button onclick="loginGoogle()">Continue with Google</button>
-  <p id="loginError" style="color:red"></p>
+  <div id="loginError"></div>
 </div>
 
 <!-- APP -->
@@ -162,15 +203,21 @@ th,td{
     <span onclick="showTab('mf',this)">Mutual Funds</span>
   </div>
   <div class="search">
-    <input placeholder="Search NIFTY / SENSEX" onkeyup="searchStock(this.value)">
+    <input placeholder="Search stocks" onkeyup="searchStock(this.value)">
   </div>
   <div class="settings-btn" onclick="openSettings()">⚙️</div>
 </div>
 
 <div class="content">
   <div id="stocks" class="grid"></div>
-  <div id="holdings" style="display:none"></div>
-  <div id="mf" style="display:none">Coming Soon 🚀</div>
+
+  <div id="holdings" style="display:none">
+    <div class="table-wrap" id="holdingsTable"></div>
+  </div>
+
+  <div id="mf" style="display:none">
+    <div class="stock">Mutual Funds coming soon 🚀</div>
+  </div>
 </div>
 </div>
 
@@ -199,56 +246,41 @@ th,td{
 </div>
 
 <script>
-/* ================= DATA ================= */
-const stockList = [
+/* DATA */
+const stockList=[
 "RELIANCE","TCS","INFOSYS","HDFC BANK","ICICI BANK","SBIN",
 "AXIS BANK","ITC","HUL","LT","BHARTI AIRTEL","KOTAK BANK",
 "TATA MOTORS","TATA STEEL","SUN PHARMA","MARUTI",
 "ASIAN PAINTS","BAJAJ FINANCE","WIPRO","NTPC","ONGC","POWER GRID"
 ];
+let holdings=JSON.parse(localStorage.getItem("holdings"))||[];
+let selectedStock="", currentUserData=null;
 
-let holdings = JSON.parse(localStorage.getItem("holdings")) || [];
-let selectedStock = "";
-let currentUserData = null;
-
-/* ================= AUTH ================= */
-function loginGoogle(){
-  auth.signInWithPopup(new firebase.auth.GoogleAuthProvider());
-}
-
+/* AUTH */
+function loginGoogle(){auth.signInWithPopup(new firebase.auth.GoogleAuthProvider());}
 function loginEmail(){
-  if(!email.value || !password.value){
-    loginError.innerText="Enter email & password";
+  if(!email.value||!password.value){
+    loginError.innerText="Enter email and password";
     return;
   }
   auth.signInWithEmailAndPassword(email.value,password.value)
-    .catch(()=>auth.createUserWithEmailAndPassword(email.value,password.value));
+  .catch(()=>auth.createUserWithEmailAndPassword(email.value,password.value));
 }
-
-auth.onAuthStateChanged(async user=>{
-  if(user){
+auth.onAuthStateChanged(async u=>{
+  if(u){
     loginBox.style.display="none";
     app.style.display="block";
-
-    const ref = db.collection("users").doc(user.uid);
-    const snap = await ref.get();
-
-    if(!snap.exists){
-      const code = Math.floor(10000+Math.random()*90000).toString();
-      await ref.set({
-        email:user.email,
-        name:"",
-        usercode:code
-      });
+    const ref=db.collection("users").doc(u.uid);
+    if(!(await ref.get()).exists){
+      await ref.set({email:u.email,name:"",usercode:Math.floor(10000+Math.random()*90000)});
     }
-
-    currentUserData = (await ref.get()).data();
+    currentUserData=(await ref.get()).data();
     renderStocks(stockList.slice(0,5));
     renderHoldings();
   }
 });
 
-/* ================= STOCKS ================= */
+/* STOCKS */
 function renderStocks(list){
   stocks.innerHTML="";
   list.forEach(s=>{
@@ -259,105 +291,67 @@ function renderStocks(list){
       </div>`;
   });
 }
-
 function searchStock(q){
-  const f = stockList.filter(s=>s.toLowerCase().includes(q.toLowerCase()));
-  renderStocks(f);
+  renderStocks(stockList.filter(s=>s.toLowerCase().includes(q.toLowerCase())));
 }
 
-/* ================= ADD STOCK ================= */
-function openAdd(stock){
-  selectedStock = stock;
-  addTitle.innerText = "Add " + stock;
-  buyPrice.value = "";
-  qty.value = "";
+/* ADD */
+function openAdd(s){
+  selectedStock=s;
+  addTitle.innerText="Add "+s;
+  buyPrice.value="";
+  qty.value="";
   addOverlay.style.display="flex";
 }
-
-function closeAdd(){
-  addOverlay.style.display="none";
-}
-
+function closeAdd(){addOverlay.style.display="none";}
 function saveStock(){
-  if(!selectedStock){
-    alert("No stock selected");
-    return;
-  }
-  if(!buyPrice.value || !qty.value){
-    alert("Enter price and quantity");
-    return;
-  }
-
-  holdings.push({
-    name: selectedStock,
-    price: Number(buyPrice.value),
-    qty: Number(qty.value)
-  });
-
-  localStorage.setItem("holdings", JSON.stringify(holdings));
-  closeAdd();
-  renderHoldings();
-  showTab('holdings', document.querySelectorAll('.tabs span')[1]);
+  if(!buyPrice.value||!qty.value){alert("Enter price & quantity");return;}
+  holdings.push({name:selectedStock,price:+buyPrice.value,qty:+qty.value});
+  localStorage.setItem("holdings",JSON.stringify(holdings));
+  closeAdd(); renderHoldings();
+  showTab("holdings",document.querySelectorAll(".tabs span")[1]);
 }
 
-/* ================= HOLDINGS ================= */
+/* HOLDINGS */
 function renderHoldings(){
-  holdings.innerHTML="";
-  let html = `
-  <table>
-    <tr>
-      <th>Stock</th><th>Price</th><th>Qty</th><th>Total</th><th></th>
-    </tr>`;
+  let html=`<table><tr><th>Stock</th><th>Price</th><th>Qty</th><th>Total</th><th></th></tr>`;
   holdings.forEach((h,i)=>{
-    html+=`
-    <tr>
+    html+=`<tr>
       <td>${h.name}</td>
       <td>${h.price}</td>
       <td>${h.qty}</td>
       <td>${h.price*h.qty}</td>
-      <td><button onclick="del(${i})">Delete</button></td>
+      <td><button class="del-btn" onclick="del(${i})">Delete</button></td>
     </tr>`;
   });
   html+="</table>";
-  document.getElementById("holdings").innerHTML = html;
+  holdingsTable.innerHTML=html;
 }
-
 function del(i){
   holdings.splice(i,1);
-  localStorage.setItem("holdings", JSON.stringify(holdings));
+  localStorage.setItem("holdings",JSON.stringify(holdings));
   renderHoldings();
 }
 
-/* ================= TABS ================= */
+/* UI */
 function showTab(id,el){
   ["stocks","holdings","mf"].forEach(t=>document.getElementById(t).style.display="none");
   document.getElementById(id).style.display="block";
   document.querySelectorAll(".tabs span").forEach(s=>s.classList.remove("active"));
   el.classList.add("active");
 }
-
-/* ================= SETTINGS ================= */
 function openSettings(){
-  setEmail.innerText = auth.currentUser.email;
-  setCode.innerText = currentUserData.usercode;
-  setName.value = currentUserData.name || "";
+  setEmail.innerText=auth.currentUser.email;
+  setCode.innerText=currentUserData.usercode;
+  setName.value=currentUserData.name||"";
   settingsOverlay.style.display="flex";
 }
-
-function closeSettings(){
-  settingsOverlay.style.display="none";
-}
-
+function closeSettings(){settingsOverlay.style.display="none";}
 function saveName(){
-  db.collection("users").doc(auth.currentUser.uid)
-    .update({name:setName.value});
+  db.collection("users").doc(auth.currentUser.uid).update({name:setName.value});
   alert("Name saved");
 }
-
-function logout(){
-  auth.signOut();
-  location.reload();
-}
+function logout(){auth.signOut();location.reload();}
 </script>
 
 </body>
