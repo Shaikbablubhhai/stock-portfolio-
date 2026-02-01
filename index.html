@@ -55,23 +55,11 @@ body{
   border:none;
   width:240px;
 }
-.settings-btn{
-  margin-left:auto;
-  font-size:20px;
-  cursor:pointer;
-}
+.settings-btn{margin-left:auto;font-size:20px;cursor:pointer}
 
 /* CONTENT */
-.content{
-  padding:22px;
-  max-width:1250px;
-  margin:auto;
-}
-.grid{
-  display:grid;
-  grid-template-columns:repeat(auto-fill,minmax(190px,1fr));
-  gap:18px;
-}
+.content{padding:22px;max-width:1250px;margin:auto}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:18px}
 .card{
   background:#fff;
   border-radius:16px;
@@ -79,7 +67,6 @@ body{
   border:1px solid #e5e7eb;
   box-shadow:0 6px 16px rgba(0,0,0,.06);
 }
-.card b{font-size:15px}
 .card button{
   margin-top:12px;
   width:100%;
@@ -99,132 +86,67 @@ body{
   overflow-x:auto;
 }
 table{width:100%;border-collapse:collapse}
-th,td{
-  padding:12px;
-  border-bottom:1px solid #e5e7eb;
-  text-align:center
-}
-th{
-  background:#f1f5f9;
-  font-weight:600;
-}
+th,td{padding:12px;border-bottom:1px solid #e5e7eb;text-align:center}
+th{background:#f1f5f9}
 
 /* CHAT */
-.chat-layout{
-  display:grid;
-  grid-template-columns:320px 1fr;
-  gap:18px;
-}
+.chat-layout{display:grid;grid-template-columns:320px 1fr;gap:18px}
 .chat-list{
-  background:#fff;
-  border-radius:16px;
-  border:1px solid #e5e7eb;
-  padding:12px;
-  height:540px;
-  overflow:auto;
+  background:#fff;border-radius:16px;border:1px solid #e5e7eb;
+  padding:12px;height:540px;overflow:auto
 }
 .chat-item{
-  padding:10px;
-  border-radius:10px;
-  border-bottom:1px solid #e5e7eb;
-  cursor:pointer;
+  padding:10px;border-radius:10px;border-bottom:1px solid #e5e7eb;
+  cursor:pointer
 }
 .chat-item:hover{background:#f1f5f9}
 .chat-box{
-  background:#fff;
-  border-radius:16px;
-  border:1px solid #e5e7eb;
-  display:flex;
-  flex-direction:column;
-  height:540px;
+  background:#fff;border-radius:16px;border:1px solid #e5e7eb;
+  display:flex;flex-direction:column;height:540px
 }
-.messages{
-  flex:1;
-  padding:14px;
-  overflow:auto;
-}
+.messages{flex:1;padding:14px;overflow:auto}
 .msg{
-  margin-bottom:10px;
-  max-width:72%;
-  padding:10px;
-  border-radius:12px;
-  font-size:14px;
+  margin-bottom:10px;max-width:72%;padding:10px;
+  border-radius:12px;font-size:14px
 }
-.me{
-  background:#4f46e5;
-  color:#fff;
-  margin-left:auto;
-}
-.them{
-  background:#e5e7eb;
-}
+.me{background:#4f46e5;color:#fff;margin-left:auto}
+.them{background:#e5e7eb}
 .chat-input{
-  display:flex;
-  gap:10px;
-  padding:10px;
-  border-top:1px solid #e5e7eb;
+  display:flex;gap:10px;padding:10px;border-top:1px solid #e5e7eb
 }
 .chat-input input{
-  flex:1;
-  padding:10px;
-  border-radius:10px;
-  border:1px solid #cbd5e1;
+  flex:1;padding:10px;border-radius:10px;border:1px solid #cbd5e1
 }
 .chat-input button{
-  padding:10px 16px;
-  border-radius:10px;
-  border:none;
-  background:#4f46e5;
-  color:#fff;
+  padding:10px 16px;border-radius:10px;border:none;
+  background:#4f46e5;color:#fff
 }
 
 /* LOGIN */
 #loginBox{
-  max-width:420px;
-  margin:90px auto;
-  background:#fff;
-  padding:28px;
-  border-radius:18px;
-  border:1px solid #e5e7eb;
+  max-width:420px;margin:90px auto;background:#fff;
+  padding:28px;border-radius:18px;border:1px solid #e5e7eb
 }
 #loginBox input,#loginBox button{
-  width:100%;
-  padding:12px;
-  margin-top:12px;
-  border-radius:10px;
+  width:100%;padding:12px;margin-top:12px;border-radius:10px
 }
 #loginError{color:#ef4444;margin-top:8px}
 
-/* SETTINGS MODAL */
+/* SETTINGS */
 .overlay{
-  position:fixed;
-  inset:0;
-  background:rgba(0,0,0,.45);
-  display:none;
-  align-items:center;
-  justify-content:center;
-  z-index:50;
+  position:fixed;inset:0;background:rgba(0,0,0,.45);
+  display:none;align-items:center;justify-content:center;z-index:50
 }
 .modal{
-  background:#fff;
-  padding:24px;
-  width:340px;
-  border-radius:18px;
+  background:#fff;padding:24px;width:340px;border-radius:18px
 }
 .modal input{
-  width:100%;
-  padding:10px;
-  margin-top:10px;
-  border-radius:10px;
-  border:1px solid #cbd5e1;
+  width:100%;padding:10px;margin-top:10px;
+  border-radius:10px;border:1px solid #cbd5e1
 }
 .modal button{
-  width:100%;
-  margin-top:12px;
-  padding:10px;
-  border-radius:10px;
-  border:none;
-  cursor:pointer;
+  width:100%;margin-top:12px;padding:10px;
+  border-radius:10px;border:none;cursor:pointer
 }
 .primary{background:#4f46e5;color:#fff}
 .danger{background:#ef4444;color:#fff}
@@ -266,38 +188,36 @@ th{
 </div>
 
 <div class="content">
+  <div id="stocks" class="grid"></div>
 
-<div id="stocks" class="grid"></div>
+  <div id="holdings" style="display:none">
+    <div class="table-wrap" id="holdingsTable"></div>
+  </div>
 
-<div id="holdings" style="display:none">
-  <div class="table-wrap" id="holdingsTable"></div>
-</div>
+  <div id="mf" style="display:none">
+    <div class="card">Mutual Funds coming soon 🚀</div>
+  </div>
 
-<div id="mf" style="display:none">
-  <div class="card">Mutual Funds coming soon 🚀</div>
-</div>
+  <div id="chat" style="display:none">
+    <div class="chat-layout">
+      <div class="chat-list">
+        <input id="uidSearch" placeholder="Search User ID (5 digits)" onkeyup="searchUser()" style="width:100%;padding:8px;border-radius:8px;border:1px solid #cbd5e1">
+        <div id="searchResult"></div>
+        <h4>Requests</h4>
+        <div id="requests"></div>
+        <h4>Friends</h4>
+        <div id="friends"></div>
+      </div>
 
-<div id="chat" style="display:none">
-  <div class="chat-layout">
-    <div class="chat-list">
-      <input id="uidSearch" placeholder="Search User ID (5 digits)" onkeyup="searchUser()" style="width:100%;padding:8px;border-radius:8px;border:1px solid #cbd5e1">
-      <div id="searchResult"></div>
-      <h4>Requests</h4>
-      <div id="requests"></div>
-      <h4>Friends</h4>
-      <div id="friends"></div>
-    </div>
-
-    <div class="chat-box">
-      <div class="messages" id="messages"></div>
-      <div class="chat-input">
-        <input id="msgInput" placeholder="Type message">
-        <button onclick="sendMessage()">Send</button>
+      <div class="chat-box">
+        <div class="messages" id="messages"></div>
+        <div class="chat-input">
+          <input id="msgInput" placeholder="Type message">
+          <button onclick="sendMessage()">Send</button>
+        </div>
       </div>
     </div>
   </div>
-</div>
-
 </div>
 </div>
 
@@ -315,9 +235,8 @@ th{
 </div>
 
 <script>
-/* ===================== STOCK DATA ===================== */
+/* ================= DATA ================= */
 const STOCKS = [
-  /* NIFTY 50 + SENSEX + BANKNIFTY + MID + SMALL CAP (COMMON) */
   "RELIANCE","TCS","INFOSYS","HDFC BANK","ICICI BANK","SBIN","AXIS BANK",
   "KOTAK BANK","ITC","HUL","LT","BHARTI AIRTEL","TATA MOTORS","TATA STEEL",
   "SUN PHARMA","MARUTI","ASIAN PAINTS","BAJAJ FINANCE","WIPRO","NTPC",
@@ -326,8 +245,7 @@ const STOCKS = [
   "GRASIM","HCL TECH","HEROMOTO","INDUSIND","LTIMINDTREE","NESTLE",
   "TITAN","UPL","TECH MAHINDRA","COAL INDIA","PNB","IDFC FIRST",
   "BANK OF BARODA","FEDERAL BANK","CANARA BANK","AU SMALL FINANCE",
-  "IRCTC","ZOMATO","PAYTM","DMART","PIDILITE","TORNT POWER",
-  "TATA POWER","NHPC","BHEL","BEL","HAL","RVNL"
+  "IRCTC","ZOMATO","PAYTM","DMART","PIDILITE","TATA POWER","NHPC","BHEL","HAL"
 ];
 
 let holdings = JSON.parse(localStorage.getItem("holdings")) || [];
@@ -335,7 +253,7 @@ let currentUser = null;
 let currentChatFriend = null;
 let unsubscribeChat = null;
 
-/* ===================== AUTH ===================== */
+/* ================= AUTH ================= */
 function loginGoogle(){
   auth.signInWithPopup(new firebase.auth.GoogleAuthProvider());
 }
@@ -370,98 +288,89 @@ auth.onAuthStateChanged(async u=>{
   loadRequests();
 });
 
-/* ===================== STOCKS ===================== */
+/* ================= STOCKS ================= */
 function renderStocks(list){
   stocks.innerHTML="";
   list.forEach(s=>{
-    stocks.innerHTML += `
-      <div class="card">
-        <b>${s}</b>
-        <button onclick="addStock('${s}')">Add</button>
-      </div>
-    `;
+    const div=document.createElement("div");
+    div.className="card";
+    div.innerHTML=`<b>${s}</b>`;
+    const btn=document.createElement("button");
+    btn.innerText="Add";
+    btn.onclick=()=>addStock(s);
+    div.appendChild(btn);
+    stocks.appendChild(div);
   });
 }
+searchBar.onkeyup=()=>renderStocks(STOCKS.filter(s=>s.toLowerCase().includes(searchBar.value.toLowerCase())));
 
-searchBar.onkeyup = () => {
-  renderStocks(
-    STOCKS.filter(s => s.toLowerCase().includes(searchBar.value.toLowerCase()))
-  );
-};
-
-/* ===================== HOLDINGS ===================== */
+/* ================= HOLDINGS ================= */
 function addStock(name){
-  const p = prompt("Buy price");
-  const q = prompt("Quantity");
-  if(!p || !q) return;
+  const p=prompt("Buy price");
+  const q=prompt("Quantity");
+  if(!p||!q) return;
   holdings.push({name,price:+p,qty:+q});
   localStorage.setItem("holdings",JSON.stringify(holdings));
   renderHoldings();
 }
-
 function renderHoldings(){
-  let h = `
-    <table>
-      <tr>
-        <th>Stock</th><th>Price</th><th>Qty</th><th>Total</th><th></th>
-      </tr>
-  `;
+  let h=`<table><tr><th>Stock</th><th>Price</th><th>Qty</th><th>Total</th><th></th></tr>`;
   holdings.forEach((x,i)=>{
-    h += `
-      <tr>
-        <td>${x.name}</td>
-        <td>${x.price}</td>
-        <td>${x.qty}</td>
-        <td>${x.price * x.qty}</td>
-        <td><button onclick="del(${i})">Delete</button></td>
-      </tr>
-    `;
+    h+=`<tr>
+      <td>${x.name}</td><td>${x.price}</td><td>${x.qty}</td>
+      <td>${x.price*x.qty}</td>
+      <td><button onclick="del(${i})">Delete</button></td>
+    </tr>`;
   });
-  holdingsTable.innerHTML = h + "</table>";
+  holdingsTable.innerHTML=h+"</table>";
 }
-
 function del(i){
   holdings.splice(i,1);
   localStorage.setItem("holdings",JSON.stringify(holdings));
   renderHoldings();
 }
 
-/* ===================== CHAT ===================== */
+/* ================= CHAT ================= */
 async function searchUser(){
-  const code = uidSearch.value.trim();
   searchResult.innerHTML="";
-  if(code.length !== 5) return;
+  const code=uidSearch.value.trim();
+  if(code.length!==5) return;
 
-  const q = await db.collection("users").where("usercode","==",code).get();
+  const q=await db.collection("users").where("usercode","==",code).get();
   if(q.empty){
-    searchResult.innerHTML="<p>No user found</p>";
+    searchResult.innerText="User not found";
     return;
   }
+
   q.forEach(d=>{
-  if(d.id === currentUser.uid) return;
+    if(d.id===currentUser.uid) return;
+    const u=d.data();
 
-  const u = d.data();
+    const row=document.createElement("div");
+    row.className="chat-item";
+    row.innerText=`${u.name||"User"} (${u.usercode})`;
 
-  const row = document.createElement("div");
-  row.className = "chat-item";
+    const btn=document.createElement("button");
+    btn.innerText="Send Request";
+    btn.onclick=()=>sendRequest(d.id);
 
-  const text = document.createElement("div");
-  text.innerText = `${u.name || "User"} (${u.usercode})`;
+    row.appendChild(btn);
+    searchResult.appendChild(row);
+  });
+}
 
-  const btn = document.createElement("button");
-  btn.innerText = "Send Request";
-  btn.onclick = () => sendRequest(d.id);
+async function sendRequest(uid){
+  const exist=await db.collection("requests")
+    .where("from","==",currentUser.uid)
+    .where("to","==",uid).get();
+  if(!exist.empty){alert("Request already sent");return;}
 
-  row.appendChild(text);
-  row.appendChild(btn);
+  const friend=await db.collection("friends")
+    .doc(currentUser.uid).collection("list").doc(uid).get();
+  if(friend.exists){alert("Already friends");return;}
 
-  searchResult.appendChild(row);
-});
-
-function sendRequest(uid){
-  db.collection("requests").add({
-    from:currentUser.uid,
-    to:uid
+  await db.collection("requests").add({
+    from:currentUser.uid,to:uid,time:firebase.firestore.FieldValue.serverTimestamp()
   });
   alert("Request sent");
 }
@@ -471,26 +380,31 @@ function loadRequests(){
   .onSnapshot(async s=>{
     requests.innerHTML="";
     for(const d of s.docs){
-      const fromRef = await db.collection("users").doc(d.data().from).get();
-      const u = fromRef.data();
-      requests.innerHTML += `
-        <div class="chat-item">
-          ${u.name || "User"}
-          <button onclick="accept('${d.id}','${d.data().from}')">Accept</button>
-        </div>
-      `;
+      const uSnap=await db.collection("users").doc(d.data().from).get();
+      const u=uSnap.data();
+
+      const row=document.createElement("div");
+      row.className="chat-item";
+      row.innerText=u.name||"User";
+
+      const btn=document.createElement("button");
+      btn.innerText="Accept";
+      btn.onclick=()=>accept(d.id,d.data().from);
+
+      row.appendChild(btn);
+      requests.appendChild(row);
     }
   });
 }
 
 async function accept(id,uid){
-  const me = await db.collection("users").doc(currentUser.uid).get();
-  const other = await db.collection("users").doc(uid).get();
+  const me=await db.collection("users").doc(currentUser.uid).get();
+  const other=await db.collection("users").doc(uid).get();
 
   await db.collection("friends").doc(currentUser.uid)
-    .collection("list").doc(uid).set({name:other.data().name || "User"});
+    .collection("list").doc(uid).set({name:other.data().name||"User"});
   await db.collection("friends").doc(uid)
-    .collection("list").doc(currentUser.uid).set({name:me.data().name || "User"});
+    .collection("list").doc(currentUser.uid).set({name:me.data().name||"User"});
 
   await db.collection("requests").doc(id).delete();
 }
@@ -500,93 +414,60 @@ function loadFriends(){
   .onSnapshot(s=>{
     friends.innerHTML="";
     s.forEach(d=>{
-      friends.innerHTML += `
-        <div class="chat-item" onclick="openChat('${d.id}','${d.data().name}')">
-          ${d.data().name}
-        </div>
-      `;
+      const div=document.createElement("div");
+      div.className="chat-item";
+      div.innerText=d.data().name;
+      div.onclick=()=>openChat(d.id);
+      friends.appendChild(div);
     });
   });
 }
 
-function openChat(uid,name){
-  currentChatFriend = uid;
+function openChat(uid){
+  currentChatFriend=uid;
   messages.innerHTML="";
-
-  const chatId = [currentUser.uid, uid].sort().join("_");
-
+  const chatId=[currentUser.uid,uid].sort().join("_");
   if(unsubscribeChat) unsubscribeChat();
-
-  unsubscribeChat = db.collection("chats")
-    .doc(chatId)
-    .collection("msgs")
-    .orderBy("time")
-    .onSnapshot(s => {
-
+  unsubscribeChat=db.collection("chats").doc(chatId)
+    .collection("msgs").orderBy("time")
+    .onSnapshot(s=>{
       messages.innerHTML="";
-
-      s.forEach(d => {
-        const m = d.data();
-
-        // Mark as seen
-        if(m.from !== currentUser.uid && m.seen === false){
-          d.ref.update({ seen: true });
-        }
-
-        const timeText = m.time
-          ? new Date(m.time.toDate()).toLocaleTimeString([], {
-              hour: '2-digit',
-              minute: '2-digit'
-            })
-          : "";
-
-        const seenText =
-          m.from === currentUser.uid
-            ? (m.seen ? "✓ Seen" : "✓ Sent")
-            : "";
-
-        messages.innerHTML += `
+      s.forEach(d=>{
+        const m=d.data();
+        const time=m.time?new Date(m.time.toDate()).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}):"";
+        const seen=m.from===currentUser.uid?(m.seen?" ✓ Seen":" ✓ Sent"):"";
+        messages.innerHTML+=`
           <div class="msg ${m.from===currentUser.uid?'me':'them'}">
-            <div>${m.text}</div>
-            <small style="font-size:11px;opacity:.7">
-              ${timeText} ${seenText}
-            </small>
-          </div>
-        `;
+            ${m.text}<br><small>${time}${seen}</small>
+          </div>`;
+        if(m.from!==currentUser.uid && !m.seen) d.ref.update({seen:true});
       });
-
-      messages.scrollTop = messages.scrollHeight;
+      messages.scrollTop=messages.scrollHeight;
     });
 }
 
 function sendMessage(){
-  if(!msgInput.value || !currentChatFriend) return;
-
-  const chatId = [currentUser.uid, currentChatFriend].sort().join("_");
-
+  if(!msgInput.value||!currentChatFriend) return;
+  const chatId=[currentUser.uid,currentChatFriend].sort().join("_");
   db.collection("chats").doc(chatId).collection("msgs").add({
-    from: currentUser.uid,
-    text: msgInput.value,
-    time: firebase.firestore.FieldValue.serverTimestamp(),
-    seen: false   // NEW
+    from:currentUser.uid,text:msgInput.value,
+    time:firebase.firestore.FieldValue.serverTimestamp(),seen:false
   });
-
-  msgInput.value = "";
+  msgInput.value="";
 }
 
-/* ===================== UI ===================== */
+/* ================= UI ================= */
 function showTab(id,el){
   ["stocks","holdings","mf","chat"].forEach(x=>document.getElementById(x).style.display="none");
   document.getElementById(id).style.display="block";
   document.querySelectorAll(".tabs span").forEach(x=>x.classList.remove("active"));
   el.classList.add("active");
 }
-
 function openSettings(){
-  setEmail.innerText = currentUser.email;
+  setEmail.innerText=currentUser.email;
   db.collection("users").doc(currentUser.uid).get().then(s=>{
-    setCode.innerText = s.data().usercode;
-    setName.value = s.data().name;
+    setCode.innerText=s.data().usercode;
+    setName.value=s.data().name;
   });
   settingsOverlay.style.display="flex";
 }
