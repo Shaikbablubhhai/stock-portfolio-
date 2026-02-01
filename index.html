@@ -418,42 +418,55 @@ function del(i){
   renderHoldings();
 }
 
-/* ================= CHAT ================= */
+/* ================= CHAT - SEARCH USER (FIXED) ================= */
 async function searchUser(){
-  const code=uidSearch.value.trim();
-  searchResult.innerHTML="";
+  const code = uidSearch.value.trim();
+  searchResult.innerHTML = "";
 
-  if(code.length!==5){
-    searchResult.innerHTML="<p style='opacity:.6'>Enter 5 digit User ID</p>";
+  if(code.length !== 5){
+    searchResult.innerHTML = "<p style='opacity:.6'>Enter 5 digit User ID</p>";
     return;
   }
 
-  const q=await db.collection("users").where("usercode","==",code).get();
+  const q = await db.collection("users").where("usercode","==",code).get();
+
   if(q.empty){
-    searchResult.innerHTML="<p style='color:#ef4444'>User not found</p>";
+    searchResult.innerHTML = "<p style='color:#ef4444'>User not found</p>";
     return;
   }
 
-  q.forEach(d=>{
-    if(d.id===currentUser.uid) return;
-    const u=d.data();
+  let foundOther = false;
 
-    const row=document.createElement("div");
-    row.className="chat-item";
+  q.forEach(function(d){
+    if(d.id === currentUser.uid) return;
+    foundOther = true;
 
-    const txt=document.createElement("span");
-    txt.innerText=`${u.name||"User"} (${u.usercode})`;
+    const odId = d.id;
+    const userData = d.data();
 
-    const btn=document.createElement("button");
-    btn.innerText="Send Request";
-    btn.onclick=()=>sendRequest(d.id);
+    const row = document.createElement("div");
+    row.className = "chat-item";
+
+    const txt = document.createElement("span");
+    txt.textContent = (userData.name || "User") + " (" + userData.usercode + ")";
+
+    const btn = document.createElement("button");
+    btn.textContent = "Send Request";
+    btn.addEventListener("click", function(){
+      sendRequest(odId);
+    });
 
     row.appendChild(txt);
     row.appendChild(btn);
     searchResult.appendChild(row);
   });
+
+  if(!foundOther && !q.empty){
+    searchResult.innerHTML = "<p style='opacity:.6'>That's your own User ID</p>";
+  }
 }
 
+/* ================= CHAT - SEND REQUEST ================= */
 async function sendRequest(uid){
   const ex=await db.collection("requests")
     .where("from","==",currentUser.uid)
@@ -472,21 +485,32 @@ async function sendRequest(uid){
   alert("Friend request sent");
 }
 
+/* ================= CHAT - LOAD REQUESTS (FIXED) ================= */
 function loadRequests(){
   db.collection("requests").where("to","==",currentUser.uid)
-  .onSnapshot(async s=>{
-    requests.innerHTML="";
+  .onSnapshot(async function(s){
+    requests.innerHTML = "";
+
     for(const d of s.docs){
-      const uSnap=await db.collection("users").doc(d.data().from).get();
-      const u=uSnap.data();
+      const requestId = d.id;
+      const fromUserId = d.data().from;
 
-      const row=document.createElement("div");
-      row.className="chat-item";
-      row.innerText=u.name||"User";
+      const uSnap = await db.collection("users").doc(fromUserId).get();
+      if(!uSnap.exists) continue;
+      const u = uSnap.data();
 
-      const btn=document.createElement("button");
-      btn.innerText="Accept";
-      btn.onclick=()=>accept(d.id,d.data().from);
+      const row = document.createElement("div");
+      row.className = "chat-item";
+
+      const nameSpan = document.createElement("span");
+      nameSpan.textContent = (u.name || "User") + " (" + (u.usercode || "") + ")";
+      row.appendChild(nameSpan);
+
+      const btn = document.createElement("button");
+      btn.textContent = "Accept";
+      btn.addEventListener("click", function(){
+        accept(requestId, fromUserId);
+      });
 
       row.appendChild(btn);
       requests.appendChild(row);
@@ -494,6 +518,7 @@ function loadRequests(){
   });
 }
 
+/* ================= CHAT - ACCEPT REQUEST ================= */
 async function accept(id,uid){
   const me=await db.collection("users").doc(currentUser.uid).get();
   const other=await db.collection("users").doc(uid).get();
@@ -506,20 +531,33 @@ async function accept(id,uid){
   await db.collection("requests").doc(id).delete();
 }
 
+/* ================= CHAT - LOAD FRIENDS (FIXED) ================= */
 function loadFriends(){
   db.collection("friends").doc(currentUser.uid).collection("list")
-  .onSnapshot(s=>{
-    friends.innerHTML="";
-    s.forEach(d=>{
-      const div=document.createElement("div");
-      div.className="chat-item";
-      div.innerText=d.data().name;
-      div.onclick=()=>openChat(d.id);
+  .onSnapshot(function(s){
+    friends.innerHTML = "";
+
+    s.forEach(function(d){
+      const friendId = d.id;
+      const friendName = d.data().name || "User";
+
+      const div = document.createElement("div");
+      div.className = "chat-item";
+
+      const nameSpan = document.createElement("span");
+      nameSpan.textContent = friendName;
+      div.appendChild(nameSpan);
+
+      div.addEventListener("click", function(){
+        openChat(friendId);
+      });
+
       friends.appendChild(div);
     });
   });
 }
 
+/* ================= CHAT - OPEN CHAT ================= */
 function openChat(uid){
   currentChatFriend=uid;
   messages.innerHTML="";
@@ -546,6 +584,7 @@ function openChat(uid){
     });
 }
 
+/* ================= CHAT - SEND MESSAGE ================= */
 function sendMessage(){
   if(!msgInput.value||!currentChatFriend) return;
   const chatId=[currentUser.uid,currentChatFriend].sort().join("_");
@@ -585,4 +624,3 @@ function logout(){auth.signOut();location.reload();}
 
 </body>
 </html>
-
