@@ -438,16 +438,25 @@ async function searchUser(){
     return;
   }
   q.forEach(d=>{
-    if(d.id === currentUser.uid) return;
-    const u = d.data();
-    searchResult.innerHTML = `
-      <div class="chat-item">
-        ${u.name || "User"} (${u.usercode})
-        <button onclick="sendRequest('${d.id}')">Send Request</button>
-      </div>
-    `;
-  });
-}
+  if(d.id === currentUser.uid) return;
+
+  const u = d.data();
+
+  const row = document.createElement("div");
+  row.className = "chat-item";
+
+  const text = document.createElement("div");
+  text.innerText = `${u.name || "User"} (${u.usercode})`;
+
+  const btn = document.createElement("button");
+  btn.innerText = "Send Request";
+  btn.onclick = () => sendRequest(d.id);
+
+  row.appendChild(text);
+  row.appendChild(btn);
+
+  searchResult.appendChild(row);
+});
 
 function sendRequest(uid){
   db.collection("requests").add({
@@ -591,6 +600,7 @@ function logout(){auth.signOut();location.reload();}
 
 </body>
 </html>
+
 
 
 
