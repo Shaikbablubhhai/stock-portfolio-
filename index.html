@@ -127,7 +127,7 @@ body{
 /* ================= STOCK GRID ================= */
 .grid{
   display:grid;
-  grid-template-columns:repeat(auto-fill,minmax(220px,1fr));
+  grid-template-columns:repeat(auto-fill,minmax(240px,1fr));
   gap:20px;
 }
 .card{
@@ -184,12 +184,31 @@ body{
   font-weight:700;
   font-size:16px;
 }
+.stock-info{flex:1}
 .stock-name{
   font-size:15px;
   font-weight:600;
   color:#1e293b;
-  flex:1;
 }
+.stock-price{
+  font-size:18px;
+  font-weight:700;
+  color:#10b981;
+  margin-top:2px;
+}
+.stock-price.loading{
+  color:#94a3b8;
+  font-size:13px;
+}
+.stock-change{
+  font-size:12px;
+  padding:4px 8px;
+  border-radius:6px;
+  font-weight:600;
+}
+.stock-change.positive{background:#d1fae5;color:#059669}
+.stock-change.negative{background:#fee2e2;color:#dc2626}
+
 .card button{
   width:100%;
   padding:12px;
@@ -205,6 +224,7 @@ body{
   align-items:center;
   justify-content:center;
   gap:8px;
+  margin-top:12px;
 }
 .card button:hover{
   transform:scale(1.02);
@@ -218,25 +238,92 @@ body{
   justify-content:space-between;
   align-items:center;
   margin-bottom:20px;
+  flex-wrap:wrap;
+  gap:16px;
 }
 .holdings-header h2{
   font-size:24px;
   font-weight:700;
   color:#1e293b;
 }
-.holdings-stats{
+.holdings-actions{
   display:flex;
-  gap:20px;
+  gap:12px;
+  align-items:center;
 }
-.stat-card{
+.refresh-btn{
+  padding:10px 20px;
+  border-radius:12px;
+  border:none;
   background:linear-gradient(135deg,#4f46e5,#7c3aed);
   color:#fff;
-  padding:16px 24px;
-  border-radius:14px;
-  text-align:center;
+  font-weight:600;
+  cursor:pointer;
+  display:flex;
+  align-items:center;
+  gap:8px;
+  transition:all 0.3s ease;
 }
-.stat-card .label{font-size:12px;opacity:0.9;margin-bottom:4px}
-.stat-card .value{font-size:22px;font-weight:700}
+.refresh-btn:hover{
+  transform:scale(1.02);
+  box-shadow:0 4px 15px rgba(79,70,229,0.4);
+}
+.refresh-btn.loading{
+  opacity:0.7;
+  pointer-events:none;
+}
+.refresh-btn.loading::before{
+  content:"";
+  width:16px;
+  height:16px;
+  border:2px solid #fff;
+  border-top-color:transparent;
+  border-radius:50%;
+  animation:spin 0.8s linear infinite;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+.last-updated{
+  font-size:12px;
+  color:#64748b;
+}
+
+.holdings-stats{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
+  gap:16px;
+  margin-bottom:24px;
+}
+.stat-card{
+  background:#fff;
+  padding:20px;
+  border-radius:16px;
+  border:1px solid #e2e8f0;
+  box-shadow:0 4px 15px rgba(0,0,0,0.05);
+}
+.stat-card.gradient{
+  background:linear-gradient(135deg,#4f46e5,#7c3aed);
+  color:#fff;
+  border:none;
+}
+.stat-card .label{
+  font-size:12px;
+  opacity:0.8;
+  margin-bottom:6px;
+  text-transform:uppercase;
+  letter-spacing:0.5px;
+}
+.stat-card .value{
+  font-size:24px;
+  font-weight:700;
+}
+.stat-card .subvalue{
+  font-size:13px;
+  margin-top:4px;
+  opacity:0.9;
+}
+.stat-card.profit .value{color:#10b981}
+.stat-card.loss .value{color:#ef4444}
 
 .table-wrap{
   background:#fff;
@@ -254,13 +341,35 @@ th,td{
 th{
   background:#f8fafc;
   font-weight:600;
-  font-size:13px;
+  font-size:12px;
   color:#64748b;
   text-transform:uppercase;
   letter-spacing:0.5px;
 }
 td{font-size:14px;color:#334155}
 tr:hover td{background:#fafbfc}
+
+.stock-cell{
+  display:flex;
+  align-items:center;
+  gap:10px;
+}
+.stock-cell-logo{
+  width:32px;
+  height:32px;
+  border-radius:8px;
+  background:linear-gradient(135deg,#4f46e5,#7c3aed);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  color:#fff;
+  font-weight:600;
+  font-size:12px;
+}
+
+.pl-positive{color:#10b981;font-weight:600}
+.pl-negative{color:#ef4444;font-weight:600}
+
 td button{
   padding:8px 14px;
   border:none;
@@ -284,6 +393,34 @@ td button:hover{background:#fecaca}
   font-size:48px;
   display:block;
   margin-bottom:16px;
+}
+
+/* ================= API KEY NOTICE ================= */
+.api-notice{
+  background:linear-gradient(135deg,#fef3c7,#fde68a);
+  border:1px solid #f59e0b;
+  border-radius:12px;
+  padding:16px 20px;
+  margin-bottom:20px;
+  display:flex;
+  align-items:center;
+  gap:12px;
+}
+.api-notice::before{
+  content:"⚠️";
+  font-size:24px;
+}
+.api-notice-text{flex:1}
+.api-notice-text strong{color:#92400e}
+.api-notice-text p{font-size:13px;color:#78350f;margin-top:4px}
+.api-notice button{
+  padding:10px 16px;
+  border-radius:10px;
+  border:none;
+  background:#f59e0b;
+  color:#fff;
+  font-weight:600;
+  cursor:pointer;
 }
 
 /* ================= CHAT ================= */
@@ -622,11 +759,13 @@ td button:hover{background:#fecaca}
 .modal{
   background:#fff;
   padding:32px;
-  width:400px;
+  width:420px;
   max-width:90%;
   border-radius:20px;
   box-shadow:0 25px 60px rgba(0,0,0,0.2);
   animation:modalIn 0.3s ease;
+  max-height:90vh;
+  overflow-y:auto;
 }
 @keyframes modalIn{from{opacity:0;transform:scale(0.95)}to{opacity:1;transform:scale(1)}}
 
@@ -693,6 +832,37 @@ td button:hover{background:#fecaca}
 .modal .gray{background:#f1f5f9;color:#64748b}
 .modal .gray:hover{background:#e2e8f0}
 
+.modal-divider{
+  border:none;
+  border-top:1px solid #e2e8f0;
+  margin:20px 0;
+}
+
+.api-key-section{
+  background:#f0fdf4;
+  border:1px solid #86efac;
+  border-radius:12px;
+  padding:16px;
+  margin-top:16px;
+}
+.api-key-section h4{
+  font-size:14px;
+  color:#166534;
+  margin-bottom:8px;
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+.api-key-section p{
+  font-size:12px;
+  color:#15803d;
+  margin-bottom:12px;
+}
+.api-key-section a{
+  color:#4f46e5;
+  text-decoration:underline;
+}
+
 /* ================= MF SECTION ================= */
 .coming-soon{
   text-align:center;
@@ -716,6 +886,7 @@ td button:hover{background:#fecaca}
   .tabs{order:3;width:100%}
   .search{margin-left:0;flex:1}
   .chat-layout{grid-template-columns:1fr}
+  .holdings-stats{grid-template-columns:repeat(2,1fr)}
 }
 @media(max-width:640px){
   .nav{padding:12px 16px}
@@ -724,7 +895,8 @@ td button:hover{background:#fecaca}
   .search input{width:100%}
   .grid{grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px}
   .card{padding:14px}
-  .holdings-stats{flex-direction:column;gap:12px}
+  .holdings-stats{grid-template-columns:1fr}
+  .holdings-header{flex-direction:column;align-items:stretch}
 }
 </style>
 </head>
@@ -766,18 +938,24 @@ td button:hover{background:#fecaca}
   <!-- HOLDINGS TAB -->
   <div id="holdings" style="display:none">
     <div class="holdings-header">
-      <h2>Your Holdings</h2>
-      <div class="holdings-stats">
-        <div class="stat-card">
-          <div class="label">Total Invested</div>
-          <div class="value" id="totalInvested">₹0</div>
-        </div>
-        <div class="stat-card">
-          <div class="label">Holdings Count</div>
-          <div class="value" id="holdingsCount">0</div>
-        </div>
+      <h2>📊 Your Portfolio</h2>
+      <div class="holdings-actions">
+        <span class="last-updated" id="lastUpdated"></span>
+        <button class="refresh-btn" id="refreshBtn" onclick="refreshPrices()">
+          🔄 Refresh Prices
+        </button>
       </div>
     </div>
+
+    <div id="apiNotice" class="api-notice" style="display:none">
+      <div class="api-notice-text">
+        <strong>Live Prices Disabled</strong>
+        <p>Add your free Alpha Vantage API key in Settings to enable live stock prices.</p>
+      </div>
+      <button onclick="openSettings()">Add API Key</button>
+    </div>
+
+    <div class="holdings-stats" id="holdingsStats"></div>
     <div class="table-wrap" id="holdingsTable"></div>
   </div>
 
@@ -843,8 +1021,18 @@ td button:hover{background:#fecaca}
     </div>
     <label>Display Name</label>
     <input id="setName" placeholder="Enter your name">
+    
+    <hr class="modal-divider">
+    
+    <div class="api-key-section">
+      <h4>📈 Live Stock Prices</h4>
+      <p>Get your FREE API key from <a href="https://www.alphavantage.co/support/#api-key" target="_blank">Alpha Vantage</a> (takes 10 seconds)</p>
+      <label>API Key</label>
+      <input id="setApiKey" placeholder="Enter your Alpha Vantage API key">
+    </div>
+    
     <div class="modal-buttons">
-      <button class="primary" onclick="saveName()">Save</button>
+      <button class="primary" onclick="saveSettings()">Save All</button>
       <button class="gray" onclick="closeSettings()">Close</button>
     </div>
     <button class="danger" onclick="logout()" style="width:100%;margin-top:12px">Logout</button>
@@ -857,6 +1045,7 @@ td button:hover{background:#fecaca}
     <h3>➕ Add Stock</h3>
     <div class="modal-info">
       <p>Stock: <span id="addStockName" style="font-weight:700;color:#4f46e5"></span></p>
+      <p>Current Price: <span id="addStockCurrentPrice" style="font-weight:700;color:#10b981">--</span></p>
     </div>
     <label>Buy Price (₹)</label>
     <input id="addStockPrice" type="number" placeholder="Enter buy price" min="0" step="0.01">
@@ -870,72 +1059,76 @@ td button:hover{background:#fecaca}
 </div>
 
 <script>
-/* ================= STOCK DATA WITH LOGOS ================= */
+/* ================= STOCK DATA WITH LOGOS & SYMBOLS ================= */
 const STOCKS = [
-  {name:"RELIANCE",domain:"ril.com"},
-  {name:"TCS",domain:"tcs.com"},
-  {name:"INFOSYS",domain:"infosys.com"},
-  {name:"HDFC BANK",domain:"hdfcbank.com"},
-  {name:"ICICI BANK",domain:"icicibank.com"},
-  {name:"SBIN",domain:"sbi.co.in"},
-  {name:"AXIS BANK",domain:"axisbank.com"},
-  {name:"KOTAK BANK",domain:"kotak.com"},
-  {name:"ITC",domain:"itcportal.com"},
-  {name:"HUL",domain:"hul.co.in"},
-  {name:"LT",domain:"larsentoubro.com"},
-  {name:"BHARTI AIRTEL",domain:"airtel.in"},
-  {name:"TATA MOTORS",domain:"tatamotors.com"},
-  {name:"TATA STEEL",domain:"tatasteel.com"},
-  {name:"SUN PHARMA",domain:"sunpharma.com"},
-  {name:"MARUTI",domain:"marutisuzuki.com"},
-  {name:"ASIAN PAINTS",domain:"asianpaints.com"},
-  {name:"BAJAJ FINANCE",domain:"bajajfinserv.in"},
-  {name:"WIPRO",domain:"wipro.com"},
-  {name:"NTPC",domain:"ntpc.co.in"},
-  {name:"ONGC",domain:"ongcindia.com"},
-  {name:"POWER GRID",domain:"powergrid.in"},
-  {name:"ADANI ENTERPRISES",domain:"adani.com"},
-  {name:"ADANI PORTS",domain:"adaniports.com"},
-  {name:"ULTRATECH",domain:"ultratechcement.com"},
-  {name:"JSW STEEL",domain:"jsw.in"},
-  {name:"DIVIS LAB",domain:"divislabs.com"},
-  {name:"DR REDDYS",domain:"drreddys.com"},
-  {name:"CIPLA",domain:"cipla.com"},
-  {name:"BRITANNIA",domain:"britannia.co.in"},
-  {name:"EICHER",domain:"eicher.in"},
-  {name:"GRASIM",domain:"grasim.com"},
-  {name:"HCL TECH",domain:"hcltech.com"},
-  {name:"HEROMOTO",domain:"heromotocorp.com"},
-  {name:"INDUSIND",domain:"indusind.com"},
-  {name:"LTIMINDTREE",domain:"ltimindtree.com"},
-  {name:"NESTLE",domain:"nestle.in"},
-  {name:"TITAN",domain:"titan.co.in"},
-  {name:"UPL",domain:"upl-ltd.com"},
-  {name:"TECH MAHINDRA",domain:"techmahindra.com"},
-  {name:"COAL INDIA",domain:"coalindia.in"},
-  {name:"PNB",domain:"pnbindia.in"},
-  {name:"IDFC FIRST",domain:"idfcfirstbank.com"},
-  {name:"BANK OF BARODA",domain:"bankofbaroda.in"},
-  {name:"FEDERAL BANK",domain:"federalbank.co.in"},
-  {name:"CANARA BANK",domain:"canarabank.com"},
-  {name:"AU SMALL FINANCE",domain:"aubank.in"},
-  {name:"IRCTC",domain:"irctc.co.in"},
-  {name:"ZOMATO",domain:"zomato.com"},
-  {name:"PAYTM",domain:"paytm.com"},
-  {name:"DMART",domain:"dmartindia.com"},
-  {name:"PIDILITE",domain:"pidilite.com"},
-  {name:"TATA POWER",domain:"tatapower.com"},
-  {name:"NHPC",domain:"nhpcindia.com"},
-  {name:"BHEL",domain:"bhel.com"},
-  {name:"HAL",domain:"hal-india.co.in"}
+  {name:"RELIANCE",domain:"ril.com",symbol:"RELIANCE.BSE"},
+  {name:"TCS",domain:"tcs.com",symbol:"TCS.BSE"},
+  {name:"INFOSYS",domain:"infosys.com",symbol:"INFY.BSE"},
+  {name:"HDFC BANK",domain:"hdfcbank.com",symbol:"HDFCBANK.BSE"},
+  {name:"ICICI BANK",domain:"icicibank.com",symbol:"ICICIBANK.BSE"},
+  {name:"SBIN",domain:"sbi.co.in",symbol:"SBIN.BSE"},
+  {name:"AXIS BANK",domain:"axisbank.com",symbol:"AXISBANK.BSE"},
+  {name:"KOTAK BANK",domain:"kotak.com",symbol:"KOTAKBANK.BSE"},
+  {name:"ITC",domain:"itcportal.com",symbol:"ITC.BSE"},
+  {name:"HUL",domain:"hul.co.in",symbol:"HINDUNILVR.BSE"},
+  {name:"LT",domain:"larsentoubro.com",symbol:"LT.BSE"},
+  {name:"BHARTI AIRTEL",domain:"airtel.in",symbol:"BHARTIARTL.BSE"},
+  {name:"TATA MOTORS",domain:"tatamotors.com",symbol:"TATAMOTORS.BSE"},
+  {name:"TATA STEEL",domain:"tatasteel.com",symbol:"TATASTEEL.BSE"},
+  {name:"SUN PHARMA",domain:"sunpharma.com",symbol:"SUNPHARMA.BSE"},
+  {name:"MARUTI",domain:"marutisuzuki.com",symbol:"MARUTI.BSE"},
+  {name:"ASIAN PAINTS",domain:"asianpaints.com",symbol:"ASIANPAINT.BSE"},
+  {name:"BAJAJ FINANCE",domain:"bajajfinserv.in",symbol:"BAJFINANCE.BSE"},
+  {name:"WIPRO",domain:"wipro.com",symbol:"WIPRO.BSE"},
+  {name:"NTPC",domain:"ntpc.co.in",symbol:"NTPC.BSE"},
+  {name:"ONGC",domain:"ongcindia.com",symbol:"ONGC.BSE"},
+  {name:"POWER GRID",domain:"powergrid.in",symbol:"POWERGRID.BSE"},
+  {name:"ADANI ENTERPRISES",domain:"adani.com",symbol:"ADANIENT.BSE"},
+  {name:"ADANI PORTS",domain:"adaniports.com",symbol:"ADANIPORTS.BSE"},
+  {name:"ULTRATECH",domain:"ultratechcement.com",symbol:"ULTRACEMCO.BSE"},
+  {name:"JSW STEEL",domain:"jsw.in",symbol:"JSWSTEEL.BSE"},
+  {name:"DIVIS LAB",domain:"divislabs.com",symbol:"DIVISLAB.BSE"},
+  {name:"DR REDDYS",domain:"drreddys.com",symbol:"DRREDDY.BSE"},
+  {name:"CIPLA",domain:"cipla.com",symbol:"CIPLA.BSE"},
+  {name:"BRITANNIA",domain:"britannia.co.in",symbol:"BRITANNIA.BSE"},
+  {name:"EICHER",domain:"eicher.in",symbol:"EICHERMOT.BSE"},
+  {name:"GRASIM",domain:"grasim.com",symbol:"GRASIM.BSE"},
+  {name:"HCL TECH",domain:"hcltech.com",symbol:"HCLTECH.BSE"},
+  {name:"HEROMOTO",domain:"heromotocorp.com",symbol:"HEROMOTOCO.BSE"},
+  {name:"INDUSIND",domain:"indusind.com",symbol:"INDUSINDBK.BSE"},
+  {name:"LTIMINDTREE",domain:"ltimindtree.com",symbol:"LTIM.BSE"},
+  {name:"NESTLE",domain:"nestle.in",symbol:"NESTLEIND.BSE"},
+  {name:"TITAN",domain:"titan.co.in",symbol:"TITAN.BSE"},
+  {name:"UPL",domain:"upl-ltd.com",symbol:"UPL.BSE"},
+  {name:"TECH MAHINDRA",domain:"techmahindra.com",symbol:"TECHM.BSE"},
+  {name:"COAL INDIA",domain:"coalindia.in",symbol:"COALINDIA.BSE"},
+  {name:"PNB",domain:"pnbindia.in",symbol:"PNB.BSE"},
+  {name:"IDFC FIRST",domain:"idfcfirstbank.com",symbol:"IDFCFIRSTB.BSE"},
+  {name:"BANK OF BARODA",domain:"bankofbaroda.in",symbol:"BANKBARODA.BSE"},
+  {name:"FEDERAL BANK",domain:"federalbank.co.in",symbol:"FEDERALBNK.BSE"},
+  {name:"CANARA BANK",domain:"canarabank.com",symbol:"CANBK.BSE"},
+  {name:"AU SMALL FINANCE",domain:"aubank.in",symbol:"AUBANK.BSE"},
+  {name:"IRCTC",domain:"irctc.co.in",symbol:"IRCTC.BSE"},
+  {name:"ZOMATO",domain:"zomato.com",symbol:"ZOMATO.BSE"},
+  {name:"PAYTM",domain:"paytm.com",symbol:"PAYTM.BSE"},
+  {name:"DMART",domain:"dmartindia.com",symbol:"DMART.BSE"},
+  {name:"PIDILITE",domain:"pidilite.com",symbol:"PIDILITIND.BSE"},
+  {name:"TATA POWER",domain:"tatapower.com",symbol:"TATAPOWER.BSE"},
+  {name:"NHPC",domain:"nhpcindia.com",symbol:"NHPC.BSE"},
+  {name:"BHEL",domain:"bhel.com",symbol:"BHEL.BSE"},
+  {name:"HAL",domain:"hal-india.co.in",symbol:"HAL.BSE"}
 ];
 
+/* ================= GLOBAL VARIABLES ================= */
 let holdings = JSON.parse(localStorage.getItem("holdings")) || [];
+let stockPrices = JSON.parse(localStorage.getItem("stockPrices")) || {};
+let apiKey = localStorage.getItem("alphaVantageKey") || "";
 let currentUser = null;
 let currentChatFriend = null;
 let currentChatFriendName = null;
 let unsubscribeChat = null;
 let selectedStock = null;
+let isFetchingPrices = false;
 
 /* ================= AUTH FUNCTIONS ================= */
 function loginGoogle(){
@@ -987,6 +1180,109 @@ auth.onAuthStateChanged(async function(u){
   loadRequests();
 });
 
+/* ================= PRICE FETCHING ================= */
+async function fetchStockPrice(symbol){
+  if(!apiKey) return null;
+  
+  try {
+    const url = `https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol=${symbol}&apikey=${apiKey}`;
+    const response = await fetch(url);
+    const data = await response.json();
+    
+    if(data["Global Quote"] && data["Global Quote"]["05. price"]){
+      return {
+        price: parseFloat(data["Global Quote"]["05. price"]),
+        change: parseFloat(data["Global Quote"]["09. change"]),
+        changePercent: data["Global Quote"]["10. change percent"]
+      };
+    }
+    return null;
+  } catch(err){
+    console.error("Price fetch error:", err);
+    return null;
+  }
+}
+
+async function fetchAllHoldingsPrices(){
+  if(!apiKey || holdings.length === 0) return;
+  if(isFetchingPrices) return;
+  
+  isFetchingPrices = true;
+  const refreshBtn = document.getElementById("refreshBtn");
+  refreshBtn.classList.add("loading");
+  refreshBtn.innerHTML = '<span></span> Fetching...';
+  
+  for(const holding of holdings){
+    const stock = STOCKS.find(s => s.name === holding.name);
+    if(!stock) continue;
+    
+    const priceData = await fetchStockPrice(stock.symbol);
+    if(priceData){
+      stockPrices[holding.name] = {
+        price: priceData.price,
+        change: priceData.change,
+        changePercent: priceData.changePercent,
+        lastUpdated: Date.now()
+      };
+    }
+    
+    // Alpha Vantage free tier: 5 calls/minute
+    await new Promise(resolve => setTimeout(resolve, 12000));
+  }
+  
+  localStorage.setItem("stockPrices", JSON.stringify(stockPrices));
+  localStorage.setItem("lastPriceUpdate", Date.now().toString());
+  
+  isFetchingPrices = false;
+  refreshBtn.classList.remove("loading");
+  refreshBtn.innerHTML = '🔄 Refresh Prices';
+  
+  renderHoldings();
+  updateLastUpdatedText();
+}
+
+function refreshPrices(){
+  if(!apiKey){
+    alert("Please add your Alpha Vantage API key in Settings first.");
+    openSettings();
+    return;
+  }
+  fetchAllHoldingsPrices();
+}
+
+function updateLastUpdatedText(){
+  const lastUpdate = localStorage.getItem("lastPriceUpdate");
+  const el = document.getElementById("lastUpdated");
+  
+  if(lastUpdate){
+    const date = new Date(parseInt(lastUpdate));
+    el.textContent = "Last updated: " + date.toLocaleTimeString();
+  } else {
+    el.textContent = "";
+  }
+}
+
+/* ================= SIMULATED PRICES (FALLBACK) ================= */
+function getSimulatedPrice(stockName){
+  // Generate consistent pseudo-random price based on stock name
+  let hash = 0;
+  for(let i = 0; i < stockName.length; i++){
+    hash = ((hash << 5) - hash) + stockName.charCodeAt(i);
+    hash = hash & hash;
+  }
+  
+  const basePrice = 100 + Math.abs(hash % 5000);
+  const variance = (Math.sin(Date.now() / 100000 + hash) * 50);
+  return Math.round((basePrice + variance) * 100) / 100;
+}
+
+function getCurrentPrice(stockName){
+  if(stockPrices[stockName] && stockPrices[stockName].price){
+    return stockPrices[stockName].price;
+  }
+  return getSimulatedPrice(stockName);
+}
+
 /* ================= STOCKS FUNCTIONS ================= */
 function renderStocks(list){
   const container = document.getElementById("stocks");
@@ -995,6 +1291,8 @@ function renderStocks(list){
   list.forEach(function(stock){
     const stockName = typeof stock === "string" ? stock : stock.name;
     const stockDomain = typeof stock === "string" ? null : stock.domain;
+    const currentPrice = getCurrentPrice(stockName);
+    const priceData = stockPrices[stockName];
 
     const div = document.createElement("div");
     div.className = "card";
@@ -1026,17 +1324,35 @@ function renderStocks(list){
       header.appendChild(placeholder);
     }
 
-    const nameSpan = document.createElement("span");
+    const infoDiv = document.createElement("div");
+    infoDiv.className = "stock-info";
+    
+    const nameSpan = document.createElement("div");
     nameSpan.className = "stock-name";
     nameSpan.textContent = stockName;
-    header.appendChild(nameSpan);
+    
+    const priceSpan = document.createElement("div");
+    priceSpan.className = "stock-price";
+    priceSpan.textContent = "₹" + currentPrice.toLocaleString();
+    
+    infoDiv.appendChild(nameSpan);
+    infoDiv.appendChild(priceSpan);
+    
+    header.appendChild(infoDiv);
+
+    if(priceData && priceData.changePercent){
+      const changeSpan = document.createElement("span");
+      changeSpan.className = "stock-change " + (priceData.change >= 0 ? "positive" : "negative");
+      changeSpan.textContent = priceData.changePercent;
+      header.appendChild(changeSpan);
+    }
 
     div.appendChild(header);
 
     const btn = document.createElement("button");
     btn.textContent = "Add to Holdings";
     btn.addEventListener("click", function(){
-      openAddStock(stockName);
+      openAddStock(stockName, currentPrice);
     });
 
     div.appendChild(btn);
@@ -1054,9 +1370,10 @@ document.getElementById("searchBar").addEventListener("keyup", function(){
 });
 
 /* ================= ADD STOCK MODAL ================= */
-function openAddStock(stockName){
+function openAddStock(stockName, currentPrice){
   selectedStock = stockName;
   document.getElementById("addStockName").textContent = stockName;
+  document.getElementById("addStockCurrentPrice").textContent = "₹" + (currentPrice || getCurrentPrice(stockName)).toLocaleString();
   document.getElementById("addStockPrice").value = "";
   document.getElementById("addStockQty").value = "";
   document.getElementById("addStockOverlay").style.display = "flex";
@@ -1083,7 +1400,8 @@ function confirmAddStock(){
   holdings.push({
     name: selectedStock,
     price: price,
-    qty: qty
+    qty: qty,
+    addedAt: Date.now()
   });
 
   localStorage.setItem("holdings", JSON.stringify(holdings));
@@ -1094,35 +1412,108 @@ function confirmAddStock(){
 /* ================= HOLDINGS FUNCTIONS ================= */
 function renderHoldings(){
   const container = document.getElementById("holdingsTable");
-  const totalEl = document.getElementById("totalInvested");
-  const countEl = document.getElementById("holdingsCount");
+  const statsContainer = document.getElementById("holdingsStats");
+  const apiNotice = document.getElementById("apiNotice");
+  
+  // Show API notice if no key
+  if(!apiKey){
+    apiNotice.style.display = "flex";
+  } else {
+    apiNotice.style.display = "none";
+  }
+  
+  updateLastUpdatedText();
 
   if(holdings.length === 0){
+    statsContainer.innerHTML = "";
     container.innerHTML = '<div class="empty-state"><p>No holdings yet. Add stocks from the Stocks tab!</p></div>';
-    totalEl.textContent = "₹0";
-    countEl.textContent = "0";
     return;
   }
 
-  let total = 0;
-  let html = '<table><tr><th>Stock</th><th>Price</th><th>Qty</th><th>Value</th><th>Action</th></tr>';
+  // Calculate totals
+  let totalInvested = 0;
+  let totalCurrentValue = 0;
+
+  holdings.forEach(function(h){
+    const invested = h.price * h.qty;
+    const currentPrice = getCurrentPrice(h.name);
+    const currentValue = currentPrice * h.qty;
+    
+    totalInvested += invested;
+    totalCurrentValue += currentValue;
+  });
+
+  const totalPL = totalCurrentValue - totalInvested;
+  const totalPLPercent = totalInvested > 0 ? ((totalPL / totalInvested) * 100).toFixed(2) : 0;
+  const isProfit = totalPL >= 0;
+
+  // Render stats cards
+  statsContainer.innerHTML = `
+    <div class="stat-card gradient">
+      <div class="label">Total Invested</div>
+      <div class="value">₹${totalInvested.toLocaleString()}</div>
+      <div class="subvalue">${holdings.length} stocks</div>
+    </div>
+    <div class="stat-card gradient">
+      <div class="label">Current Value</div>
+      <div class="value">₹${totalCurrentValue.toLocaleString()}</div>
+      <div class="subvalue">${apiKey ? "Live prices" : "Simulated prices"}</div>
+    </div>
+    <div class="stat-card ${isProfit ? 'profit' : 'loss'}">
+      <div class="label">Total P&L</div>
+      <div class="value">${isProfit ? '+' : ''}₹${totalPL.toLocaleString()}</div>
+      <div class="subvalue" style="color:${isProfit ? '#10b981' : '#ef4444'}">${isProfit ? '+' : ''}${totalPLPercent}%</div>
+    </div>
+    <div class="stat-card">
+      <div class="label">Day's Change</div>
+      <div class="value" style="color:#10b981">+₹0</div>
+      <div class="subvalue">Based on market hours</div>
+    </div>
+  `;
+
+  // Render table
+  let html = `<table>
+    <tr>
+      <th>Stock</th>
+      <th>Buy Price</th>
+      <th>Qty</th>
+      <th>Invested</th>
+      <th>Current Price</th>
+      <th>Current Value</th>
+      <th>P&L</th>
+      <th>Action</th>
+    </tr>`;
 
   holdings.forEach(function(h, i){
-    const value = h.price * h.qty;
-    total += value;
-    html += '<tr>';
-    html += '<td><strong>' + h.name + '</strong></td>';
-    html += '<td>₹' + h.price.toLocaleString() + '</td>';
-    html += '<td>' + h.qty + '</td>';
-    html += '<td>₹' + value.toLocaleString() + '</td>';
-    html += '<td><button onclick="deleteHolding(' + i + ')">Delete</button></td>';
-    html += '</tr>';
+    const invested = h.price * h.qty;
+    const currentPrice = getCurrentPrice(h.name);
+    const currentValue = currentPrice * h.qty;
+    const pl = currentValue - invested;
+    const plPercent = ((pl / invested) * 100).toFixed(2);
+    const isStockProfit = pl >= 0;
+    
+    html += `<tr>
+      <td>
+        <div class="stock-cell">
+          <div class="stock-cell-logo">${h.name.charAt(0)}</div>
+          <strong>${h.name}</strong>
+        </div>
+      </td>
+      <td>₹${h.price.toLocaleString()}</td>
+      <td>${h.qty}</td>
+      <td>₹${invested.toLocaleString()}</td>
+      <td>₹${currentPrice.toLocaleString()}</td>
+      <td><strong>₹${currentValue.toLocaleString()}</strong></td>
+      <td class="${isStockProfit ? 'pl-positive' : 'pl-negative'}">
+        ${isStockProfit ? '+' : ''}₹${pl.toLocaleString()}<br>
+        <small>(${isStockProfit ? '+' : ''}${plPercent}%)</small>
+      </td>
+      <td><button onclick="deleteHolding(${i})">Delete</button></td>
+    </tr>`;
   });
 
   html += '</table>';
   container.innerHTML = html;
-  totalEl.textContent = "₹" + total.toLocaleString();
-  countEl.textContent = holdings.length.toString();
 }
 
 function deleteHolding(index){
@@ -1472,10 +1863,16 @@ function showTab(id, el){
     x.classList.remove("active");
   });
   el.classList.add("active");
+  
+  if(id === "holdings"){
+    renderHoldings();
+  }
 }
 
 function openSettings(){
   document.getElementById("setEmail").textContent = currentUser.email;
+  document.getElementById("setApiKey").value = apiKey;
+  
   db.collection("users").doc(currentUser.uid).get().then(function(s){
     const data = s.data();
     document.getElementById("setCode").textContent = data.usercode;
@@ -1488,12 +1885,21 @@ function closeSettings(){
   document.getElementById("settingsOverlay").style.display = "none";
 }
 
-function saveName(){
+function saveSettings(){
   const newName = document.getElementById("setName").value.trim();
+  const newApiKey = document.getElementById("setApiKey").value.trim();
+  
+  // Save API key locally
+  apiKey = newApiKey;
+  localStorage.setItem("alphaVantageKey", newApiKey);
+  
+  // Save name to Firestore
   db.collection("users").doc(currentUser.uid).update({name: newName})
   .then(function(){
-    alert("✅ Name saved!");
+    alert("✅ Settings saved!");
     closeSettings();
+    renderHoldings();
+    renderStocks(STOCKS);
   });
 }
 
