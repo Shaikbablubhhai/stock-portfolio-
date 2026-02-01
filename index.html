@@ -233,6 +233,29 @@ th{background:#f1f5f9}
     <button class="gray" onclick="closeSettings()">Close</button>
   </div>
 </div>
+  #requests .chat-item,
+#friends .chat-item {
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:10px;
+}
+
+#requests button,
+#searchResult button {
+  background:#4f46e5;
+  color:#fff;
+  border:none;
+  border-radius:8px;
+  padding:6px 10px;
+  cursor:pointer;
+}
+
+#requests button:hover,
+#searchResult button:hover {
+  opacity:.9;
+}
+
 
 <script>
 /* ================= DATA ================= */
@@ -332,47 +355,79 @@ function del(i){
 
 /* ================= CHAT ================= */
 async function searchUser(){
-  searchResult.innerHTML="";
-  const code=uidSearch.value.trim();
-  if(code.length!==5) return;
+  const code = uidSearch.value.trim();
+  searchResult.innerHTML = "";
 
-  const q=await db.collection("users").where("usercode","==",code).get();
+  if(code.length !== 5){
+    searchResult.innerHTML = "<p style='opacity:.6'>Enter 5 digit User ID</p>";
+    return;
+  }
+
+  const q = await db.collection("users")
+    .where("usercode","==",code)
+    .get();
+
   if(q.empty){
-    searchResult.innerText="User not found";
+    searchResult.innerHTML = "<p style='color:#ef4444'>User not found</p>";
     return;
   }
 
   q.forEach(d=>{
-    if(d.id===currentUser.uid) return;
-    const u=d.data();
+    if(d.id === currentUser.uid) return;
 
-    const row=document.createElement("div");
-    row.className="chat-item";
-    row.innerText=`${u.name||"User"} (${u.usercode})`;
+    const u = d.data();
 
-    const btn=document.createElement("button");
-    btn.innerText="Send Request";
-    btn.onclick=()=>sendRequest(d.id);
+    const row = document.createElement("div");
+    row.className = "chat-item";
 
+    const info = document.createElement("div");
+    info.innerText = `${u.name || "User"} (${u.usercode})`;
+
+    const btn = document.createElement("button");
+    btn.innerText = "Send Request";
+    btn.style.marginTop = "6px";
+    btn.onclick = () => sendRequest(d.id);
+
+    row.appendChild(info);
     row.appendChild(btn);
     searchResult.appendChild(row);
   });
 }
 
-async function sendRequest(uid){
-  const exist=await db.collection("requests")
-    .where("from","==",currentUser.uid)
-    .where("to","==",uid).get();
-  if(!exist.empty){alert("Request already sent");return;}
 
-  const friend=await db.collection("friends")
-    .doc(currentUser.uid).collection("list").doc(uid).get();
-  if(friend.exists){alert("Already friends");return;}
+async function sendRequest(uid){
+
+  // Check existing request
+  const existing = await db.collection("requests")
+    .where("from","==",currentUser.uid)
+    .where("to","==",uid)
+    .get();
+
+  if(!existing.empty){
+    alert("Request already sent");
+    return;
+  }
+
+  // Check already friends
+  const alreadyFriend = await db
+    .collection("friends")
+    .doc(currentUser.uid)
+    .collection("list")
+    .doc(uid)
+    .get();
+
+  if(alreadyFriend.exists){
+    alert("Already friends");
+    return;
+  }
 
   await db.collection("requests").add({
-    from:currentUser.uid,to:uid,time:firebase.firestore.FieldValue.serverTimestamp()
+    from: currentUser.uid,
+    to: uid,
+    time: firebase.firestore.FieldValue.serverTimestamp()
   });
-  alert("Request sent");
+
+  alert("Friend request sent");
 }
 
 function loadRequests(){
@@ -481,6 +536,7 @@ function logout(){auth.signOut();location.reload();}
 
 </body>
 </html>
+
 
 
 
