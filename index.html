@@ -503,20 +503,50 @@ function loadFriends(){
 function openChat(uid,name){
   currentChatFriend = uid;
   messages.innerHTML="";
-  const chatId = [currentUser.uid,uid].sort().join("_");
+
+  const chatId = [currentUser.uid, uid].sort().join("_");
+
   if(unsubscribeChat) unsubscribeChat();
-  unsubscribeChat = db.collection("chats").doc(chatId)
-    .collection("msgs").orderBy("time")
-    .onSnapshot(s=>{
+
+  unsubscribeChat = db.collection("chats")
+    .doc(chatId)
+    .collection("msgs")
+    .orderBy("time")
+    .onSnapshot(s => {
+
       messages.innerHTML="";
-      s.forEach(d=>{
+
+      s.forEach(d => {
         const m = d.data();
+
+        // Mark as seen
+        if(m.from !== currentUser.uid && m.seen === false){
+          d.ref.update({ seen: true });
+        }
+
+        const timeText = m.time
+          ? new Date(m.time.toDate()).toLocaleTimeString([], {
+              hour: '2-digit',
+              minute: '2-digit'
+            })
+          : "";
+
+        const seenText =
+          m.from === currentUser.uid
+            ? (m.seen ? "✓ Seen" : "✓ Sent")
+            : "";
+
         messages.innerHTML += `
           <div class="msg ${m.from===currentUser.uid?'me':'them'}">
-            ${m.text}
+            <div>${m.text}</div>
+            <small style="font-size:11px;opacity:.7">
+              ${timeText} ${seenText}
+            </small>
           </div>
         `;
       });
+
+      messages.scrollTop = messages.scrollHeight;
     });
 }
 
@@ -561,5 +591,6 @@ function logout(){auth.signOut();location.reload();}
 
 </body>
 </html>
+
 
 
