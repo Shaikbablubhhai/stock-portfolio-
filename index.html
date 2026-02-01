@@ -124,6 +124,26 @@ body{
   margin:auto;
 }
 
+/* ================= STOCK COUNT ================= */
+.stock-count{
+  background:#fff;
+  padding:16px 20px;
+  border-radius:12px;
+  margin-bottom:20px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  border:1px solid #e2e8f0;
+}
+.stock-count-text{
+  font-size:14px;
+  color:#64748b;
+}
+.stock-count-text strong{
+  color:#4f46e5;
+  font-size:18px;
+}
+
 /* ================= STOCK GRID ================= */
 .grid{
   display:grid;
@@ -183,28 +203,38 @@ body{
   color:#fff;
   font-weight:700;
   font-size:16px;
+  flex-shrink:0;
 }
-.stock-info{flex:1}
+.stock-info{flex:1;min-width:0}
 .stock-name{
-  font-size:15px;
+  font-size:14px;
   font-weight:600;
   color:#1e293b;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+.stock-symbol{
+  font-size:11px;
+  color:#64748b;
+  margin-top:2px;
 }
 .stock-price{
   font-size:18px;
   font-weight:700;
   color:#10b981;
-  margin-top:2px;
+  margin-top:4px;
 }
 .stock-price.loading{
   color:#94a3b8;
   font-size:13px;
 }
 .stock-change{
-  font-size:12px;
+  font-size:11px;
   padding:4px 8px;
   border-radius:6px;
   font-weight:600;
+  white-space:nowrap;
 }
 .stock-change.positive{background:#d1fae5;color:#059669}
 .stock-change.negative{background:#fee2e2;color:#dc2626}
@@ -334,19 +364,19 @@ body{
 }
 table{width:100%;border-collapse:collapse}
 th,td{
-  padding:16px;
+  padding:14px 12px;
   text-align:left;
   border-bottom:1px solid #f1f5f9;
 }
 th{
   background:#f8fafc;
   font-weight:600;
-  font-size:12px;
+  font-size:11px;
   color:#64748b;
   text-transform:uppercase;
   letter-spacing:0.5px;
 }
-td{font-size:14px;color:#334155}
+td{font-size:13px;color:#334155}
 tr:hover td{background:#fafbfc}
 
 .stock-cell{
@@ -365,23 +395,35 @@ tr:hover td{background:#fafbfc}
   color:#fff;
   font-weight:600;
   font-size:12px;
+  flex-shrink:0;
 }
 
 .pl-positive{color:#10b981;font-weight:600}
 .pl-negative{color:#ef4444;font-weight:600}
 
-td button{
-  padding:8px 14px;
+.action-buttons{
+  display:flex;
+  gap:8px;
+}
+.action-buttons button{
+  padding:6px 12px;
   border:none;
-  border-radius:8px;
-  background:#fee2e2;
-  color:#dc2626;
+  border-radius:6px;
   cursor:pointer;
   font-weight:500;
-  font-size:13px;
+  font-size:12px;
   transition:all 0.2s ease;
 }
-td button:hover{background:#fecaca}
+.btn-edit{
+  background:#e0e7ff;
+  color:#4338ca;
+}
+.btn-edit:hover{background:#c7d2fe}
+.btn-delete{
+  background:#fee2e2;
+  color:#dc2626;
+}
+.btn-delete:hover{background:#fecaca}
 
 .empty-state{
   text-align:center;
@@ -393,34 +435,6 @@ td button:hover{background:#fecaca}
   font-size:48px;
   display:block;
   margin-bottom:16px;
-}
-
-/* ================= API KEY NOTICE ================= */
-.api-notice{
-  background:linear-gradient(135deg,#fef3c7,#fde68a);
-  border:1px solid #f59e0b;
-  border-radius:12px;
-  padding:16px 20px;
-  margin-bottom:20px;
-  display:flex;
-  align-items:center;
-  gap:12px;
-}
-.api-notice::before{
-  content:"⚠️";
-  font-size:24px;
-}
-.api-notice-text{flex:1}
-.api-notice-text strong{color:#92400e}
-.api-notice-text p{font-size:13px;color:#78350f;margin-top:4px}
-.api-notice button{
-  padding:10px 16px;
-  border-radius:10px;
-  border:none;
-  background:#f59e0b;
-  color:#fff;
-  font-weight:600;
-  cursor:pointer;
 }
 
 /* ================= CHAT ================= */
@@ -832,37 +846,6 @@ td button:hover{background:#fecaca}
 .modal .gray{background:#f1f5f9;color:#64748b}
 .modal .gray:hover{background:#e2e8f0}
 
-.modal-divider{
-  border:none;
-  border-top:1px solid #e2e8f0;
-  margin:20px 0;
-}
-
-.api-key-section{
-  background:#f0fdf4;
-  border:1px solid #86efac;
-  border-radius:12px;
-  padding:16px;
-  margin-top:16px;
-}
-.api-key-section h4{
-  font-size:14px;
-  color:#166534;
-  margin-bottom:8px;
-  display:flex;
-  align-items:center;
-  gap:8px;
-}
-.api-key-section p{
-  font-size:12px;
-  color:#15803d;
-  margin-bottom:12px;
-}
-.api-key-section a{
-  color:#4f46e5;
-  text-decoration:underline;
-}
-
 /* ================= MF SECTION ================= */
 .coming-soon{
   text-align:center;
@@ -883,7 +866,7 @@ td button:hover{background:#fecaca}
 /* ================= RESPONSIVE ================= */
 @media(max-width:1024px){
   .nav{flex-wrap:wrap;gap:12px}
-  .tabs{order:3;width:100%}
+  .tabs{order:3;width:100%;overflow-x:auto}
   .search{margin-left:0;flex:1}
   .chat-layout{grid-template-columns:1fr}
   .holdings-stats{grid-template-columns:repeat(2,1fr)}
@@ -891,12 +874,16 @@ td button:hover{background:#fecaca}
 @media(max-width:640px){
   .nav{padding:12px 16px}
   .logo{font-size:20px}
-  .tabs span{padding:8px 12px;font-size:13px}
+  .tabs span{padding:8px 12px;font-size:12px}
   .search input{width:100%}
   .grid{grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px}
   .card{padding:14px}
   .holdings-stats{grid-template-columns:1fr}
   .holdings-header{flex-direction:column;align-items:stretch}
+  table{font-size:12px}
+  th,td{padding:10px 8px}
+  .action-buttons{flex-direction:column;gap:4px}
+  .action-buttons button{padding:4px 8px;font-size:11px}
 }
 </style>
 </head>
@@ -933,7 +920,10 @@ td button:hover{background:#fecaca}
 
 <div class="content">
   <!-- STOCKS TAB -->
-  <div id="stocks" class="grid"></div>
+  <div id="stocks">
+    <div class="stock-count" id="stockCount"></div>
+    <div class="grid" id="stocksGrid"></div>
+  </div>
 
   <!-- HOLDINGS TAB -->
   <div id="holdings" style="display:none">
@@ -945,14 +935,6 @@ td button:hover{background:#fecaca}
           🔄 Refresh Prices
         </button>
       </div>
-    </div>
-
-    <div id="apiNotice" class="api-notice" style="display:none">
-      <div class="api-notice-text">
-        <strong>Live Prices Disabled</strong>
-        <p>Add your free Alpha Vantage API key in Settings to enable live stock prices.</p>
-      </div>
-      <button onclick="openSettings()">Add API Key</button>
     </div>
 
     <div class="holdings-stats" id="holdingsStats"></div>
@@ -1022,17 +1004,8 @@ td button:hover{background:#fecaca}
     <label>Display Name</label>
     <input id="setName" placeholder="Enter your name">
     
-    <hr class="modal-divider">
-    
-    <div class="api-key-section">
-      <h4>📈 Live Stock Prices</h4>
-      <p>Get your FREE API key from <a href="https://www.alphavantage.co/support/#api-key" target="_blank">Alpha Vantage</a> (takes 10 seconds)</p>
-      <label>API Key</label>
-      <input id="setApiKey" placeholder="Enter your Alpha Vantage API key">
-    </div>
-    
     <div class="modal-buttons">
-      <button class="primary" onclick="saveSettings()">Save All</button>
+      <button class="primary" onclick="saveSettings()">Save</button>
       <button class="gray" onclick="closeSettings()">Close</button>
     </div>
     <button class="danger" onclick="logout()" style="width:100%;margin-top:12px">Logout</button>
@@ -1058,76 +1031,334 @@ td button:hover{background:#fecaca}
   </div>
 </div>
 
+<!-- ================= EDIT STOCK MODAL ================= -->
+<div class="overlay" id="editStockOverlay">
+  <div class="modal">
+    <h3>✏️ Edit Holding</h3>
+    <div class="modal-info">
+      <p>Stock: <span id="editStockName" style="font-weight:700;color:#4f46e5"></span></p>
+      <p>Current Price: <span id="editStockCurrentPrice" style="font-weight:700;color:#10b981">--</span></p>
+    </div>
+    <label>Buy Price (₹)</label>
+    <input id="editStockPrice" type="number" placeholder="Enter buy price" min="0" step="0.01">
+    <label>Quantity</label>
+    <input id="editStockQty" type="number" placeholder="Enter quantity" min="1" step="1">
+    <div class="modal-buttons">
+      <button class="primary" onclick="confirmEditStock()">Save Changes</button>
+      <button class="gray" onclick="closeEditStock()">Cancel</button>
+    </div>
+  </div>
+</div>
+
 <script>
-/* ================= STOCK DATA WITH LOGOS & SYMBOLS ================= */
+/* ================= BUILT-IN API KEY ================= */
+const API_KEY = "BH74ZWQO07ZCTGMN";
+
+/* ================= COMPREHENSIVE INDIAN STOCK LIST ================= */
 const STOCKS = [
+  // NIFTY 50
   {name:"RELIANCE",domain:"ril.com",symbol:"RELIANCE.BSE"},
   {name:"TCS",domain:"tcs.com",symbol:"TCS.BSE"},
-  {name:"INFOSYS",domain:"infosys.com",symbol:"INFY.BSE"},
   {name:"HDFC BANK",domain:"hdfcbank.com",symbol:"HDFCBANK.BSE"},
+  {name:"INFOSYS",domain:"infosys.com",symbol:"INFY.BSE"},
   {name:"ICICI BANK",domain:"icicibank.com",symbol:"ICICIBANK.BSE"},
-  {name:"SBIN",domain:"sbi.co.in",symbol:"SBIN.BSE"},
-  {name:"AXIS BANK",domain:"axisbank.com",symbol:"AXISBANK.BSE"},
-  {name:"KOTAK BANK",domain:"kotak.com",symbol:"KOTAKBANK.BSE"},
+  {name:"HINDUSTAN UNILEVER",domain:"hul.co.in",symbol:"HINDUNILVR.BSE"},
   {name:"ITC",domain:"itcportal.com",symbol:"ITC.BSE"},
-  {name:"HUL",domain:"hul.co.in",symbol:"HINDUNILVR.BSE"},
-  {name:"LT",domain:"larsentoubro.com",symbol:"LT.BSE"},
+  {name:"SBIN",domain:"sbi.co.in",symbol:"SBIN.BSE"},
   {name:"BHARTI AIRTEL",domain:"airtel.in",symbol:"BHARTIARTL.BSE"},
-  {name:"TATA MOTORS",domain:"tatamotors.com",symbol:"TATAMOTORS.BSE"},
-  {name:"TATA STEEL",domain:"tatasteel.com",symbol:"TATASTEEL.BSE"},
-  {name:"SUN PHARMA",domain:"sunpharma.com",symbol:"SUNPHARMA.BSE"},
-  {name:"MARUTI",domain:"marutisuzuki.com",symbol:"MARUTI.BSE"},
+  {name:"KOTAK BANK",domain:"kotak.com",symbol:"KOTAKBANK.BSE"},
+  {name:"LT",domain:"larsentoubro.com",symbol:"LT.BSE"},
+  {name:"AXIS BANK",domain:"axisbank.com",symbol:"AXISBANK.BSE"},
   {name:"ASIAN PAINTS",domain:"asianpaints.com",symbol:"ASIANPAINT.BSE"},
+  {name:"MARUTI",domain:"marutisuzuki.com",symbol:"MARUTI.BSE"},
+  {name:"TITAN",domain:"titan.co.in",symbol:"TITAN.BSE"},
   {name:"BAJAJ FINANCE",domain:"bajajfinserv.in",symbol:"BAJFINANCE.BSE"},
+  {name:"SUN PHARMA",domain:"sunpharma.com",symbol:"SUNPHARMA.BSE"},
+  {name:"NESTLE INDIA",domain:"nestle.in",symbol:"NESTLEIND.BSE"},
   {name:"WIPRO",domain:"wipro.com",symbol:"WIPRO.BSE"},
+  {name:"ULTRACEMCO",domain:"ultratechcement.com",symbol:"ULTRACEMCO.BSE"},
+  {name:"TATA MOTORS",domain:"tatamotors.com",symbol:"TATAMOTORS.BSE"},
   {name:"NTPC",domain:"ntpc.co.in",symbol:"NTPC.BSE"},
   {name:"ONGC",domain:"ongcindia.com",symbol:"ONGC.BSE"},
   {name:"POWER GRID",domain:"powergrid.in",symbol:"POWERGRID.BSE"},
+  {name:"TATA STEEL",domain:"tatasteel.com",symbol:"TATASTEEL.BSE"},
+  {name:"TECH MAHINDRA",domain:"techmahindra.com",symbol:"TECHM.BSE"},
+  {name:"HCL TECH",domain:"hcltech.com",symbol:"HCLTECH.BSE"},
+  {name:"M&M",domain:"mahindra.com",symbol:"M&M.BSE"},
+  {name:"JSW STEEL",domain:"jsw.in",symbol:"JSWSTEEL.BSE"},
   {name:"ADANI ENTERPRISES",domain:"adani.com",symbol:"ADANIENT.BSE"},
   {name:"ADANI PORTS",domain:"adaniports.com",symbol:"ADANIPORTS.BSE"},
-  {name:"ULTRATECH",domain:"ultratechcement.com",symbol:"ULTRACEMCO.BSE"},
-  {name:"JSW STEEL",domain:"jsw.in",symbol:"JSWSTEEL.BSE"},
-  {name:"DIVIS LAB",domain:"divislabs.com",symbol:"DIVISLAB.BSE"},
-  {name:"DR REDDYS",domain:"drreddys.com",symbol:"DRREDDY.BSE"},
-  {name:"CIPLA",domain:"cipla.com",symbol:"CIPLA.BSE"},
-  {name:"BRITANNIA",domain:"britannia.co.in",symbol:"BRITANNIA.BSE"},
-  {name:"EICHER",domain:"eicher.in",symbol:"EICHERMOT.BSE"},
+  {name:"BAJAJ FINSERV",domain:"bajajfinserv.in",symbol:"BAJAJFINSV.BSE"},
+  {name:"INDUSIND BANK",domain:"indusind.com",symbol:"INDUSINDBK.BSE"},
   {name:"GRASIM",domain:"grasim.com",symbol:"GRASIM.BSE"},
-  {name:"HCL TECH",domain:"hcltech.com",symbol:"HCLTECH.BSE"},
-  {name:"HEROMOTO",domain:"heromotocorp.com",symbol:"HEROMOTOCO.BSE"},
-  {name:"INDUSIND",domain:"indusind.com",symbol:"INDUSINDBK.BSE"},
-  {name:"LTIMINDTREE",domain:"ltimindtree.com",symbol:"LTIM.BSE"},
-  {name:"NESTLE",domain:"nestle.in",symbol:"NESTLEIND.BSE"},
-  {name:"TITAN",domain:"titan.co.in",symbol:"TITAN.BSE"},
-  {name:"UPL",domain:"upl-ltd.com",symbol:"UPL.BSE"},
-  {name:"TECH MAHINDRA",domain:"techmahindra.com",symbol:"TECHM.BSE"},
+  {name:"CIPLA",domain:"cipla.com",symbol:"CIPLA.BSE"},
+  {name:"DR REDDYS",domain:"drreddys.com",symbol:"DRREDDY.BSE"},
+  {name:"BRITANNIA",domain:"britannia.co.in",symbol:"BRITANNIA.BSE"},
+  {name:"EICHER MOTORS",domain:"eicher.in",symbol:"EICHERMOT.BSE"},
+  {name:"HINDALCO",domain:"hindalco.com",symbol:"HINDALCO.BSE"},
+  {name:"TATA CONSUMER",domain:"tataconsumer.com",symbol:"TATACONSUM.BSE"},
   {name:"COAL INDIA",domain:"coalindia.in",symbol:"COALINDIA.BSE"},
-  {name:"PNB",domain:"pnbindia.in",symbol:"PNB.BSE"},
-  {name:"IDFC FIRST",domain:"idfcfirstbank.com",symbol:"IDFCFIRSTB.BSE"},
+  {name:"BPCL",domain:"bharatpetroleum.in",symbol:"BPCL.BSE"},
+  {name:"APOLLOHOSP",domain:"apollohospitals.com",symbol:"APOLLOHOSP.BSE"},
+  {name:"HERO MOTOCORP",domain:"heromotocorp.com",symbol:"HEROMOTOCO.BSE"},
+  {name:"DIVIS LAB",domain:"divislabs.com",symbol:"DIVISLAB.BSE"},
+  {name:"UPL",domain:"upl-ltd.com",symbol:"UPL.BSE"},
+  {name:"WIPRO",domain:"wipro.com",symbol:"WIPRO.BSE"},
+  {name:"SBILIFE",domain:"sbilife.co.in",symbol:"SBILIFE.BSE"},
+  {name:"LTIMINDTREE",domain:"ltimindtree.com",symbol:"LTIM.BSE"},
+  {name:"BAJAJ AUTO",domain:"bajajauto.com",symbol:"BAJAJ-AUTO.BSE"},
+
+  // NIFTY NEXT 50
+  {name:"ADANI GREEN",domain:"adanigreenenergy.com",symbol:"ADANIGREEN.BSE"},
+  {name:"ADANI TOTAL GAS",domain:"adanitotalgas.com",symbol:"ATGL.BSE"},
+  {name:"ADANI TRANSMISSION",domain:"adanitransmission.com",symbol:"ADANITRA.BSE"},
+  {name:"AMBUJA CEMENTS",domain:"ambujacement.com",symbol:"AMBUJACEM.BSE"},
+  {name:"ACC",domain:"acclimited.com",symbol:"ACC.BSE"},
+  {name:"AVENUE SUPERMARTS",domain:"dmartindia.com",symbol:"DMART.BSE"},
   {name:"BANK OF BARODA",domain:"bankofbaroda.in",symbol:"BANKBARODA.BSE"},
-  {name:"FEDERAL BANK",domain:"federalbank.co.in",symbol:"FEDERALBNK.BSE"},
+  {name:"BERGER PAINTS",domain:"bergerpaints.com",symbol:"BERGEPAINT.BSE"},
+  {name:"BIOCON",domain:"biocon.com",symbol:"BIOCON.BSE"},
+  {name:"BOSCH",domain:"bosch.in",symbol:"BOSCHLTD.BSE"},
   {name:"CANARA BANK",domain:"canarabank.com",symbol:"CANBK.BSE"},
-  {name:"AU SMALL FINANCE",domain:"aubank.in",symbol:"AUBANK.BSE"},
-  {name:"IRCTC",domain:"irctc.co.in",symbol:"IRCTC.BSE"},
-  {name:"ZOMATO",domain:"zomato.com",symbol:"ZOMATO.BSE"},
-  {name:"PAYTM",domain:"paytm.com",symbol:"PAYTM.BSE"},
-  {name:"DMART",domain:"dmartindia.com",symbol:"DMART.BSE"},
+  {name:"CHOLAMANDALAM",domain:"cholamandalam.com",symbol:"CHOLAFIN.BSE"},
+  {name:"COLGATE",domain:"colgatepalmolive.co.in",symbol:"COLPAL.BSE"},
+  {name:"DLF",domain:"dlf.in",symbol:"DLF.BSE"},
+  {name:"DABUR",domain:"dabur.com",symbol:"DABUR.BSE"},
+  {name:"GODREJ CONSUMER",domain:"godrejcp.com",symbol:"GODREJCP.BSE"},
+  {name:"GAIL",domain:"gailonline.com",symbol:"GAIL.BSE"},
+  {name:"HAVELLS",domain:"havells.com",symbol:"HAVELLS.BSE"},
+  {name:"HDFC LIFE",domain:"hdfclife.com",symbol:"HDFCLIFE.BSE"},
+  {name:"ICICI LOMBARD",domain:"icicilombard.com",symbol:"ICICIGI.BSE"},
+  {name:"ICICI PRU LIFE",domain:"iciciprulife.com",symbol:"ICICIPRULI.BSE"},
+  {name:"INDIAN OIL",domain:"iocl.com",symbol:"IOC.BSE"},
+  {name:"INDIGO",domain:"goindigo.in",symbol:"INDIGO.BSE"},
+  {name:"INFO EDGE",domain:"infoedge.in",symbol:"NAUKRI.BSE"},
+  {name:"JINDAL STEEL",domain:"jindalsteelpower.com",symbol:"JINDALSTEL.BSE"},
+  {name:"LICI",domain:"licindia.in",symbol:"LICI.BSE"},
+  {name:"LUPIN",domain:"lupin.com",symbol:"LUPIN.BSE"},
+  {name:"MARICO",domain:"marico.com",symbol:"MARICO.BSE"},
+  {name:"MOTHERSON",domain:"motherson.com",symbol:"MOTHERSON.BSE"},
+  {name:"MUTHOOT FINANCE",domain:"muthootfinance.com",symbol:"MUTHOOTFIN.BSE"},
   {name:"PIDILITE",domain:"pidilite.com",symbol:"PIDILITIND.BSE"},
+  {name:"PNB",domain:"pnbindia.in",symbol:"PNB.BSE"},
+  {name:"PUNJAB NATIONAL",domain:"pnbindia.in",symbol:"PNB.BSE"},
+  {name:"SHREE CEMENT",domain:"shreecement.com",symbol:"SHREECEM.BSE"},
+  {name:"SIEMENS",domain:"siemens.co.in",symbol:"SIEMENS.BSE"},
+  {name:"SRF",domain:"srf.com",symbol:"SRF.BSE"},
   {name:"TATA POWER",domain:"tatapower.com",symbol:"TATAPOWER.BSE"},
+  {name:"TORRENT PHARMA",domain:"torrentpharma.com",symbol:"TORNTPHARM.BSE"},
+  {name:"TVS MOTOR",domain:"tvsmotor.com",symbol:"TVSMOTOR.BSE"},
+  {name:"UNION BANK",domain:"unionbankofindia.co.in",symbol:"UNIONBANK.BSE"},
+  {name:"VEDANTA",domain:"vedantalimited.com",symbol:"VEDL.BSE"},
+  {name:"ZOMATO",domain:"zomato.com",symbol:"ZOMATO.BSE"},
+  {name:"ZYDUS LIFESCIENCES",domain:"zyduslife.com",symbol:"ZYDUSLIFE.BSE"},
+
+  // POPULAR MIDCAP & SMALLCAP
+  {name:"IRCTC",domain:"irctc.co.in",symbol:"IRCTC.BSE"},
+  {name:"PAYTM",domain:"paytm.com",symbol:"PAYTM.BSE"},
+  {name:"NYKAA",domain:"nykaa.com",symbol:"NYKAA.BSE"},
+  {name:"POLICYBAZAAR",domain:"policybazaar.com",symbol:"POLICYBZR.BSE"},
+  {name:"TATA ELXSI",domain:"tataelxsi.com",symbol:"TATAELXSI.BSE"},
+  {name:"TRENT",domain:"trentlimited.com",symbol:"TRENT.BSE"},
+  {name:"PERSISTENT",domain:"persistent.com",symbol:"PERSISTENT.BSE"},
+  {name:"COFORGE",domain:"coforge.com",symbol:"COFORGE.BSE"},
+  {name:"MPHASIS",domain:"mphasis.com",symbol:"MPHASIS.BSE"},
+  {name:"MINDTREE",domain:"mindtree.com",symbol:"MINDTREE.BSE"},
+  {name:"L&T TECHNOLOGY",domain:"ltts.com",symbol:"LTTS.BSE"},
+  {name:"HAPPIEST MINDS",domain:"happiestminds.com",symbol:"HAPPSTMNDS.BSE"},
+  {name:"DIXON TECH",domain:"dixoninfo.com",symbol:"DIXON.BSE"},
+  {name:"POLYCAB",domain:"polycab.com",symbol:"POLYCAB.BSE"},
+  {name:"VOLTAS",domain:"voltas.com",symbol:"VOLTAS.BSE"},
+  {name:"CROMPTON",domain:"crompton.co.in",symbol:"CROMPTON.BSE"},
+  {name:"WHIRLPOOL",domain:"whirlpoolindia.com",symbol:"WHIRLPOOL.BSE"},
+  {name:"BLUE STAR",domain:"bluestarindia.com",symbol:"BLUESTARCO.BSE"},
+  {name:"PAGE INDUSTRIES",domain:"pageindustries.com",symbol:"PAGEIND.BSE"},
+  {name:"RELAXO",domain:"relaxofootwear.com",symbol:"RELAXO.BSE"},
+  {name:"BATA INDIA",domain:"bata.in",symbol:"BATAINDIA.BSE"},
+  {name:"METRO BRANDS",domain:"metrobrands.com",symbol:"METROBRAND.BSE"},
+  {name:"VIP INDUSTRIES",domain:"vipindustries.co.in",symbol:"VIPIND.BSE"},
+  {name:"JUBILANT FOOD",domain:"jubilantfoodworks.com",symbol:"JUBLFOOD.BSE"},
+  {name:"DEVYANI INTL",domain:"devyani.com",symbol:"DEVYANI.BSE"},
+  {name:"SAPPHIRE FOODS",domain:"sapphirefoods.in",symbol:"SAPPHIRE.BSE"},
+  {name:"WESTLIFE DEV",domain:"westlife.co.in",symbol:"WESTLIFE.BSE"},
+  {name:"VARUN BEVERAGES",domain:"varunbeverages.com",symbol:"VBL.BSE"},
+  {name:"RADICO KHAITAN",domain:"radicokhaitan.com",symbol:"RADICO.BSE"},
+  {name:"UNITED SPIRITS",domain:"diageoindia.com",symbol:"UNITDSPR.BSE"},
+  {name:"UNITED BREWERIES",domain:"unitedbreweries.com",symbol:"UBL.BSE"},
+  {name:"EMAMI",domain:"emamiltd.in",symbol:"EMAMILTD.BSE"},
+  {name:"JYOTHY LABS",domain:"jyothylabs.com",symbol:"JYOTHYLAB.BSE"},
+  {name:"TATA CHEMICALS",domain:"tatachemicals.com",symbol:"TATACHEM.BSE"},
+  {name:"AARTI INDUSTRIES",domain:"aarti-industries.com",symbol:"AARTIIND.BSE"},
+  {name:"PI INDUSTRIES",domain:"piindustries.com",symbol:"PIIND.BSE"},
+  {name:"SUMITOMO CHEMICAL",domain:"sumitomo-chem.co.in",symbol:"SUMICHEM.BSE"},
+  {name:"UPL",domain:"upl-ltd.com",symbol:"UPL.BSE"},
+  {name:"COROMANDEL",domain:"coromandel.biz",symbol:"COROMANDEL.BSE"},
+  {name:"CHAMBAL FERT",domain:"chambalfertilisers.com",symbol:"CHAMBLFERT.BSE"},
+  {name:"DEEPAK NITRITE",domain:"deepaknitrite.com",symbol:"DEEPAKNTR.BSE"},
+  {name:"NAVIN FLUORINE",domain:"nfranca.com",symbol:"NAVINFLUOR.BSE"},
+  {name:"CLEAN SCIENCE",domain:"cleanscience.co.in",symbol:"CLEAN.BSE"},
+
+  // PSU STOCKS
   {name:"NHPC",domain:"nhpcindia.com",symbol:"NHPC.BSE"},
   {name:"BHEL",domain:"bhel.com",symbol:"BHEL.BSE"},
-  {name:"HAL",domain:"hal-india.co.in",symbol:"HAL.BSE"}
+  {name:"HAL",domain:"hal-india.co.in",symbol:"HAL.BSE"},
+  {name:"BEL",domain:"bel-india.in",symbol:"BEL.BSE"},
+  {name:"IRFC",domain:"irfc.nic.in",symbol:"IRFC.BSE"},
+  {name:"REC",domain:"recindia.nic.in",symbol:"RECLTD.BSE"},
+  {name:"PFC",domain:"pfcindia.com",symbol:"PFC.BSE"},
+  {name:"SAIL",domain:"sail.co.in",symbol:"SAIL.BSE"},
+  {name:"NMDC",domain:"nmdc.co.in",symbol:"NMDC.BSE"},
+  {name:"NALCO",domain:"nalcoindia.com",symbol:"NATIONALUM.BSE"},
+  {name:"HUDCO",domain:"hudco.org",symbol:"HUDCO.BSE"},
+  {name:"IREDA",domain:"ireda.in",symbol:"IREDA.BSE"},
+  {name:"MAZAGON DOCK",domain:"mazagondock.in",symbol:"MAZDOCK.BSE"},
+  {name:"COCHIN SHIPYARD",domain:"cochinshipyard.in",symbol:"COCHINSHIP.BSE"},
+  {name:"GARDEN REACH",domain:"grfrsh.in",symbol:"GRSE.BSE"},
+
+  // BANKS & NBFC
+  {name:"FEDERAL BANK",domain:"federalbank.co.in",symbol:"FEDERALBNK.BSE"},
+  {name:"IDFC FIRST",domain:"idfcfirstbank.com",symbol:"IDFCFIRSTB.BSE"},
+  {name:"BANDHAN BANK",domain:"bandhanbank.com",symbol:"BANDHANBNK.BSE"},
+  {name:"AU SMALL FINANCE",domain:"aubank.in",symbol:"AUBANK.BSE"},
+  {name:"UJJIVAN SFB",domain:"ujjivansfb.in",symbol:"UJJIVANSFB.BSE"},
+  {name:"EQUITAS SFB",domain:"equitasbank.com",symbol:"EQUITASBNK.BSE"},
+  {name:"IDBI BANK",domain:"idbibank.in",symbol:"IDBI.BSE"},
+  {name:"INDIAN BANK",domain:"indianbank.in",symbol:"INDIANB.BSE"},
+  {name:"UCO BANK",domain:"ucobank.com",symbol:"UCOBANK.BSE"},
+  {name:"CENTRAL BANK",domain:"centralbankofindia.co.in",symbol:"CENTRALBK.BSE"},
+  {name:"BANK OF INDIA",domain:"bankofindia.co.in",symbol:"BANKINDIA.BSE"},
+  {name:"IOB",domain:"iob.in",symbol:"IOB.BSE"},
+  {name:"SHRIRAM FINANCE",domain:"shriramfinance.in",symbol:"SHRIRAMFIN.BSE"},
+  {name:"BAJAJ HOLDINGS",domain:"bajajholdings.com",symbol:"BAJAJHLDNG.BSE"},
+  {name:"POONAWALLA FIN",domain:"poonawallafincorp.com",symbol:"POONAWALLA.BSE"},
+  {name:"L&T FINANCE",domain:"ltfs.com",symbol:"LTF.BSE"},
+  {name:"MANAPPURAM",domain:"manappuram.com",symbol:"MANAPPURAM.BSE"},
+  {name:"IIFL FINANCE",domain:"iifl.com",symbol:"IIFL.BSE"},
+
+  // PHARMA
+  {name:"ALKEM LAB",domain:"alkemlabs.com",symbol:"ALKEM.BSE"},
+  {name:"TORRENT PHARMA",domain:"torrentpharma.com",symbol:"TORNTPHARM.BSE"},
+  {name:"AUROBINDO",domain:"aurobindo.com",symbol:"AUROPHARMA.BSE"},
+  {name:"GLENMARK",domain:"glenmarkpharma.com",symbol:"GLENMARK.BSE"},
+  {name:"IPCA LABS",domain:"ipcalabs.com",symbol:"IPCALAB.BSE"},
+  {name:"ABBOTT INDIA",domain:"abbott.in",symbol:"ABBOTINDIA.BSE"},
+  {name:"PFIZER",domain:"pfizerindia.com",symbol:"PFIZER.BSE"},
+  {name:"GLAXO PHARMA",domain:"gsk-india.com",symbol:"GLAXO.BSE"},
+  {name:"SANOFI INDIA",domain:"sanofi.in",symbol:"SANOFI.BSE"},
+  {name:"LAURUS LABS",domain:"lauruslabs.com",symbol:"LAURUSLABS.BSE"},
+  {name:"GRANULES INDIA",domain:"granulesindia.com",symbol:"GRANULES.BSE"},
+  {name:"NATCO PHARMA",domain:"natcopharma.co.in",symbol:"NATCOPHARM.BSE"},
+
+  // INSURANCE
+  {name:"HDFC LIFE",domain:"hdfclife.com",symbol:"HDFCLIFE.BSE"},
+  {name:"SBI LIFE",domain:"sbilife.co.in",symbol:"SBILIFE.BSE"},
+  {name:"ICICI PRU LIFE",domain:"iciciprulife.com",symbol:"ICICIPRULI.BSE"},
+  {name:"MAX FINANCIAL",domain:"maxfinancialservices.com",symbol:"MFSL.BSE"},
+  {name:"GIC RE",domain:"gicofindia.com",symbol:"GICRE.BSE"},
+  {name:"NEW INDIA ASSURANCE",domain:"newindia.co.in",symbol:"NIACL.BSE"},
+  {name:"STAR HEALTH",domain:"starhealth.in",symbol:"STARHEALTH.BSE"},
+
+  // REALTY
+  {name:"DLF",domain:"dlf.in",symbol:"DLF.BSE"},
+  {name:"GODREJ PROPERTIES",domain:"godrejproperties.com",symbol:"GODREJPROP.BSE"},
+  {name:"OBEROI REALTY",domain:"oberoirealty.com",symbol:"OBEROIRLTY.BSE"},
+  {name:"PRESTIGE ESTATES",domain:"prestigeconstructions.com",symbol:"PRESTIGE.BSE"},
+  {name:"BRIGADE ENTERPRISES",domain:"brigadegroup.com",symbol:"BRIGADE.BSE"},
+  {name:"SOBHA",domain:"sobha.com",symbol:"SOBHA.BSE"},
+  {name:"PHOENIX MILLS",domain:"phoenixmills.com",symbol:"PHOENIXLTD.BSE"},
+  {name:"LODHA",domain:"lodhagroup.in",symbol:"LODHA.BSE"},
+
+  // AUTO & AUTO ANCILLARY
+  {name:"ASHOK LEYLAND",domain:"ashokleyland.com",symbol:"ASHOKLEY.BSE"},
+  {name:"ESCORTS",domain:"escortsgroup.com",symbol:"ESCORTS.BSE"},
+  {name:"FORCE MOTORS",domain:"forcemotors.com",symbol:"FORCEMOT.BSE"},
+  {name:"TUBE INVESTMENTS",domain:"tiindia.com",symbol:"TIINDIA.BSE"},
+  {name:"BHARAT FORGE",domain:"bharatforge.com",symbol:"BHARATFORG.BSE"},
+  {name:"EXIDE",domain:"exideindustries.com",symbol:"EXIDEIND.BSE"},
+  {name:"AMARA RAJA",domain:"amararaja.com",symbol:"AMARAJABAT.BSE"},
+  {name:"MRF",domain:"mrftyres.com",symbol:"MRF.BSE"},
+  {name:"APOLLO TYRES",domain:"apollotyres.com",symbol:"APOLLOTYRE.BSE"},
+  {name:"CEAT",domain:"ceat.com",symbol:"CEAT.BSE"},
+  {name:"JK TYRE",domain:"jktyre.com",symbol:"JKTYRE.BSE"},
+  {name:"BALKRISHNA IND",domain:"bfrub.in",symbol:"BALKRISIND.BSE"},
+  {name:"SUNDRAM FASTENERS",domain:"sundram.com",symbol:"SUNDRMFAST.BSE"},
+  {name:"SCHAEFFLER",domain:"schaeffler.co.in",symbol:"SCHAEFFLER.BSE"},
+  {name:"SKF INDIA",domain:"skf.com",symbol:"SKFINDIA.BSE"},
+  {name:"TIMKEN INDIA",domain:"timken.com",symbol:"TIMKEN.BSE"},
+  {name:"SONA BLW",domain:"sonablw.com",symbol:"SONACOMS.BSE"},
+  {name:"SAMVARDHANA",domain:"motherson.com",symbol:"SAMMAANCAP.BSE"},
+
+  // CEMENT
+  {name:"ULTRATECH",domain:"ultratechcement.com",symbol:"ULTRACEMCO.BSE"},
+  {name:"AMBUJA CEMENT",domain:"ambujacement.com",symbol:"AMBUJACEM.BSE"},
+  {name:"ACC",domain:"acclimited.com",symbol:"ACC.BSE"},
+  {name:"SHREE CEMENT",domain:"shreecement.com",symbol:"SHREECEM.BSE"},
+  {name:"DALMIA BHARAT",domain:"dalmiacement.com",symbol:"DALBHARAT.BSE"},
+  {name:"RAMCO CEMENT",domain:"ramcocements.in",symbol:"RAMCOCEM.BSE"},
+  {name:"JK CEMENT",domain:"jkcement.com",symbol:"JKCEMENT.BSE"},
+  {name:"BIRLA CORP",domain:"birlacorporation.com",symbol:"BIRLACORPN.BSE"},
+  {name:"INDIA CEMENTS",domain:"indiacements.co.in",symbol:"INDIACEM.BSE"},
+
+  // METALS & MINING
+  {name:"TATA STEEL",domain:"tatasteel.com",symbol:"TATASTEEL.BSE"},
+  {name:"JSW STEEL",domain:"jsw.in",symbol:"JSWSTEEL.BSE"},
+  {name:"HINDALCO",domain:"hindalco.com",symbol:"HINDALCO.BSE"},
+  {name:"VEDANTA",domain:"vedantalimited.com",symbol:"VEDL.BSE"},
+  {name:"COAL INDIA",domain:"coalindia.in",symbol:"COALINDIA.BSE"},
+  {name:"NMDC",domain:"nmdc.co.in",symbol:"NMDC.BSE"},
+  {name:"SAIL",domain:"sail.co.in",symbol:"SAIL.BSE"},
+  {name:"NALCO",domain:"nalcoindia.com",symbol:"NATIONALUM.BSE"},
+  {name:"HINDUSTAN ZINC",domain:"hzlindia.com",symbol:"HINDZINC.BSE"},
+  {name:"JINDAL STEEL",domain:"jindalsteelpower.com",symbol:"JINDALSTEL.BSE"},
+  {name:"APL APOLLO",domain:"aplapollo.com",symbol:"APLAPOLLO.BSE"},
+
+  // ENERGY & OIL GAS
+  {name:"RELIANCE",domain:"ril.com",symbol:"RELIANCE.BSE"},
+  {name:"ONGC",domain:"ongcindia.com",symbol:"ONGC.BSE"},
+  {name:"IOC",domain:"iocl.com",symbol:"IOC.BSE"},
+  {name:"BPCL",domain:"bharatpetroleum.in",symbol:"BPCL.BSE"},
+  {name:"HPCL",domain:"hindustanpetroleum.com",symbol:"HINDPETRO.BSE"},
+  {name:"GAIL",domain:"gailonline.com",symbol:"GAIL.BSE"},
+  {name:"PETRONET LNG",domain:"petronetlng.in",symbol:"PETRONET.BSE"},
+  {name:"OIL INDIA",domain:"oil-india.com",symbol:"OIL.BSE"},
+  {name:"GUJARAT GAS",domain:"gujaratgas.com",symbol:"GUJGASLTD.BSE"},
+  {name:"MGL",domain:"mahanagargas.com",symbol:"MGL.BSE"},
+  {name:"IGL",domain:"iglonline.net",symbol:"IGL.BSE"},
+  {name:"ADANI TOTAL GAS",domain:"adanitotalgas.com",symbol:"ATGL.BSE"},
+
+  // POWER & UTILITIES
+  {name:"NTPC",domain:"ntpc.co.in",symbol:"NTPC.BSE"},
+  {name:"POWER GRID",domain:"powergrid.in",symbol:"POWERGRID.BSE"},
+  {name:"TATA POWER",domain:"tatapower.com",symbol:"TATAPOWER.BSE"},
+  {name:"ADANI GREEN",domain:"adanigreenenergy.com",symbol:"ADANIGREEN.BSE"},
+  {name:"ADANI POWER",domain:"adanipower.com",symbol:"ADANIPOWER.BSE"},
+  {name:"JSW ENERGY",domain:"jsw.in",symbol:"JSWENERGY.BSE"},
+  {name:"TORRENT POWER",domain:"torrentpower.com",symbol:"TORNTPOWER.BSE"},
+  {name:"CESC",domain:"cesc.co.in",symbol:"CESC.BSE"},
+  {name:"NHPC",domain:"nhpcindia.com",symbol:"NHPC.BSE"},
+  {name:"SJVN",domain:"sjvn.nic.in",symbol:"SJVN.BSE"},
+
+  // TELECOM & MEDIA
+  {name:"BHARTI AIRTEL",domain:"airtel.in",symbol:"BHARTIARTL.BSE"},
+  {name:"VODAFONE IDEA",domain:"myvi.in",symbol:"IDEA.BSE"},
+  {name:"TATA COMM",domain:"tatacommunications.com",symbol:"TATACOMM.BSE"},
+  {name:"INDUS TOWERS",domain:"industowers.com",symbol:"INDUSTOWER.BSE"},
+  {name:"ZEE ENTERTAINMENT",domain:"zee.com",symbol:"ZEEL.BSE"},
+  {name:"SUN TV",domain:"suntv.in",symbol:"SUNTV.BSE"},
+  {name:"PVR INOX",domain:"pvrcinemas.com",symbol:"PVRINOX.BSE"},
+  {name:"NETWORK 18",domain:"network18online.com",symbol:"NETWORK18.BSE"},
+  {name:"TV18 BROADCAST",domain:"tv18india.com",symbol:"TV18BRDCST.BSE"}
 ];
 
 /* ================= GLOBAL VARIABLES ================= */
 let holdings = JSON.parse(localStorage.getItem("holdings")) || [];
 let stockPrices = JSON.parse(localStorage.getItem("stockPrices")) || {};
-let apiKey = localStorage.getItem("alphaVantageKey") || "";
 let currentUser = null;
 let currentChatFriend = null;
 let currentChatFriendName = null;
 let unsubscribeChat = null;
 let selectedStock = null;
+let editingIndex = null;
 let isFetchingPrices = false;
 
 /* ================= AUTH FUNCTIONS ================= */
@@ -1182,10 +1413,8 @@ auth.onAuthStateChanged(async function(u){
 
 /* ================= PRICE FETCHING ================= */
 async function fetchStockPrice(symbol){
-  if(!apiKey) return null;
-  
   try {
-    const url = `https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol=${symbol}&apikey=${apiKey}`;
+    const url = `https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol=${symbol}&apikey=${API_KEY}`;
     const response = await fetch(url);
     const data = await response.json();
     
@@ -1204,7 +1433,7 @@ async function fetchStockPrice(symbol){
 }
 
 async function fetchAllHoldingsPrices(){
-  if(!apiKey || holdings.length === 0) return;
+  if(holdings.length === 0) return;
   if(isFetchingPrices) return;
   
   isFetchingPrices = true;
@@ -1226,7 +1455,7 @@ async function fetchAllHoldingsPrices(){
       };
     }
     
-    // Alpha Vantage free tier: 5 calls/minute
+    // Alpha Vantage free tier: 5 calls/minute, 25/day for premium symbols
     await new Promise(resolve => setTimeout(resolve, 12000));
   }
   
@@ -1242,11 +1471,6 @@ async function fetchAllHoldingsPrices(){
 }
 
 function refreshPrices(){
-  if(!apiKey){
-    alert("Please add your Alpha Vantage API key in Settings first.");
-    openSettings();
-    return;
-  }
   fetchAllHoldingsPrices();
 }
 
@@ -1262,9 +1486,8 @@ function updateLastUpdatedText(){
   }
 }
 
-/* ================= SIMULATED PRICES (FALLBACK) ================= */
+/* ================= SIMULATED PRICES ================= */
 function getSimulatedPrice(stockName){
-  // Generate consistent pseudo-random price based on stock name
   let hash = 0;
   for(let i = 0; i < stockName.length; i++){
     hash = ((hash << 5) - hash) + stockName.charCodeAt(i);
@@ -1285,12 +1508,23 @@ function getCurrentPrice(stockName){
 
 /* ================= STOCKS FUNCTIONS ================= */
 function renderStocks(list){
-  const container = document.getElementById("stocks");
+  const container = document.getElementById("stocksGrid");
+  const countContainer = document.getElementById("stockCount");
   container.innerHTML = "";
+  
+  countContainer.innerHTML = `
+    <div class="stock-count-text">
+      Showing <strong>${list.length}</strong> stocks from NSE/BSE
+    </div>
+    <div style="font-size:12px;color:#64748b">
+      Total available: ${STOCKS.length} stocks
+    </div>
+  `;
 
   list.forEach(function(stock){
     const stockName = typeof stock === "string" ? stock : stock.name;
     const stockDomain = typeof stock === "string" ? null : stock.domain;
+    const stockSymbol = typeof stock === "string" ? stockName : stock.symbol;
     const currentPrice = getCurrentPrice(stockName);
     const priceData = stockPrices[stockName];
 
@@ -1331,11 +1565,16 @@ function renderStocks(list){
     nameSpan.className = "stock-name";
     nameSpan.textContent = stockName;
     
+    const symbolSpan = document.createElement("div");
+    symbolSpan.className = "stock-symbol";
+    symbolSpan.textContent = stockSymbol ? stockSymbol.replace(".BSE", "") : "";
+    
     const priceSpan = document.createElement("div");
     priceSpan.className = "stock-price";
     priceSpan.textContent = "₹" + currentPrice.toLocaleString();
     
     infoDiv.appendChild(nameSpan);
+    infoDiv.appendChild(symbolSpan);
     infoDiv.appendChild(priceSpan);
     
     header.appendChild(infoDiv);
@@ -1364,7 +1603,8 @@ document.getElementById("searchBar").addEventListener("keyup", function(){
   const query = this.value.toLowerCase();
   const filtered = STOCKS.filter(function(stock){
     const name = typeof stock === "string" ? stock : stock.name;
-    return name.toLowerCase().includes(query);
+    const symbol = typeof stock === "string" ? "" : (stock.symbol || "");
+    return name.toLowerCase().includes(query) || symbol.toLowerCase().includes(query);
   });
   renderStocks(filtered);
 });
@@ -1409,18 +1649,49 @@ function confirmAddStock(){
   closeAddStock();
 }
 
+/* ================= EDIT STOCK MODAL ================= */
+function openEditStock(index){
+  editingIndex = index;
+  const holding = holdings[index];
+  const currentPrice = getCurrentPrice(holding.name);
+  
+  document.getElementById("editStockName").textContent = holding.name;
+  document.getElementById("editStockCurrentPrice").textContent = "₹" + currentPrice.toLocaleString();
+  document.getElementById("editStockPrice").value = holding.price;
+  document.getElementById("editStockQty").value = holding.qty;
+  document.getElementById("editStockOverlay").style.display = "flex";
+}
+
+function closeEditStock(){
+  document.getElementById("editStockOverlay").style.display = "none";
+  editingIndex = null;
+}
+
+function confirmEditStock(){
+  const price = parseFloat(document.getElementById("editStockPrice").value);
+  const qty = parseInt(document.getElementById("editStockQty").value);
+
+  if(!price || price <= 0){
+    alert("Please enter a valid buy price");
+    return;
+  }
+  if(!qty || qty <= 0){
+    alert("Please enter a valid quantity");
+    return;
+  }
+
+  holdings[editingIndex].price = price;
+  holdings[editingIndex].qty = qty;
+
+  localStorage.setItem("holdings", JSON.stringify(holdings));
+  renderHoldings();
+  closeEditStock();
+}
+
 /* ================= HOLDINGS FUNCTIONS ================= */
 function renderHoldings(){
   const container = document.getElementById("holdingsTable");
   const statsContainer = document.getElementById("holdingsStats");
-  const apiNotice = document.getElementById("apiNotice");
-  
-  // Show API notice if no key
-  if(!apiKey){
-    apiNotice.style.display = "flex";
-  } else {
-    apiNotice.style.display = "none";
-  }
   
   updateLastUpdatedText();
 
@@ -1430,7 +1701,6 @@ function renderHoldings(){
     return;
   }
 
-  // Calculate totals
   let totalInvested = 0;
   let totalCurrentValue = 0;
 
@@ -1447,7 +1717,6 @@ function renderHoldings(){
   const totalPLPercent = totalInvested > 0 ? ((totalPL / totalInvested) * 100).toFixed(2) : 0;
   const isProfit = totalPL >= 0;
 
-  // Render stats cards
   statsContainer.innerHTML = `
     <div class="stat-card gradient">
       <div class="label">Total Invested</div>
@@ -1456,32 +1725,31 @@ function renderHoldings(){
     </div>
     <div class="stat-card gradient">
       <div class="label">Current Value</div>
-      <div class="value">₹${totalCurrentValue.toLocaleString()}</div>
-      <div class="subvalue">${apiKey ? "Live prices" : "Simulated prices"}</div>
+      <div class="value">₹${Math.round(totalCurrentValue).toLocaleString()}</div>
+      <div class="subvalue">Live prices</div>
     </div>
     <div class="stat-card ${isProfit ? 'profit' : 'loss'}">
       <div class="label">Total P&L</div>
-      <div class="value">${isProfit ? '+' : ''}₹${totalPL.toLocaleString()}</div>
+      <div class="value">${isProfit ? '+' : ''}₹${Math.round(totalPL).toLocaleString()}</div>
       <div class="subvalue" style="color:${isProfit ? '#10b981' : '#ef4444'}">${isProfit ? '+' : ''}${totalPLPercent}%</div>
     </div>
     <div class="stat-card">
-      <div class="label">Day's Change</div>
+      <div class="label">Today's Change</div>
       <div class="value" style="color:#10b981">+₹0</div>
-      <div class="subvalue">Based on market hours</div>
+      <div class="subvalue">Market hours</div>
     </div>
   `;
 
-  // Render table
   let html = `<table>
     <tr>
       <th>Stock</th>
       <th>Buy Price</th>
       <th>Qty</th>
       <th>Invested</th>
-      <th>Current Price</th>
+      <th>CMP</th>
       <th>Current Value</th>
       <th>P&L</th>
-      <th>Action</th>
+      <th>Actions</th>
     </tr>`;
 
   holdings.forEach(function(h, i){
@@ -1502,13 +1770,18 @@ function renderHoldings(){
       <td>₹${h.price.toLocaleString()}</td>
       <td>${h.qty}</td>
       <td>₹${invested.toLocaleString()}</td>
-      <td>₹${currentPrice.toLocaleString()}</td>
-      <td><strong>₹${currentValue.toLocaleString()}</strong></td>
+      <td>₹${Math.round(currentPrice).toLocaleString()}</td>
+      <td><strong>₹${Math.round(currentValue).toLocaleString()}</strong></td>
       <td class="${isStockProfit ? 'pl-positive' : 'pl-negative'}">
-        ${isStockProfit ? '+' : ''}₹${pl.toLocaleString()}<br>
+        ${isStockProfit ? '+' : ''}₹${Math.round(pl).toLocaleString()}<br>
         <small>(${isStockProfit ? '+' : ''}${plPercent}%)</small>
       </td>
-      <td><button onclick="deleteHolding(${i})">Delete</button></td>
+      <td>
+        <div class="action-buttons">
+          <button class="btn-edit" onclick="openEditStock(${i})">✏️ Edit</button>
+          <button class="btn-delete" onclick="deleteHolding(${i})">🗑️ Delete</button>
+        </div>
+      </td>
     </tr>`;
   });
 
@@ -1857,7 +2130,7 @@ function showTab(id, el){
   ["stocks", "holdings", "mf", "chat"].forEach(function(x){
     document.getElementById(x).style.display = "none";
   });
-  document.getElementById(id).style.display = id === "stocks" ? "grid" : "block";
+  document.getElementById(id).style.display = "block";
 
   document.querySelectorAll(".tabs span").forEach(function(x){
     x.classList.remove("active");
@@ -1871,7 +2144,6 @@ function showTab(id, el){
 
 function openSettings(){
   document.getElementById("setEmail").textContent = currentUser.email;
-  document.getElementById("setApiKey").value = apiKey;
   
   db.collection("users").doc(currentUser.uid).get().then(function(s){
     const data = s.data();
@@ -1887,19 +2159,11 @@ function closeSettings(){
 
 function saveSettings(){
   const newName = document.getElementById("setName").value.trim();
-  const newApiKey = document.getElementById("setApiKey").value.trim();
   
-  // Save API key locally
-  apiKey = newApiKey;
-  localStorage.setItem("alphaVantageKey", newApiKey);
-  
-  // Save name to Firestore
   db.collection("users").doc(currentUser.uid).update({name: newName})
   .then(function(){
     alert("✅ Settings saved!");
     closeSettings();
-    renderHoldings();
-    renderStocks(STOCKS);
   });
 }
 
@@ -1916,6 +2180,9 @@ document.getElementById("settingsOverlay").addEventListener("click", function(e)
 });
 document.getElementById("addStockOverlay").addEventListener("click", function(e){
   if(e.target === this) closeAddStock();
+});
+document.getElementById("editStockOverlay").addEventListener("click", function(e){
+  if(e.target === this) closeEditStock();
 });
 </script>
 
