@@ -17,13 +17,12 @@ const firebaseConfig = {
   projectId: "stock-portfolio-web-final"
 };
 firebase.initializeApp(firebaseConfig);
-
 const auth = firebase.auth();
 const db = firebase.firestore();
 </script>
 
 <style>
-/* ================= GLOBAL ================= */
+/* ================= RESET ================= */
 *{box-sizing:border-box}
 body{
   margin:0;
@@ -32,7 +31,7 @@ body{
   color:#1e293b;
 }
 
-/* ================= NAVBAR ================= */
+/* ================= NAV ================= */
 .nav{
   background:linear-gradient(90deg,#4f46e5,#6366f1);
   color:#fff;
@@ -61,6 +60,8 @@ body{
 
 /* ================= CONTENT ================= */
 .content{padding:22px;max-width:1250px;margin:auto}
+
+/* ================= STOCK GRID ================= */
 .grid{
   display:grid;
   grid-template-columns:repeat(auto-fill,minmax(190px,1fr));
@@ -73,6 +74,7 @@ body{
   border:1px solid #e5e7eb;
   box-shadow:0 6px 16px rgba(0,0,0,.06);
 }
+.card b{display:block;font-size:15px}
 .card button{
   margin-top:12px;
   width:100%;
@@ -84,7 +86,7 @@ body{
   cursor:pointer;
 }
 
-/* ================= TABLE ================= */
+/* ================= HOLDINGS ================= */
 .table-wrap{
   background:#fff;
   border-radius:16px;
@@ -124,7 +126,6 @@ th{background:#f1f5f9}
   cursor:pointer;
 }
 .chat-item:hover{background:#f1f5f9}
-
 .chat-item button{
   background:#4f46e5;
   color:#fff;
@@ -261,46 +262,44 @@ th{background:#f1f5f9}
 </div>
 
 <div class="content">
+  <div id="stocks" class="grid"></div>
 
-<div id="stocks" class="grid"></div>
-
-<div id="holdings" style="display:none">
-  <div class="table-wrap" id="holdingsTable"></div>
-</div>
-
-<div id="mf" style="display:none">
-  <div class="card">Mutual Funds coming soon 🚀</div>
-</div>
-
-<div id="chat" style="display:none">
-  <div class="chat-layout">
-
-    <div class="chat-list">
-      <input id="uidSearch"
-        placeholder="Search User ID (5 digits)"
-        onkeyup="searchUser()"
-        style="width:100%;padding:8px;border-radius:8px;border:1px solid #cbd5e1">
-
-      <div id="searchResult"></div>
-
-      <h4>Requests</h4>
-      <div id="requests"></div>
-
-      <h4>Friends</h4>
-      <div id="friends"></div>
-    </div>
-
-    <div class="chat-box">
-      <div class="messages" id="messages"></div>
-      <div class="chat-input">
-        <input id="msgInput" placeholder="Type message">
-        <button onclick="sendMessage()">Send</button>
-      </div>
-    </div>
-
+  <div id="holdings" style="display:none">
+    <div class="table-wrap" id="holdingsTable"></div>
   </div>
-</div>
 
+  <div id="mf" style="display:none">
+    <div class="card">Mutual Funds coming soon 🚀</div>
+  </div>
+
+  <div id="chat" style="display:none">
+    <div class="chat-layout">
+
+      <div class="chat-list">
+        <input id="uidSearch"
+          placeholder="Search User ID (5 digits)"
+          onkeyup="searchUser()"
+          style="width:100%;padding:8px;border-radius:8px;border:1px solid #cbd5e1">
+
+        <div id="searchResult"></div>
+
+        <h4>Requests</h4>
+        <div id="requests"></div>
+
+        <h4>Friends</h4>
+        <div id="friends"></div>
+      </div>
+
+      <div class="chat-box">
+        <div class="messages" id="messages"></div>
+        <div class="chat-input">
+          <input id="msgInput" placeholder="Type message">
+          <button onclick="sendMessage()">Send</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
 </div>
 </div>
 
@@ -351,6 +350,7 @@ function loginEmail(){
 
 auth.onAuthStateChanged(async u=>{
   if(!u) return;
+
   loginBox.style.display="none";
   app.style.display="block";
   currentUser=u;
@@ -371,7 +371,54 @@ auth.onAuthStateChanged(async u=>{
   loadRequests();
 });
 
-/* ================= CHAT LOGIC (FIXED) ================= */
+/* ================= STOCKS ================= */
+function renderStocks(list){
+  stocks.innerHTML="";
+  list.forEach(s=>{
+    const div=document.createElement("div");
+    div.className="card";
+    div.innerHTML=`<b>${s}</b>`;
+    const btn=document.createElement("button");
+    btn.innerText="Add";
+    btn.onclick=()=>addStock(s);
+    div.appendChild(btn);
+    stocks.appendChild(div);
+  });
+}
+searchBar.onkeyup=()=>renderStocks(
+  STOCKS.filter(s=>s.toLowerCase().includes(searchBar.value.toLowerCase()))
+);
+
+/* ================= HOLDINGS ================= */
+function addStock(name){
+  const p=prompt("Buy price");
+  const q=prompt("Quantity");
+  if(!p||!q) return;
+  holdings.push({name,price:+p,qty:+q});
+  localStorage.setItem("holdings",JSON.stringify(holdings));
+  renderHoldings();
+}
+function renderHoldings(){
+  let h=`<table>
+    <tr><th>Stock</th><th>Price</th><th>Qty</th><th>Total</th><th></th></tr>`;
+  holdings.forEach((x,i)=>{
+    h+=`<tr>
+      <td>${x.name}</td>
+      <td>${x.price}</td>
+      <td>${x.qty}</td>
+      <td>${x.price*x.qty}</td>
+      <td><button onclick="del(${i})">Delete</button></td>
+    </tr>`;
+  });
+  holdingsTable.innerHTML=h+"</table>";
+}
+function del(i){
+  holdings.splice(i,1);
+  localStorage.setItem("holdings",JSON.stringify(holdings));
+  renderHoldings();
+}
+
+/* ================= CHAT ================= */
 async function searchUser(){
   const code=uidSearch.value.trim();
   searchResult.innerHTML="";
@@ -394,38 +441,34 @@ async function searchUser(){
     const row=document.createElement("div");
     row.className="chat-item";
 
-    const text=document.createElement("span");
-    text.innerText=`${u.name||"User"} (${u.usercode})`;
+    const txt=document.createElement("span");
+    txt.innerText=`${u.name||"User"} (${u.usercode})`;
 
     const btn=document.createElement("button");
     btn.innerText="Send Request";
     btn.onclick=()=>sendRequest(d.id);
 
-    row.appendChild(text);
+    row.appendChild(txt);
     row.appendChild(btn);
     searchResult.appendChild(row);
   });
 }
 
 async function sendRequest(uid){
-  const existing=await db.collection("requests")
+  const ex=await db.collection("requests")
     .where("from","==",currentUser.uid)
-    .where("to","==",uid)
-    .get();
+    .where("to","==",uid).get();
+  if(!ex.empty){alert("Request already sent");return;}
 
-  if(!existing.empty){alert("Request already sent");return;}
-
-  const friend=await db.collection("friends")
+  const fr=await db.collection("friends")
     .doc(currentUser.uid).collection("list").doc(uid).get();
-
-  if(friend.exists){alert("Already friends");return;}
+  if(fr.exists){alert("Already friends");return;}
 
   await db.collection("requests").add({
     from:currentUser.uid,
     to:uid,
     time:firebase.firestore.FieldValue.serverTimestamp()
   });
-
   alert("Friend request sent");
 }
 
@@ -483,20 +526,17 @@ function openChat(uid){
   const chatId=[currentUser.uid,uid].sort().join("_");
 
   if(unsubscribeChat) unsubscribeChat();
-
   unsubscribeChat=db.collection("chats").doc(chatId)
     .collection("msgs").orderBy("time")
     .onSnapshot(s=>{
       messages.innerHTML="";
       s.forEach(d=>{
         const m=d.data();
-        const time=m.time?new Date(m.time.toDate()).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}):"";
+        const time=m.time?new Date(m.time.toDate()).toLocaleTimeString([],{
+          hour:'2-digit',minute:'2-digit'
+        }):"";
         const seen=m.from===currentUser.uid?(m.seen?" ✓ Seen":" ✓ Sent"):"";
-
-        if(m.from!==currentUser.uid && !m.seen){
-          d.ref.update({seen:true});
-        }
-
+        if(m.from!==currentUser.uid&&!m.seen){d.ref.update({seen:true});}
         messages.innerHTML+=`
           <div class="msg ${m.from===currentUser.uid?'me':'them'}">
             ${m.text}<br><small>${time}${seen}</small>
@@ -520,7 +560,9 @@ function sendMessage(){
 
 /* ================= UI ================= */
 function showTab(id,el){
-  ["stocks","holdings","mf","chat"].forEach(x=>document.getElementById(x).style.display="none");
+  ["stocks","holdings","mf","chat"].forEach(x=>{
+    document.getElementById(x).style.display="none";
+  });
   document.getElementById(id).style.display="block";
   document.querySelectorAll(".tabs span").forEach(x=>x.classList.remove("active"));
   el.classList.add("active");
