@@ -522,13 +522,17 @@ function openChat(uid,name){
 
 function sendMessage(){
   if(!msgInput.value || !currentChatFriend) return;
-  const chatId = [currentUser.uid,currentChatFriend].sort().join("_");
+
+  const chatId = [currentUser.uid, currentChatFriend].sort().join("_");
+
   db.collection("chats").doc(chatId).collection("msgs").add({
-    from:currentUser.uid,
-    text:msgInput.value,
-    time:firebase.firestore.FieldValue.serverTimestamp()
+    from: currentUser.uid,
+    text: msgInput.value,
+    time: firebase.firestore.FieldValue.serverTimestamp(),
+    seen: false   // NEW
   });
-  msgInput.value="";
+
+  msgInput.value = "";
 }
 
 /* ===================== UI ===================== */
@@ -557,4 +561,5 @@ function logout(){auth.signOut();location.reload();}
 
 </body>
 </html>
+
 
