@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>FinzoTalk</title>
 
-<!-- Firebase -->
+<!-- ================= FIREBASE ================= -->
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
@@ -17,11 +17,13 @@ const firebaseConfig = {
   projectId: "stock-portfolio-web-final"
 };
 firebase.initializeApp(firebaseConfig);
+
 const auth = firebase.auth();
 const db = firebase.firestore();
 </script>
 
 <style>
+/* ================= GLOBAL ================= */
 *{box-sizing:border-box}
 body{
   margin:0;
@@ -30,7 +32,7 @@ body{
   color:#1e293b;
 }
 
-/* NAVBAR */
+/* ================= NAVBAR ================= */
 .nav{
   background:linear-gradient(90deg,#4f46e5,#6366f1);
   color:#fff;
@@ -57,9 +59,13 @@ body{
 }
 .settings-btn{margin-left:auto;font-size:20px;cursor:pointer}
 
-/* CONTENT */
+/* ================= CONTENT ================= */
 .content{padding:22px;max-width:1250px;margin:auto}
-.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:18px}
+.grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(190px,1fr));
+  gap:18px;
+}
 .card{
   background:#fff;
   border-radius:16px;
@@ -78,7 +84,7 @@ body{
   cursor:pointer;
 }
 
-/* TABLE */
+/* ================= TABLE ================= */
 .table-wrap{
   background:#fff;
   border-radius:16px;
@@ -86,67 +92,134 @@ body{
   overflow-x:auto;
 }
 table{width:100%;border-collapse:collapse}
-th,td{padding:12px;border-bottom:1px solid #e5e7eb;text-align:center}
+th,td{
+  padding:12px;
+  border-bottom:1px solid #e5e7eb;
+  text-align:center
+}
 th{background:#f1f5f9}
 
-/* CHAT */
-.chat-layout{display:grid;grid-template-columns:320px 1fr;gap:18px}
+/* ================= CHAT ================= */
+.chat-layout{
+  display:grid;
+  grid-template-columns:320px 1fr;
+  gap:18px;
+}
 .chat-list{
-  background:#fff;border-radius:16px;border:1px solid #e5e7eb;
-  padding:12px;height:540px;overflow:auto
+  background:#fff;
+  border-radius:16px;
+  border:1px solid #e5e7eb;
+  padding:12px;
+  height:540px;
+  overflow:auto;
 }
 .chat-item{
-  padding:10px;border-radius:10px;border-bottom:1px solid #e5e7eb;
-  cursor:pointer
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:10px;
+  padding:10px;
+  border-radius:10px;
+  border-bottom:1px solid #e5e7eb;
+  cursor:pointer;
 }
 .chat-item:hover{background:#f1f5f9}
+
+.chat-item button{
+  background:#4f46e5;
+  color:#fff;
+  border:none;
+  border-radius:8px;
+  padding:6px 10px;
+  cursor:pointer;
+}
+
 .chat-box{
-  background:#fff;border-radius:16px;border:1px solid #e5e7eb;
-  display:flex;flex-direction:column;height:540px
+  background:#fff;
+  border-radius:16px;
+  border:1px solid #e5e7eb;
+  display:flex;
+  flex-direction:column;
+  height:540px;
 }
 .messages{flex:1;padding:14px;overflow:auto}
 .msg{
-  margin-bottom:10px;max-width:72%;padding:10px;
-  border-radius:12px;font-size:14px
+  margin-bottom:10px;
+  max-width:72%;
+  padding:10px;
+  border-radius:12px;
+  font-size:14px;
 }
 .me{background:#4f46e5;color:#fff;margin-left:auto}
 .them{background:#e5e7eb}
+
 .chat-input{
-  display:flex;gap:10px;padding:10px;border-top:1px solid #e5e7eb
+  display:flex;
+  gap:10px;
+  padding:10px;
+  border-top:1px solid #e5e7eb
 }
 .chat-input input{
-  flex:1;padding:10px;border-radius:10px;border:1px solid #cbd5e1
+  flex:1;
+  padding:10px;
+  border-radius:10px;
+  border:1px solid #cbd5e1
 }
 .chat-input button{
-  padding:10px 16px;border-radius:10px;border:none;
-  background:#4f46e5;color:#fff
+  padding:10px 16px;
+  border-radius:10px;
+  border:none;
+  background:#4f46e5;
+  color:#fff
 }
 
-/* LOGIN */
+/* ================= LOGIN ================= */
 #loginBox{
-  max-width:420px;margin:90px auto;background:#fff;
-  padding:28px;border-radius:18px;border:1px solid #e5e7eb
+  max-width:420px;
+  margin:90px auto;
+  background:#fff;
+  padding:28px;
+  border-radius:18px;
+  border:1px solid #e5e7eb
 }
 #loginBox input,#loginBox button{
-  width:100%;padding:12px;margin-top:12px;border-radius:10px
+  width:100%;
+  padding:12px;
+  margin-top:12px;
+  border-radius:10px
 }
 #loginError{color:#ef4444;margin-top:8px}
 
-/* SETTINGS */
+/* ================= SETTINGS ================= */
 .overlay{
-  position:fixed;inset:0;background:rgba(0,0,0,.45);
-  display:none;align-items:center;justify-content:center;z-index:50
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,.45);
+  display:none;
+  align-items:center;
+  justify-content:center;
+  z-index:50
 }
 .modal{
-  background:#fff;padding:24px;width:340px;border-radius:18px
+  background:#fff;
+  padding:24px;
+  width:340px;
+  border-radius:18px
 }
 .modal input{
-  width:100%;padding:10px;margin-top:10px;
-  border-radius:10px;border:1px solid #cbd5e1
+  width:100%;
+  padding:10px;
+  margin-top:10px;
+  border-radius:10px;
+  border:1px solid #cbd5e1
 }
 .modal button{
-  width:100%;margin-top:12px;padding:10px;
-  border-radius:10px;border:none;cursor:pointer
+  width:100%;
+  margin-top:12px;
+  padding:10px;
+  border-radius:10px;
+  border:none;
+  cursor:pointer
 }
 .primary{background:#4f46e5;color:#fff}
 .danger{background:#ef4444;color:#fff}
@@ -160,7 +233,7 @@ th{background:#f1f5f9}
 
 <body>
 
-<!-- LOGIN -->
+<!-- ================= LOGIN ================= -->
 <div id="loginBox">
   <h2>FinzoTalk Login</h2>
   <input id="email" placeholder="Email">
@@ -170,7 +243,7 @@ th{background:#f1f5f9}
   <div id="loginError"></div>
 </div>
 
-<!-- APP -->
+<!-- ================= APP ================= -->
 <div id="app" style="display:none">
 
 <div class="nav">
@@ -188,40 +261,50 @@ th{background:#f1f5f9}
 </div>
 
 <div class="content">
-  <div id="stocks" class="grid"></div>
 
-  <div id="holdings" style="display:none">
-    <div class="table-wrap" id="holdingsTable"></div>
-  </div>
+<div id="stocks" class="grid"></div>
 
-  <div id="mf" style="display:none">
-    <div class="card">Mutual Funds coming soon 🚀</div>
-  </div>
+<div id="holdings" style="display:none">
+  <div class="table-wrap" id="holdingsTable"></div>
+</div>
 
-  <div id="chat" style="display:none">
-    <div class="chat-layout">
-      <div class="chat-list">
-        <input id="uidSearch" placeholder="Search User ID (5 digits)" onkeyup="searchUser()" style="width:100%;padding:8px;border-radius:8px;border:1px solid #cbd5e1">
-        <div id="searchResult"></div>
-        <h4>Requests</h4>
-        <div id="requests"></div>
-        <h4>Friends</h4>
-        <div id="friends"></div>
-      </div>
+<div id="mf" style="display:none">
+  <div class="card">Mutual Funds coming soon 🚀</div>
+</div>
 
-      <div class="chat-box">
-        <div class="messages" id="messages"></div>
-        <div class="chat-input">
-          <input id="msgInput" placeholder="Type message">
-          <button onclick="sendMessage()">Send</button>
-        </div>
+<div id="chat" style="display:none">
+  <div class="chat-layout">
+
+    <div class="chat-list">
+      <input id="uidSearch"
+        placeholder="Search User ID (5 digits)"
+        onkeyup="searchUser()"
+        style="width:100%;padding:8px;border-radius:8px;border:1px solid #cbd5e1">
+
+      <div id="searchResult"></div>
+
+      <h4>Requests</h4>
+      <div id="requests"></div>
+
+      <h4>Friends</h4>
+      <div id="friends"></div>
+    </div>
+
+    <div class="chat-box">
+      <div class="messages" id="messages"></div>
+      <div class="chat-input">
+        <input id="msgInput" placeholder="Type message">
+        <button onclick="sendMessage()">Send</button>
       </div>
     </div>
+
   </div>
+</div>
+
 </div>
 </div>
 
-<!-- SETTINGS -->
+<!-- ================= SETTINGS ================= -->
 <div class="overlay" id="settingsOverlay">
   <div class="modal">
     <h3>Settings</h3>
@@ -233,29 +316,6 @@ th{background:#f1f5f9}
     <button class="gray" onclick="closeSettings()">Close</button>
   </div>
 </div>
-  #requests .chat-item,
-#friends .chat-item {
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  gap:10px;
-}
-
-#requests button,
-#searchResult button {
-  background:#4f46e5;
-  color:#fff;
-  border:none;
-  border-radius:8px;
-  padding:6px 10px;
-  cursor:pointer;
-}
-
-#requests button:hover,
-#searchResult button:hover {
-  opacity:.9;
-}
-
 
 <script>
 /* ================= DATA ================= */
@@ -293,10 +353,10 @@ auth.onAuthStateChanged(async u=>{
   if(!u) return;
   loginBox.style.display="none";
   app.style.display="block";
-  currentUser = u;
+  currentUser=u;
 
-  const ref = db.collection("users").doc(u.uid);
-  const snap = await ref.get();
+  const ref=db.collection("users").doc(u.uid);
+  const snap=await ref.get();
   if(!snap.exists){
     await ref.set({
       email:u.email,
@@ -311,120 +371,59 @@ auth.onAuthStateChanged(async u=>{
   loadRequests();
 });
 
-/* ================= STOCKS ================= */
-function renderStocks(list){
-  stocks.innerHTML="";
-  list.forEach(s=>{
-    const div=document.createElement("div");
-    div.className="card";
-    div.innerHTML=`<b>${s}</b>`;
-    const btn=document.createElement("button");
-    btn.innerText="Add";
-    btn.onclick=()=>addStock(s);
-    div.appendChild(btn);
-    stocks.appendChild(div);
-  });
-}
-searchBar.onkeyup=()=>renderStocks(STOCKS.filter(s=>s.toLowerCase().includes(searchBar.value.toLowerCase())));
-
-/* ================= HOLDINGS ================= */
-function addStock(name){
-  const p=prompt("Buy price");
-  const q=prompt("Quantity");
-  if(!p||!q) return;
-  holdings.push({name,price:+p,qty:+q});
-  localStorage.setItem("holdings",JSON.stringify(holdings));
-  renderHoldings();
-}
-function renderHoldings(){
-  let h=`<table><tr><th>Stock</th><th>Price</th><th>Qty</th><th>Total</th><th></th></tr>`;
-  holdings.forEach((x,i)=>{
-    h+=`<tr>
-      <td>${x.name}</td><td>${x.price}</td><td>${x.qty}</td>
-      <td>${x.price*x.qty}</td>
-      <td><button onclick="del(${i})">Delete</button></td>
-    </tr>`;
-  });
-  holdingsTable.innerHTML=h+"</table>";
-}
-function del(i){
-  holdings.splice(i,1);
-  localStorage.setItem("holdings",JSON.stringify(holdings));
-  renderHoldings();
-}
-
-/* ================= CHAT ================= */
+/* ================= CHAT LOGIC (FIXED) ================= */
 async function searchUser(){
-  const code = uidSearch.value.trim();
-  searchResult.innerHTML = "";
+  const code=uidSearch.value.trim();
+  searchResult.innerHTML="";
 
-  if(code.length !== 5){
-    searchResult.innerHTML = "<p style='opacity:.6'>Enter 5 digit User ID</p>";
+  if(code.length!==5){
+    searchResult.innerHTML="<p style='opacity:.6'>Enter 5 digit User ID</p>";
     return;
   }
 
-  const q = await db.collection("users")
-    .where("usercode","==",code)
-    .get();
-
+  const q=await db.collection("users").where("usercode","==",code).get();
   if(q.empty){
-    searchResult.innerHTML = "<p style='color:#ef4444'>User not found</p>";
+    searchResult.innerHTML="<p style='color:#ef4444'>User not found</p>";
     return;
   }
 
   q.forEach(d=>{
-    if(d.id === currentUser.uid) return;
+    if(d.id===currentUser.uid) return;
+    const u=d.data();
 
-    const u = d.data();
+    const row=document.createElement("div");
+    row.className="chat-item";
 
-    const row = document.createElement("div");
-    row.className = "chat-item";
+    const text=document.createElement("span");
+    text.innerText=`${u.name||"User"} (${u.usercode})`;
 
-    const info = document.createElement("div");
-    info.innerText = `${u.name || "User"} (${u.usercode})`;
+    const btn=document.createElement("button");
+    btn.innerText="Send Request";
+    btn.onclick=()=>sendRequest(d.id);
 
-    const btn = document.createElement("button");
-    btn.innerText = "Send Request";
-    btn.style.marginTop = "6px";
-    btn.onclick = () => sendRequest(d.id);
-
-    row.appendChild(info);
+    row.appendChild(text);
     row.appendChild(btn);
     searchResult.appendChild(row);
   });
 }
 
-
 async function sendRequest(uid){
-
-  // Check existing request
-  const existing = await db.collection("requests")
+  const existing=await db.collection("requests")
     .where("from","==",currentUser.uid)
     .where("to","==",uid)
     .get();
 
-  if(!existing.empty){
-    alert("Request already sent");
-    return;
-  }
+  if(!existing.empty){alert("Request already sent");return;}
 
-  // Check already friends
-  const alreadyFriend = await db
-    .collection("friends")
-    .doc(currentUser.uid)
-    .collection("list")
-    .doc(uid)
-    .get();
+  const friend=await db.collection("friends")
+    .doc(currentUser.uid).collection("list").doc(uid).get();
 
-  if(alreadyFriend.exists){
-    alert("Already friends");
-    return;
-  }
+  if(friend.exists){alert("Already friends");return;}
 
   await db.collection("requests").add({
-    from: currentUser.uid,
-    to: uid,
-    time: firebase.firestore.FieldValue.serverTimestamp()
+    from:currentUser.uid,
+    to:uid,
+    time:firebase.firestore.FieldValue.serverTimestamp()
   });
 
   alert("Friend request sent");
@@ -482,7 +481,9 @@ function openChat(uid){
   currentChatFriend=uid;
   messages.innerHTML="";
   const chatId=[currentUser.uid,uid].sort().join("_");
+
   if(unsubscribeChat) unsubscribeChat();
+
   unsubscribeChat=db.collection("chats").doc(chatId)
     .collection("msgs").orderBy("time")
     .onSnapshot(s=>{
@@ -491,11 +492,15 @@ function openChat(uid){
         const m=d.data();
         const time=m.time?new Date(m.time.toDate()).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}):"";
         const seen=m.from===currentUser.uid?(m.seen?" ✓ Seen":" ✓ Sent"):"";
+
+        if(m.from!==currentUser.uid && !m.seen){
+          d.ref.update({seen:true});
+        }
+
         messages.innerHTML+=`
           <div class="msg ${m.from===currentUser.uid?'me':'them'}">
             ${m.text}<br><small>${time}${seen}</small>
           </div>`;
-        if(m.from!==currentUser.uid && !m.seen) d.ref.update({seen:true});
       });
       messages.scrollTop=messages.scrollHeight;
     });
@@ -505,8 +510,10 @@ function sendMessage(){
   if(!msgInput.value||!currentChatFriend) return;
   const chatId=[currentUser.uid,currentChatFriend].sort().join("_");
   db.collection("chats").doc(chatId).collection("msgs").add({
-    from:currentUser.uid,text:msgInput.value,
-    time:firebase.firestore.FieldValue.serverTimestamp(),seen:false
+    from:currentUser.uid,
+    text:msgInput.value,
+    time:firebase.firestore.FieldValue.serverTimestamp(),
+    seen:false
   });
   msgInput.value="";
 }
@@ -536,8 +543,3 @@ function logout(){auth.signOut();location.reload();}
 
 </body>
 </html>
-
-
-
-
-
