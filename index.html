@@ -35,13 +35,13 @@ body{
 }
 
 /* ================= SCROLLBAR ================= */
-::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar{width:8px;height:8px}
 ::-webkit-scrollbar-track{background:#f1f5f9;border-radius:10px}
 ::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:10px}
 ::-webkit-scrollbar-thumb:hover{background:#94a3b8}
 
 /* ================= NAV ================= */
-.nav{
+.navbar{
   background:linear-gradient(135deg,#4f46e5 0%,#7c3aed 100%);
   color:#fff;
   display:flex;
@@ -52,20 +52,18 @@ body{
   position:sticky;
   top:0;
   z-index:100;
+  flex-wrap:wrap;
 }
-.logo{
+.brand{
   font-size:24px;
   font-weight:700;
   display:flex;
   align-items:center;
   gap:10px;
 }
-.logo::before{
-  content:"📊";
-  font-size:28px;
-}
-.tabs{display:flex;gap:8px;flex-wrap:wrap}
-.tabs span{
+.brand::before{content:"📊";font-size:28px}
+.nav-tabs{display:flex;gap:8px;flex-wrap:wrap}
+.nav-tabs span{
   padding:10px 18px;
   cursor:pointer;
   border-radius:10px;
@@ -73,8 +71,8 @@ body{
   transition:all 0.3s ease;
   font-size:14px;
 }
-.tabs span:hover{background:rgba(255,255,255,0.15)}
-.tabs span.active{
+.nav-tabs span:hover{background:rgba(255,255,255,0.15)}
+.nav-tabs span.active{
   background:rgba(255,255,255,0.25);
   font-weight:600;
 }
@@ -95,7 +93,7 @@ body{
   padding:10px 14px 10px 38px;
   border-radius:12px;
   border:none;
-  width:260px;
+  width:280px;
   font-size:14px;
   background:rgba(255,255,255,0.95);
   transition:all 0.3s ease;
@@ -104,70 +102,75 @@ body{
   outline:none;
   box-shadow:0 0 0 3px rgba(255,255,255,0.3);
 }
-.settings-btn{
+.settings-icon{
   font-size:22px;
   cursor:pointer;
   padding:8px;
   border-radius:10px;
   transition:all 0.3s ease;
 }
-.settings-btn:hover{
+.settings-icon:hover{
   background:rgba(255,255,255,0.15);
   transform:rotate(45deg);
 }
 
-/* ================= CONTENT ================= */
-.content{
+/* ================= MAIN CONTENT ================= */
+.main-content{
   padding:24px;
-  max-width:1400px;
+  max-width:1500px;
   margin:auto;
 }
 
-/* ================= LIVE STATUS BAR ================= */
+/* ================= STATUS BAR ================= */
 .status-bar{
   background:#fff;
-  padding:14px 20px;
-  border-radius:12px;
-  margin-bottom:20px;
+  padding:16px 24px;
+  border-radius:14px;
+  margin-bottom:24px;
   display:flex;
   justify-content:space-between;
   align-items:center;
   border:1px solid #e2e8f0;
   flex-wrap:wrap;
-  gap:12px;
-  box-shadow:0 2px 8px rgba(0,0,0,0.04);
+  gap:16px;
+  box-shadow:0 2px 10px rgba(0,0,0,0.04);
 }
 .status-left{
   display:flex;
   align-items:center;
-  gap:16px;
+  gap:20px;
+  flex-wrap:wrap;
 }
-.stock-count{
-  font-size:14px;
+.stock-counter{
+  font-size:15px;
   color:#64748b;
 }
-.stock-count strong{
+.stock-counter strong{
   color:#4f46e5;
-  font-size:18px;
+  font-size:20px;
 }
-.live-badge{
+.live-status{
   display:flex;
   align-items:center;
   gap:8px;
-  padding:6px 14px;
-  border-radius:20px;
+  padding:8px 16px;
+  border-radius:25px;
   font-size:13px;
-  font-weight:500;
+  font-weight:600;
   background:#d1fae5;
   color:#065f46;
 }
-.live-badge.updating{
+.live-status.updating{
   background:#fef3c7;
   color:#92400e;
 }
+.live-status.error{
+  background:#fee2e2;
+  color:#991b1b;
+}
 .live-dot{
-  width:8px;
-  height:8px;
+  width:10px;
+  height:10px;
   border-radius:50%;
   background:currentColor;
   animation:pulse 2s infinite;
@@ -176,49 +179,51 @@ body{
   0%,100%{opacity:1;transform:scale(1)}
   50%{opacity:0.5;transform:scale(0.8)}
 }
-.last-update{
-  font-size:12px;
+.update-time{
+  font-size:13px;
   color:#64748b;
 }
 .status-right{
   display:flex;
   align-items:center;
-  gap:12px;
+  gap:16px;
+  flex-wrap:wrap;
 }
-.countdown-text{
-  font-size:12px;
+.countdown-display{
+  font-size:13px;
   color:#64748b;
 }
 .countdown-num{
   font-weight:700;
   color:#4f46e5;
+  font-size:16px;
 }
-.refresh-btn{
-  padding:10px 20px;
-  border-radius:10px;
+.refresh-button{
+  padding:12px 24px;
+  border-radius:12px;
   border:none;
   background:linear-gradient(135deg,#4f46e5,#7c3aed);
   color:#fff;
   font-weight:600;
-  font-size:13px;
+  font-size:14px;
   cursor:pointer;
   display:flex;
   align-items:center;
   gap:8px;
   transition:all 0.3s;
 }
-.refresh-btn:hover{
+.refresh-button:hover{
   transform:translateY(-2px);
-  box-shadow:0 4px 15px rgba(79,70,229,0.4);
+  box-shadow:0 6px 20px rgba(79,70,229,0.4);
 }
-.refresh-btn:disabled{
+.refresh-button:disabled{
   opacity:0.7;
   cursor:not-allowed;
   transform:none;
 }
-.refresh-btn .spinner{
-  width:14px;
-  height:14px;
+.refresh-button .loading-spinner{
+  width:16px;
+  height:16px;
   border:2px solid #fff;
   border-top-color:transparent;
   border-radius:50%;
@@ -227,17 +232,17 @@ body{
 @keyframes spin{to{transform:rotate(360deg)}}
 
 /* ================= STOCK GRID ================= */
-.stock-grid{
+.stocks-grid{
   display:grid;
-  grid-template-columns:repeat(auto-fill,minmax(280px,1fr));
+  grid-template-columns:repeat(auto-fill,minmax(300px,1fr));
   gap:20px;
 }
 .stock-card{
   background:#fff;
-  border-radius:16px;
-  padding:20px;
+  border-radius:18px;
+  padding:22px;
   border:1px solid #e2e8f0;
-  box-shadow:0 4px 15px rgba(0,0,0,0.05);
+  box-shadow:0 4px 16px rgba(0,0,0,0.05);
   transition:all 0.3s ease;
   position:relative;
   overflow:hidden;
@@ -252,31 +257,31 @@ body{
   transition:opacity 0.3s;
 }
 .stock-card:hover{
-  transform:translateY(-4px);
-  box-shadow:0 12px 30px rgba(0,0,0,0.12);
+  transform:translateY(-5px);
+  box-shadow:0 15px 40px rgba(0,0,0,0.12);
 }
 .stock-card:hover::before{opacity:1}
-.stock-card.flash-up{animation:flashUp 0.5s ease}
-.stock-card.flash-down{animation:flashDown 0.5s ease}
-@keyframes flashUp{
+.stock-card.price-up{animation:priceUp 0.6s ease}
+.stock-card.price-down{animation:priceDown 0.6s ease}
+@keyframes priceUp{
   0%,100%{background:#fff}
-  50%{background:#d1fae5}
+  50%{background:#d1fae5;border-color:#10b981}
 }
-@keyframes flashDown{
+@keyframes priceDown{
   0%,100%{background:#fff}
-  50%{background:#fee2e2}
+  50%{background:#fee2e2;border-color:#ef4444}
 }
 
-.stock-top{
+.stock-header{
   display:flex;
   align-items:center;
-  gap:12px;
-  margin-bottom:16px;
+  gap:14px;
+  margin-bottom:18px;
 }
 .stock-logo{
-  width:50px;
-  height:50px;
-  border-radius:12px;
+  width:54px;
+  height:54px;
+  border-radius:14px;
   background:#f8fafc;
   border:1px solid #e2e8f0;
   display:flex;
@@ -289,16 +294,16 @@ body{
   width:100%;
   height:100%;
   object-fit:contain;
-  padding:6px;
+  padding:8px;
 }
-.stock-logo-text{
-  font-size:20px;
+.stock-logo-fallback{
+  font-size:22px;
   font-weight:700;
   color:#4f46e5;
 }
-.stock-details{flex:1;min-width:0}
-.stock-name{
-  font-size:15px;
+.stock-meta{flex:1;min-width:0}
+.stock-title{
+  font-size:16px;
   font-weight:600;
   color:#1e293b;
   margin-bottom:4px;
@@ -310,52 +315,53 @@ body{
   font-size:12px;
   color:#64748b;
   background:#f1f5f9;
-  padding:3px 8px;
-  border-radius:6px;
-  display:inline-block;
-}
-
-.stock-price-row{
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  padding:14px;
-  background:#f8fafc;
-  border-radius:12px;
-  margin-bottom:14px;
-}
-.stock-price{
-  font-size:24px;
-  font-weight:700;
-  color:#1e293b;
-}
-.stock-change{text-align:right}
-.change-amount{
-  font-size:14px;
-  font-weight:600;
-  margin-bottom:4px;
-}
-.change-amount.up{color:#10b981}
-.change-amount.down{color:#ef4444}
-.change-percent{
-  font-size:12px;
-  font-weight:600;
   padding:4px 10px;
   border-radius:6px;
   display:inline-block;
+  font-weight:500;
 }
-.change-percent.up{background:#d1fae5;color:#065f46}
-.change-percent.down{background:#fee2e2;color:#991b1b}
 
-.add-btn{
+.price-display{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding:16px;
+  background:linear-gradient(135deg,#f8fafc,#f1f5f9);
+  border-radius:14px;
+  margin-bottom:16px;
+}
+.current-price{
+  font-size:26px;
+  font-weight:700;
+  color:#1e293b;
+}
+.price-change{text-align:right}
+.change-value{
+  font-size:15px;
+  font-weight:600;
+  margin-bottom:4px;
+}
+.change-value.positive{color:#10b981}
+.change-value.negative{color:#ef4444}
+.change-badge{
+  font-size:12px;
+  font-weight:600;
+  padding:5px 12px;
+  border-radius:8px;
+  display:inline-block;
+}
+.change-badge.positive{background:#d1fae5;color:#065f46}
+.change-badge.negative{background:#fee2e2;color:#991b1b}
+
+.add-stock-btn{
   width:100%;
-  padding:12px;
+  padding:14px;
   border:none;
-  border-radius:12px;
+  border-radius:14px;
   background:linear-gradient(135deg,#4f46e5,#7c3aed);
   color:#fff;
   font-weight:600;
-  font-size:14px;
+  font-size:15px;
   cursor:pointer;
   transition:all 0.3s;
   display:flex;
@@ -363,269 +369,291 @@ body{
   justify-content:center;
   gap:8px;
 }
-.add-btn:hover{
+.add-stock-btn:hover{
   transform:scale(1.02);
-  box-shadow:0 4px 15px rgba(79,70,229,0.4);
+  box-shadow:0 6px 20px rgba(79,70,229,0.4);
 }
 
-/* ================= HOLDINGS ================= */
-.holdings-top{
+/* ================= HOLDINGS PAGE ================= */
+.holdings-header{
   display:flex;
   justify-content:space-between;
   align-items:center;
-  margin-bottom:20px;
+  margin-bottom:24px;
   flex-wrap:wrap;
   gap:16px;
 }
-.holdings-top h2{
-  font-size:24px;
+.holdings-header h2{
+  font-size:26px;
   font-weight:700;
   color:#1e293b;
 }
 .holdings-controls{
   display:flex;
   align-items:center;
-  gap:12px;
+  gap:16px;
   flex-wrap:wrap;
 }
-.holdings-status{
+.holdings-live-badge{
   display:flex;
   align-items:center;
   gap:8px;
-  padding:8px 14px;
+  padding:10px 18px;
   background:#f8fafc;
-  border-radius:10px;
+  border-radius:12px;
   border:1px solid #e2e8f0;
-  font-size:13px;
+  font-size:14px;
+  font-weight:500;
 }
 
-.stats-grid{
+.stats-cards{
   display:grid;
-  grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
-  gap:16px;
-  margin-bottom:24px;
+  grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+  gap:18px;
+  margin-bottom:28px;
 }
-.stat-box{
-  padding:20px;
-  border-radius:16px;
+.stat-card{
+  padding:24px;
+  border-radius:18px;
   background:#fff;
   border:1px solid #e2e8f0;
+  box-shadow:0 4px 16px rgba(0,0,0,0.04);
 }
-.stat-box.purple{
+.stat-card.gradient-purple{
   background:linear-gradient(135deg,#4f46e5,#7c3aed);
   color:#fff;
   border:none;
 }
-.stat-box.green{
+.stat-card.gradient-green{
   background:linear-gradient(135deg,#10b981,#059669);
   color:#fff;
   border:none;
 }
-.stat-box.red{
+.stat-card.gradient-red{
   background:linear-gradient(135deg,#ef4444,#dc2626);
   color:#fff;
   border:none;
 }
+.stat-card.gradient-blue{
+  background:linear-gradient(135deg,#3b82f6,#2563eb);
+  color:#fff;
+  border:none;
+}
 .stat-label{
-  font-size:12px;
+  font-size:13px;
   opacity:0.9;
-  margin-bottom:6px;
+  margin-bottom:8px;
   text-transform:uppercase;
   letter-spacing:0.5px;
+  font-weight:500;
 }
 .stat-value{
-  font-size:26px;
+  font-size:28px;
   font-weight:700;
 }
-.stat-sub{
-  font-size:13px;
-  margin-top:4px;
+.stat-subtitle{
+  font-size:14px;
+  margin-top:6px;
   opacity:0.9;
 }
 
-.table-container{
+.holdings-table-wrap{
   background:#fff;
-  border-radius:16px;
+  border-radius:18px;
   border:1px solid #e2e8f0;
   overflow:hidden;
+  box-shadow:0 4px 16px rgba(0,0,0,0.04);
 }
 .table-scroll{
   overflow-x:auto;
 }
-table{
+.holdings-table{
   width:100%;
   border-collapse:collapse;
-  min-width:850px;
+  min-width:950px;
 }
-th,td{
-  padding:14px 12px;
+.holdings-table th,
+.holdings-table td{
+  padding:16px 14px;
   text-align:left;
   border-bottom:1px solid #f1f5f9;
 }
-th{
+.holdings-table th{
   background:#f8fafc;
   font-weight:600;
-  font-size:11px;
+  font-size:12px;
   color:#64748b;
   text-transform:uppercase;
   letter-spacing:0.5px;
 }
-td{font-size:13px;color:#334155}
-tr:hover td{background:#fafbfc}
+.holdings-table td{font-size:14px;color:#334155}
+.holdings-table tr:hover td{background:#fafbfc}
 
-.holding-stock{
+.holding-stock-cell{
   display:flex;
   align-items:center;
-  gap:10px;
+  gap:12px;
 }
-.holding-icon{
-  width:36px;
-  height:36px;
-  border-radius:10px;
+.holding-stock-icon{
+  width:42px;
+  height:42px;
+  border-radius:12px;
   background:linear-gradient(135deg,#4f46e5,#7c3aed);
   color:#fff;
   display:flex;
   align-items:center;
   justify-content:center;
-  font-weight:600;
-  font-size:14px;
+  font-weight:700;
+  font-size:16px;
+  flex-shrink:0;
 }
-.holding-info{display:flex;flex-direction:column}
-.holding-name{font-weight:600;color:#1e293b}
-.holding-sym{font-size:11px;color:#64748b}
+.holding-stock-info{display:flex;flex-direction:column}
+.holding-stock-name{font-weight:600;color:#1e293b;font-size:14px}
+.holding-stock-sym{font-size:12px;color:#64748b}
 
-.profit{color:#10b981;font-weight:600}
-.loss{color:#ef4444;font-weight:600}
+.text-profit{color:#10b981;font-weight:600}
+.text-loss{color:#ef4444;font-weight:600}
 
-.action-btns{display:flex;gap:8px}
-.action-btns button{
-  padding:6px 14px;
+.action-buttons{display:flex;gap:10px}
+.action-buttons button{
+  padding:8px 16px;
   border:none;
-  border-radius:8px;
-  font-weight:500;
-  font-size:12px;
+  border-radius:10px;
+  font-weight:600;
+  font-size:13px;
   cursor:pointer;
   transition:all 0.2s;
 }
-.edit-btn{background:#e0e7ff;color:#4338ca}
-.edit-btn:hover{background:#c7d2fe}
-.delete-btn{background:#fee2e2;color:#dc2626}
-.delete-btn:hover{background:#fecaca}
+.btn-edit{background:#e0e7ff;color:#4338ca}
+.btn-edit:hover{background:#c7d2fe}
+.btn-delete{background:#fee2e2;color:#dc2626}
+.btn-delete:hover{background:#fecaca}
 
 .empty-holdings{
   text-align:center;
-  padding:60px 20px;
+  padding:80px 20px;
   color:#64748b;
 }
 .empty-holdings::before{
   content:"📈";
-  font-size:48px;
+  font-size:56px;
   display:block;
-  margin-bottom:16px;
+  margin-bottom:20px;
+}
+.empty-holdings h3{
+  font-size:20px;
+  color:#1e293b;
+  margin-bottom:8px;
 }
 
-/* ================= CHAT ================= */
-.chat-container{
+/* ================= CHAT PAGE ================= */
+.chat-wrapper{
   display:grid;
-  grid-template-columns:380px 1fr;
-  gap:20px;
-  height:calc(100vh - 160px);
-  min-height:500px;
+  grid-template-columns:400px 1fr;
+  gap:24px;
+  height:calc(100vh - 180px);
+  min-height:550px;
 }
 .chat-sidebar{
   background:#fff;
-  border-radius:16px;
+  border-radius:18px;
   border:1px solid #e2e8f0;
   display:flex;
   flex-direction:column;
   overflow:hidden;
+  box-shadow:0 4px 16px rgba(0,0,0,0.04);
 }
 
 /* Chat Search */
-.chat-search-box{
-  padding:16px;
+.chat-search-section{
+  padding:20px;
   border-bottom:1px solid #f1f5f9;
 }
-.search-input-wrap{
+.search-input-group{
   display:flex;
-  gap:10px;
+  gap:12px;
 }
-.search-input-wrap input{
+.search-input-group input{
   flex:1;
-  padding:12px 16px;
+  padding:14px 18px;
   border:2px solid #e2e8f0;
-  border-radius:12px;
-  font-size:14px;
+  border-radius:14px;
+  font-size:15px;
   transition:all 0.3s;
 }
-.search-input-wrap input:focus{
+.search-input-group input:focus{
   outline:none;
   border-color:#4f46e5;
+  box-shadow:0 0 0 4px rgba(79,70,229,0.1);
 }
 .search-btn{
-  padding:12px 16px;
+  padding:14px 20px;
   border:none;
-  border-radius:12px;
+  border-radius:14px;
   background:linear-gradient(135deg,#4f46e5,#7c3aed);
   color:#fff;
-  font-size:18px;
+  font-size:20px;
   cursor:pointer;
   transition:all 0.3s;
 }
 .search-btn:hover{
   transform:scale(1.05);
+  box-shadow:0 4px 16px rgba(79,70,229,0.4);
 }
-.search-result{
-  margin-top:12px;
+.search-results{
+  margin-top:16px;
 }
-.search-user-card{
+.search-result-card{
   display:flex;
   align-items:center;
-  gap:12px;
-  padding:12px;
+  gap:14px;
+  padding:14px;
   background:#f8fafc;
-  border-radius:12px;
+  border-radius:14px;
   border:1px solid #e2e8f0;
 }
-.search-avatar{
-  width:44px;
-  height:44px;
+.search-result-avatar{
+  width:50px;
+  height:50px;
   border-radius:50%;
   background:linear-gradient(135deg,#4f46e5,#7c3aed);
   color:#fff;
   display:flex;
   align-items:center;
   justify-content:center;
-  font-weight:600;
-  font-size:18px;
+  font-weight:700;
+  font-size:20px;
 }
-.search-info{flex:1}
-.search-name{font-weight:600;color:#1e293b}
-.search-code{font-size:12px;color:#64748b}
-.send-req-btn{
-  padding:8px 16px;
+.search-result-info{flex:1}
+.search-result-name{font-weight:600;color:#1e293b;font-size:16px}
+.search-result-code{font-size:13px;color:#64748b}
+.send-request-btn{
+  padding:10px 20px;
   border:none;
-  border-radius:8px;
+  border-radius:10px;
   background:linear-gradient(135deg,#10b981,#059669);
   color:#fff;
-  font-weight:500;
-  font-size:13px;
+  font-weight:600;
+  font-size:14px;
   cursor:pointer;
   transition:all 0.2s;
 }
-.send-req-btn:hover{transform:scale(1.05)}
+.send-request-btn:hover{
+  transform:scale(1.05);
+  box-shadow:0 4px 12px rgba(16,185,129,0.4);
+}
 
 /* Chat Tabs */
-.chat-tabs{
+.chat-nav-tabs{
   display:flex;
   border-bottom:1px solid #f1f5f9;
 }
-.chat-tab{
+.chat-nav-tab{
   flex:1;
-  padding:14px;
+  padding:16px;
   text-align:center;
-  font-weight:500;
-  font-size:14px;
+  font-weight:600;
+  font-size:15px;
   color:#64748b;
   cursor:pointer;
   transition:all 0.3s;
@@ -633,128 +661,142 @@ tr:hover td{background:#fafbfc}
   background:none;
   position:relative;
 }
-.chat-tab:hover{
+.chat-nav-tab:hover{
   background:#f8fafc;
   color:#4f46e5;
 }
-.chat-tab.active{
+.chat-nav-tab.active{
   color:#4f46e5;
   border-bottom-color:#4f46e5;
   background:#f8fafc;
 }
-.chat-tab .badge{
+.chat-nav-tab .count-badge{
   position:absolute;
-  top:8px;
-  right:20px;
+  top:10px;
+  right:25%;
   background:#ef4444;
   color:#fff;
-  font-size:10px;
-  padding:2px 6px;
-  border-radius:10px;
-  font-weight:600;
+  font-size:11px;
+  padding:3px 8px;
+  border-radius:12px;
+  font-weight:700;
 }
 
 /* Chat Lists */
-.chat-lists{
+.chat-lists-container{
   flex:1;
   overflow-y:auto;
-  padding:12px;
+  padding:16px;
 }
-.chat-list{display:none}
-.chat-list.active{display:block}
+.chat-list-section{display:none}
+.chat-list-section.active{display:block}
 
-.chat-item{
+.chat-list-item{
   display:flex;
   align-items:center;
-  gap:12px;
-  padding:12px;
-  border-radius:12px;
+  gap:14px;
+  padding:14px;
+  border-radius:14px;
   cursor:pointer;
   transition:all 0.2s;
-  margin-bottom:8px;
+  margin-bottom:10px;
+  border:1px solid transparent;
 }
-.chat-item:hover{background:#f8fafc}
-.chat-item.selected{background:#ede9fe}
-.chat-avatar{
-  width:48px;
-  height:48px;
+.chat-list-item:hover{
+  background:#f8fafc;
+  border-color:#e2e8f0;
+}
+.chat-list-item.selected{
+  background:#ede9fe;
+  border-color:#c4b5fd;
+}
+.chat-item-avatar{
+  width:52px;
+  height:52px;
   border-radius:50%;
   background:linear-gradient(135deg,#4f46e5,#7c3aed);
   color:#fff;
   display:flex;
   align-items:center;
   justify-content:center;
-  font-weight:600;
-  font-size:18px;
+  font-weight:700;
+  font-size:20px;
   flex-shrink:0;
 }
-.chat-item-info{flex:1;min-width:0}
+.chat-item-content{flex:1;min-width:0}
 .chat-item-name{
   font-weight:600;
-  font-size:14px;
+  font-size:15px;
   color:#1e293b;
-  margin-bottom:2px;
+  margin-bottom:3px;
 }
 .chat-item-preview{
-  font-size:12px;
+  font-size:13px;
   color:#64748b;
   white-space:nowrap;
   overflow:hidden;
   text-overflow:ellipsis;
 }
-.accept-btn{
-  padding:8px 14px;
+.accept-request-btn{
+  padding:10px 18px;
   border:none;
-  border-radius:8px;
+  border-radius:10px;
   background:linear-gradient(135deg,#10b981,#059669);
   color:#fff;
-  font-weight:500;
-  font-size:12px;
+  font-weight:600;
+  font-size:13px;
   cursor:pointer;
   transition:all 0.2s;
 }
-.accept-btn:hover{transform:scale(1.05)}
-
-.empty-list{
-  text-align:center;
-  padding:40px 20px;
-  color:#94a3b8;
-  font-size:14px;
+.accept-request-btn:hover{
+  transform:scale(1.05);
 }
 
-/* Chat Box */
-.chat-box{
+.empty-list-msg{
+  text-align:center;
+  padding:50px 20px;
+  color:#94a3b8;
+  font-size:15px;
+}
+
+/* Chat Main Box */
+.chat-main-box{
   background:#fff;
-  border-radius:16px;
+  border-radius:18px;
   border:1px solid #e2e8f0;
   display:flex;
   flex-direction:column;
   overflow:hidden;
+  box-shadow:0 4px 16px rgba(0,0,0,0.04);
 }
-.chat-header{
-  padding:16px 20px;
+.chat-main-header{
+  padding:18px 24px;
   border-bottom:1px solid #f1f5f9;
   display:flex;
   align-items:center;
-  gap:12px;
+  gap:14px;
   background:#fafbfc;
 }
-.chat-header .chat-avatar{width:44px;height:44px;font-size:16px}
-.chat-header-info h3{
-  font-size:16px;
+.chat-main-header .chat-item-avatar{width:48px;height:48px;font-size:18px}
+.chat-partner-details h3{
+  font-size:17px;
   font-weight:600;
   color:#1e293b;
-  margin-bottom:2px;
+  margin-bottom:3px;
 }
-.chat-header-info span{font-size:12px;color:#10b981}
+.chat-partner-details span{
+  font-size:13px;
+  color:#10b981;
+  font-weight:500;
+}
 
-.chat-messages{
+.chat-messages-area{
   flex:1;
-  padding:20px;
+  padding:24px;
   overflow-y:auto;
-  background:#f8fafc;
+  background:linear-gradient(180deg,#f8fafc,#fff);
 }
-.chat-empty{
+.chat-placeholder{
   display:flex;
   flex-direction:column;
   align-items:center;
@@ -763,1183 +805,1607 @@ tr:hover td{background:#fafbfc}
   color:#94a3b8;
   text-align:center;
 }
-.chat-empty::before{
+.chat-placeholder::before{
   content:"💬";
-  font-size:48px;
-  margin-bottom:16px;
+  font-size:56px;
+  margin-bottom:20px;
 }
+.chat-placeholder p{font-size:16px}
 
-.message{
-  max-width:70%;
-  padding:12px 16px;
-  border-radius:16px;
-  margin-bottom:12px;
-  font-size:14px;
+.chat-message{
+  max-width:72%;
+  padding:14px 18px;
+  border-radius:18px;
+  margin-bottom:14px;
+  font-size:15px;
   line-height:1.5;
-  animation:fadeIn 0.3s ease;
+  animation:messageIn 0.3s ease;
 }
-@keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
-.message.sent{
+@keyframes messageIn{
+  from{opacity:0;transform:translateY(12px)}
+  to{opacity:1;transform:translateY(0)}
+}
+.chat-message.outgoing{
   background:linear-gradient(135deg,#4f46e5,#7c3aed);
   color:#fff;
   margin-left:auto;
-  border-bottom-right-radius:4px;
+  border-bottom-right-radius:6px;
 }
-.message.received{
+.chat-message.incoming{
   background:#fff;
   color:#1e293b;
   border:1px solid #e2e8f0;
-  border-bottom-left-radius:4px;
+  border-bottom-left-radius:6px;
 }
-.message small{
+.chat-message .msg-time{
   display:block;
-  margin-top:6px;
+  margin-top:8px;
   font-size:11px;
   opacity:0.7;
 }
+.chat-message.outgoing .msg-time{text-align:right}
 
-.chat-input-box{
+.chat-input-section{
   display:flex;
-  gap:12px;
-  padding:16px 20px;
+  gap:14px;
+  padding:18px 24px;
   border-top:1px solid #f1f5f9;
   background:#fff;
 }
-.chat-input-box input{
+.chat-input-section input{
   flex:1;
-  padding:14px 18px;
-  border-radius:14px;
+  padding:16px 20px;
+  border-radius:16px;
   border:2px solid #e2e8f0;
-  font-size:14px;
+  font-size:15px;
   transition:all 0.3s;
 }
-.chat-input-box input:focus{
+.chat-input-section input:focus{
   outline:none;
   border-color:#4f46e5;
 }
-.chat-send-btn{
-  padding:14px 24px;
-  border-radius:14px;
+.send-msg-btn{
+  padding:16px 28px;
+  border-radius:16px;
   border:none;
   background:linear-gradient(135deg,#4f46e5,#7c3aed);
   color:#fff;
   font-weight:600;
-  font-size:14px;
+  font-size:15px;
   cursor:pointer;
   transition:all 0.3s;
 }
-.chat-send-btn:hover{
+.send-msg-btn:hover{
   transform:scale(1.02);
-  box-shadow:0 4px 15px rgba(79,70,229,0.4);
+  box-shadow:0 6px 20px rgba(79,70,229,0.4);
 }
 
-/* ================= LOGIN ================= */
-#loginBox{
-  max-width:440px;
+/* ================= LOGIN PAGE ================= */
+#loginPage{
+  max-width:460px;
   margin:80px auto;
   background:#fff;
-  padding:40px;
-  border-radius:24px;
+  padding:48px;
+  border-radius:28px;
   border:1px solid #e2e8f0;
-  box-shadow:0 20px 50px rgba(0,0,0,0.1);
+  box-shadow:0 24px 60px rgba(0,0,0,0.12);
 }
-#loginBox h2{
+#loginPage h2{
   text-align:center;
-  margin-bottom:8px;
-  font-size:28px;
+  margin-bottom:10px;
+  font-size:32px;
   background:linear-gradient(135deg,#4f46e5,#7c3aed);
   -webkit-background-clip:text;
   -webkit-text-fill-color:transparent;
   background-clip:text;
 }
-#loginBox .subtitle{
+#loginPage .tagline{
   text-align:center;
   color:#64748b;
-  margin-bottom:30px;
-  font-size:14px;
+  margin-bottom:36px;
+  font-size:15px;
 }
-#loginBox input{
+#loginPage input{
   width:100%;
-  padding:14px 18px;
-  margin-bottom:14px;
-  border-radius:12px;
+  padding:16px 20px;
+  margin-bottom:16px;
+  border-radius:14px;
   border:2px solid #e2e8f0;
-  font-size:14px;
+  font-size:15px;
   transition:all 0.3s;
 }
-#loginBox input:focus{
+#loginPage input:focus{
   outline:none;
   border-color:#4f46e5;
 }
-#loginBox button{
+#loginPage button{
   width:100%;
-  padding:14px;
-  margin-top:8px;
-  border-radius:12px;
+  padding:16px;
+  margin-top:10px;
+  border-radius:14px;
   border:none;
-  font-size:15px;
+  font-size:16px;
   font-weight:600;
   cursor:pointer;
   transition:all 0.3s;
 }
-.btn-primary{
+.login-primary-btn{
   background:linear-gradient(135deg,#4f46e5,#7c3aed);
   color:#fff;
 }
-.btn-primary:hover{
-  box-shadow:0 4px 20px rgba(79,70,229,0.4);
+.login-primary-btn:hover{
+  box-shadow:0 6px 24px rgba(79,70,229,0.4);
   transform:translateY(-2px);
 }
-.btn-google{
+.login-google-btn{
   background:#fff;
   border:2px solid #e2e8f0 !important;
   color:#1e293b;
   display:flex;
   align-items:center;
   justify-content:center;
-  gap:10px;
+  gap:12px;
 }
-.btn-google:hover{background:#f8fafc}
+.login-google-btn:hover{background:#f8fafc}
 #loginError{
   color:#dc2626;
-  margin-top:14px;
+  margin-top:16px;
   text-align:center;
   font-size:14px;
 }
 
 /* ================= MODALS ================= */
-.modal-overlay{
+.modal-backdrop{
   position:fixed;
   inset:0;
-  background:rgba(15,23,42,0.6);
-  backdrop-filter:blur(4px);
+  background:rgba(15,23,42,0.65);
+  backdrop-filter:blur(5px);
   display:none;
   align-items:center;
   justify-content:center;
-  z-index:200;
+  z-index:300;
 }
-.modal-box{
+.modal-container{
   background:#fff;
-  padding:32px;
-  width:420px;
-  max-width:90%;
-  border-radius:20px;
-  box-shadow:0 25px 60px rgba(0,0,0,0.2);
-  animation:modalIn 0.3s ease;
+  padding:36px;
+  width:440px;
+  max-width:92%;
+  border-radius:24px;
+  box-shadow:0 28px 70px rgba(0,0,0,0.25);
+  animation:modalAppear 0.3s ease;
 }
-@keyframes modalIn{from{opacity:0;transform:scale(0.95)}to{opacity:1;transform:scale(1)}}
-.modal-box h3{
-  font-size:20px;
+@keyframes modalAppear{
+  from{opacity:0;transform:scale(0.94)}
+  to{opacity:1;transform:scale(1)}
+}
+.modal-container h3{
+  font-size:22px;
   font-weight:700;
-  margin-bottom:20px;
+  margin-bottom:24px;
   color:#1e293b;
 }
-.modal-info{
+.modal-info-box{
   background:#f8fafc;
-  padding:14px;
-  border-radius:12px;
-  margin-bottom:16px;
+  padding:16px;
+  border-radius:14px;
+  margin-bottom:20px;
 }
-.modal-info p{
-  font-size:13px;
-  color:#64748b;
-  margin-bottom:4px;
-}
-.modal-info span{color:#1e293b;font-weight:600}
-.modal-box label{
-  display:block;
-  font-size:13px;
-  font-weight:500;
+.modal-info-box p{
+  font-size:14px;
   color:#64748b;
   margin-bottom:6px;
 }
-.modal-box input{
-  width:100%;
-  padding:14px 16px;
-  margin-bottom:12px;
-  border-radius:12px;
-  border:2px solid #e2e8f0;
+.modal-info-box span{color:#1e293b;font-weight:600}
+.modal-container label{
+  display:block;
   font-size:14px;
+  font-weight:500;
+  color:#64748b;
+  margin-bottom:8px;
+}
+.modal-container input{
+  width:100%;
+  padding:16px 18px;
+  margin-bottom:14px;
+  border-radius:14px;
+  border:2px solid #e2e8f0;
+  font-size:15px;
   transition:all 0.3s;
 }
-.modal-box input:focus{
+.modal-container input:focus{
   outline:none;
   border-color:#4f46e5;
 }
-.modal-btns{
+.modal-actions{
   display:flex;
-  gap:12px;
-  margin-top:20px;
+  gap:14px;
+  margin-top:24px;
 }
-.modal-btns button{
+.modal-actions button{
   flex:1;
-  padding:14px;
-  border-radius:12px;
+  padding:16px;
+  border-radius:14px;
   border:none;
   font-weight:600;
-  font-size:14px;
+  font-size:15px;
   cursor:pointer;
   transition:all 0.3s;
 }
-.modal-btns .primary{
+.modal-primary{
   background:linear-gradient(135deg,#4f46e5,#7c3aed);
   color:#fff;
 }
-.modal-btns .secondary{background:#f1f5f9;color:#64748b}
-.modal-btns .danger{background:#fee2e2;color:#dc2626}
+.modal-primary:hover{box-shadow:0 6px 20px rgba(79,70,229,0.4)}
+.modal-secondary{background:#f1f5f9;color:#64748b}
+.modal-secondary:hover{background:#e2e8f0}
+.modal-danger{background:#fee2e2;color:#dc2626}
+.modal-danger:hover{background:#fecaca}
 
-/* ================= MF TAB ================= */
-.coming-soon{
+/* ================= MUTUAL FUNDS PAGE ================= */
+.mf-coming-soon{
   text-align:center;
-  padding:80px 20px;
+  padding:100px 20px;
   background:#fff;
-  border-radius:16px;
+  border-radius:18px;
   border:1px solid #e2e8f0;
 }
-.coming-soon::before{
+.mf-coming-soon::before{
   content:"🚀";
-  font-size:64px;
+  font-size:72px;
   display:block;
-  margin-bottom:20px;
+  margin-bottom:24px;
 }
-.coming-soon h3{font-size:24px;color:#1e293b;margin-bottom:8px}
-.coming-soon p{color:#64748b}
+.mf-coming-soon h3{font-size:28px;color:#1e293b;margin-bottom:12px}
+.mf-coming-soon p{color:#64748b;font-size:16px}
 
 /* ================= RESPONSIVE ================= */
-@media(max-width:1024px){
-  .nav{flex-wrap:wrap;gap:12px}
-  .tabs{order:3;width:100%;overflow-x:auto}
+@media(max-width:1100px){
+  .navbar{flex-wrap:wrap;gap:14px}
+  .nav-tabs{order:3;width:100%;overflow-x:auto}
   .nav-search{margin-left:0;flex:1}
-  .chat-container{grid-template-columns:1fr}
-  .stats-grid{grid-template-columns:repeat(2,1fr)}
+  .chat-wrapper{grid-template-columns:1fr}
+  .stats-cards{grid-template-columns:repeat(2,1fr)}
 }
-@media(max-width:640px){
-  .nav{padding:12px 16px}
-  .logo{font-size:20px}
-  .tabs span{padding:8px 14px;font-size:13px;white-space:nowrap}
-  .stock-grid{grid-template-columns:1fr}
-  .stats-grid{grid-template-columns:1fr}
+@media(max-width:680px){
+  .navbar{padding:14px 18px}
+  .brand{font-size:20px}
+  .nav-tabs span{padding:10px 14px;font-size:13px;white-space:nowrap}
+  .stocks-grid{grid-template-columns:1fr}
+  .stats-cards{grid-template-columns:1fr}
   .status-bar{flex-direction:column;text-align:center}
   .status-left,.status-right{justify-content:center}
-  .action-btns{flex-direction:column;gap:4px}
+  .action-buttons{flex-direction:column;gap:6px}
 }
 </style>
 </head>
 
 <body>
 
-<!-- ================= LOGIN ================= -->
-<div id="loginBox">
+<!-- ================= LOGIN PAGE ================= -->
+<div id="loginPage">
   <h2>FinzoTalk</h2>
-  <p class="subtitle">Your smart portfolio & chat companion</p>
-  <input id="loginEmail" type="email" placeholder="Email address">
-  <input id="loginPassword" type="password" placeholder="Password">
-  <button class="btn-primary" onclick="loginWithEmail()">Login / Sign Up</button>
-  <button class="btn-google" onclick="loginWithGoogle()">🔵 Continue with Google</button>
+  <p class="tagline">Your smart portfolio & chat companion</p>
+  <input type="email" id="emailInput" placeholder="Email address">
+  <input type="password" id="passwordInput" placeholder="Password">
+  <button class="login-primary-btn" onclick="handleEmailLogin()">Login / Sign Up</button>
+  <button class="login-google-btn" onclick="handleGoogleLogin()">🔵 Continue with Google</button>
   <div id="loginError"></div>
 </div>
 
-<!-- ================= APP ================= -->
-<div id="appMain" style="display:none">
+<!-- ================= MAIN APPLICATION ================= -->
+<div id="mainApp" style="display:none">
 
-<nav class="nav">
-  <div class="logo">FinzoTalk</div>
-  <div class="tabs">
+<!-- Navbar -->
+<nav class="navbar">
+  <div class="brand">FinzoTalk</div>
+  <div class="nav-tabs">
     <span class="active" data-tab="stocks">📊 Stocks</span>
     <span data-tab="holdings">💼 Holdings</span>
     <span data-tab="mf">📈 Mutual Funds</span>
     <span data-tab="chat">💬 Chat</span>
   </div>
   <div class="nav-search">
-    <input type="text" id="stockSearch" placeholder="Search stocks...">
+    <input type="text" id="stockSearchInput" placeholder="Search 300+ stocks...">
   </div>
-  <div class="settings-btn" onclick="openSettings()">⚙️</div>
+  <div class="settings-icon" onclick="showSettings()">⚙️</div>
 </nav>
 
-<div class="content">
+<!-- Main Content -->
+<div class="main-content">
   
   <!-- ========== STOCKS TAB ========== -->
-  <div id="stocksTab">
+  <section id="stocksSection">
     <div class="status-bar">
       <div class="status-left">
-        <div class="stock-count">
-          <strong id="visibleCount">0</strong> of <span id="totalCount">0</span> stocks
+        <div class="stock-counter">
+          <strong id="displayedCount">0</strong> of <span id="totalStockCount">0</span> stocks
         </div>
-        <div class="live-badge" id="liveBadge">
+        <div class="live-status" id="liveStatusBadge">
           <div class="live-dot"></div>
-          <span id="liveStatus">Ready</span>
+          <span id="liveStatusText">Ready</span>
         </div>
-        <div class="last-update" id="lastUpdateText">--</div>
+        <div class="update-time" id="lastUpdateDisplay">--</div>
       </div>
       <div class="status-right">
-        <div class="countdown-text">
-          Next refresh: <span class="countdown-num" id="countdownNum">30</span>s
+        <div class="countdown-display">
+          Next update: <span class="countdown-num" id="countdownDisplay">30</span>s
         </div>
-        <button class="refresh-btn" id="refreshStocksBtn" onclick="manualRefresh()">
+        <button class="refresh-button" id="mainRefreshBtn" onclick="triggerManualRefresh()">
           🔄 Refresh Now
         </button>
       </div>
     </div>
-    <div class="stock-grid" id="stockGrid"></div>
-  </div>
+    <div class="stocks-grid" id="stocksContainer"></div>
+  </section>
 
   <!-- ========== HOLDINGS TAB ========== -->
-  <div id="holdingsTab" style="display:none">
-    <div class="holdings-top">
+  <section id="holdingsSection" style="display:none">
+    <div class="holdings-header">
       <h2>📊 Your Portfolio</h2>
       <div class="holdings-controls">
-        <div class="holdings-status">
+        <div class="holdings-live-badge">
           <div class="live-dot" style="background:#10b981"></div>
-          <span id="holdingsUpdateText">Live</span>
+          <span id="holdingsUpdateDisplay">Live</span>
         </div>
-        <button class="refresh-btn" onclick="refreshHoldings()">
-          🔄 Refresh
-        </button>
+        <button class="refresh-button" onclick="refreshHoldingsData()">🔄 Refresh</button>
       </div>
     </div>
-    <div class="stats-grid" id="statsGrid"></div>
-    <div class="table-container">
-      <div class="table-scroll" id="holdingsTableWrap"></div>
+    <div class="stats-cards" id="portfolioStats"></div>
+    <div class="holdings-table-wrap">
+      <div class="table-scroll" id="holdingsTableContainer"></div>
     </div>
-  </div>
+  </section>
 
   <!-- ========== MUTUAL FUNDS TAB ========== -->
-  <div id="mfTab" style="display:none">
-    <div class="coming-soon">
+  <section id="mfSection" style="display:none">
+    <div class="mf-coming-soon">
       <h3>Mutual Funds</h3>
       <p>Coming soon! We're working on bringing you the best MF experience.</p>
     </div>
-  </div>
+  </section>
 
   <!-- ========== CHAT TAB ========== -->
-  <div id="chatTab" style="display:none">
-    <div class="chat-container">
+  <section id="chatSection" style="display:none">
+    <div class="chat-wrapper">
       
       <!-- Sidebar -->
       <div class="chat-sidebar">
         
         <!-- Search -->
-        <div class="chat-search-box">
-          <div class="search-input-wrap">
-            <input type="text" id="userSearchInput" placeholder="Enter 5-digit User ID" maxlength="5">
-            <button class="search-btn" onclick="searchUserById()">🔍</button>
+        <div class="chat-search-section">
+          <div class="search-input-group">
+            <input type="text" id="userIdSearchInput" placeholder="Enter 5-digit User ID" maxlength="5">
+            <button class="search-btn" onclick="performUserSearch()">🔍</button>
           </div>
-          <div class="search-result" id="searchResult"></div>
+          <div class="search-results" id="userSearchResults"></div>
         </div>
         
         <!-- Tabs -->
-        <div class="chat-tabs">
-          <div class="chat-tab active" data-list="friends">
+        <div class="chat-nav-tabs">
+          <div class="chat-nav-tab active" data-list="friends">
             👥 Friends
-            <span class="badge" id="friendsBadge" style="display:none">0</span>
+            <span class="count-badge" id="friendsCountBadge" style="display:none">0</span>
           </div>
-          <div class="chat-tab" data-list="requests">
+          <div class="chat-nav-tab" data-list="requests">
             📩 Requests
-            <span class="badge" id="requestsBadge" style="display:none">0</span>
+            <span class="count-badge" id="requestsCountBadge" style="display:none">0</span>
           </div>
         </div>
         
         <!-- Lists -->
-        <div class="chat-lists">
-          <div class="chat-list active" id="friendsList">
-            <div class="empty-list">No friends yet. Search by User ID to add friends!</div>
+        <div class="chat-lists-container">
+          <div class="chat-list-section active" id="friendsListContainer">
+            <div class="empty-list-msg">No friends yet. Search by User ID to add friends!</div>
           </div>
-          <div class="chat-list" id="requestsList">
-            <div class="empty-list">No pending requests</div>
+          <div class="chat-list-section" id="requestsListContainer">
+            <div class="empty-list-msg">No pending requests</div>
           </div>
         </div>
         
       </div>
       
-      <!-- Chat Box -->
-      <div class="chat-box">
-        <div class="chat-header" id="chatBoxHeader" style="display:none">
-          <div class="chat-avatar" id="chatPartnerAvatar">U</div>
-          <div class="chat-header-info">
+      <!-- Chat Main -->
+      <div class="chat-main-box">
+        <div class="chat-main-header" id="chatMainHeader" style="display:none">
+          <div class="chat-item-avatar" id="chatPartnerAvatar">U</div>
+          <div class="chat-partner-details">
             <h3 id="chatPartnerName">User</h3>
             <span>● Online</span>
           </div>
         </div>
-        <div class="chat-messages" id="chatMessages">
-          <div class="chat-empty">
+        <div class="chat-messages-area" id="chatMessagesContainer">
+          <div class="chat-placeholder">
             <p>Select a friend to start chatting</p>
           </div>
         </div>
-        <div class="chat-input-box">
-          <input type="text" id="messageInput" placeholder="Type a message..." onkeypress="if(event.key==='Enter')sendChatMessage()">
-          <button class="chat-send-btn" onclick="sendChatMessage()">Send ➤</button>
+        <div class="chat-input-section">
+          <input type="text" id="chatMessageInput" placeholder="Type a message..." onkeypress="if(event.key==='Enter')sendChatMsg()">
+          <button class="send-msg-btn" onclick="sendChatMsg()">Send ➤</button>
         </div>
       </div>
       
     </div>
-  </div>
+  </section>
 
 </div>
 </div>
 
 <!-- ================= SETTINGS MODAL ================= -->
-<div class="modal-overlay" id="settingsModal">
-  <div class="modal-box">
+<div class="modal-backdrop" id="settingsModal">
+  <div class="modal-container">
     <h3>⚙️ Settings</h3>
-    <div class="modal-info">
-      <p>Email: <span id="userEmail">--</span></p>
-      <p>Your ID: <span id="userCode" style="color:#4f46e5;font-size:18px">--</span></p>
+    <div class="modal-info-box">
+      <p>Email: <span id="displayUserEmail">--</span></p>
+      <p>Your ID: <span id="displayUserCode" style="color:#4f46e5;font-size:20px">--</span></p>
     </div>
     <label>Display Name</label>
-    <input type="text" id="userName" placeholder="Enter your name">
-    <div class="modal-btns">
-      <button class="primary" onclick="saveUserSettings()">Save</button>
-      <button class="secondary" onclick="closeSettings()">Close</button>
+    <input type="text" id="displayNameInput" placeholder="Enter your name">
+    <div class="modal-actions">
+      <button class="modal-primary" onclick="saveUserProfile()">Save</button>
+      <button class="modal-secondary" onclick="hideSettings()">Close</button>
     </div>
-    <button class="danger" onclick="logoutUser()" style="width:100%;margin-top:12px;padding:12px;border:none;border-radius:10px;cursor:pointer">Logout</button>
+    <button class="modal-danger" onclick="performLogout()" style="width:100%;margin-top:14px;padding:14px;border:none;border-radius:12px;cursor:pointer">Logout</button>
   </div>
 </div>
 
 <!-- ================= ADD STOCK MODAL ================= -->
-<div class="modal-overlay" id="addStockModal">
-  <div class="modal-box">
+<div class="modal-backdrop" id="addStockModal">
+  <div class="modal-container">
     <h3>➕ Add to Holdings</h3>
-    <div class="modal-info">
-      <p>Stock: <span id="addStockName">--</span></p>
-      <p>Current Price: <span id="addStockPrice" style="color:#10b981">₹--</span></p>
+    <div class="modal-info-box">
+      <p>Stock: <span id="modalStockName">--</span></p>
+      <p>Current Price: <span id="modalStockPrice" style="color:#10b981">₹--</span></p>
     </div>
     <label>Buy Price (₹)</label>
-    <input type="number" id="buyPriceInput" placeholder="Enter your buy price" step="0.01">
+    <input type="number" id="modalBuyPrice" placeholder="Enter your buy price" step="0.01">
     <label>Quantity</label>
-    <input type="number" id="quantityInput" placeholder="Enter quantity" step="1">
-    <div class="modal-btns">
-      <button class="primary" onclick="confirmAddStock()">Add</button>
-      <button class="secondary" onclick="closeAddModal()">Cancel</button>
+    <input type="number" id="modalQuantity" placeholder="Enter quantity" step="1">
+    <div class="modal-actions">
+      <button class="modal-primary" onclick="confirmStockAdd()">Add</button>
+      <button class="modal-secondary" onclick="hideAddModal()">Cancel</button>
     </div>
   </div>
 </div>
 
 <!-- ================= EDIT STOCK MODAL ================= -->
-<div class="modal-overlay" id="editStockModal">
-  <div class="modal-box">
+<div class="modal-backdrop" id="editStockModal">
+  <div class="modal-container">
     <h3>✏️ Edit Holding</h3>
-    <div class="modal-info">
-      <p>Stock: <span id="editStockName">--</span></p>
-      <p>Current Price: <span id="editStockPrice" style="color:#10b981">₹--</span></p>
+    <div class="modal-info-box">
+      <p>Stock: <span id="editModalStockName">--</span></p>
+      <p>Current Price: <span id="editModalStockPrice" style="color:#10b981">₹--</span></p>
     </div>
     <label>Buy Price (₹)</label>
-    <input type="number" id="editBuyPrice" placeholder="Buy price" step="0.01">
+    <input type="number" id="editModalBuyPrice" placeholder="Buy price" step="0.01">
     <label>Quantity</label>
-    <input type="number" id="editQuantity" placeholder="Quantity" step="1">
-    <div class="modal-btns">
-      <button class="primary" onclick="confirmEditStock()">Save</button>
-      <button class="secondary" onclick="closeEditModal()">Cancel</button>
+    <input type="number" id="editModalQuantity" placeholder="Quantity" step="1">
+    <div class="modal-actions">
+      <button class="modal-primary" onclick="confirmStockEdit()">Save</button>
+      <button class="modal-secondary" onclick="hideEditModal()">Cancel</button>
     </div>
   </div>
 </div>
 
 <script>
-/* ================= STOCK DATA ================= */
-const STOCK_LIST = [
-  {name:"Reliance Industries",sym:"RELIANCE",yahooSym:"RELIANCE.NS",logo:"ril.com"},
-  {name:"Tata Consultancy",sym:"TCS",yahooSym:"TCS.NS",logo:"tcs.com"},
-  {name:"HDFC Bank",sym:"HDFCBANK",yahooSym:"HDFCBANK.NS",logo:"hdfcbank.com"},
-  {name:"Infosys",sym:"INFY",yahooSym:"INFY.NS",logo:"infosys.com"},
-  {name:"ICICI Bank",sym:"ICICIBANK",yahooSym:"ICICIBANK.NS",logo:"icicibank.com"},
-  {name:"Hindustan Unilever",sym:"HINDUNILVR",yahooSym:"HINDUNILVR.NS",logo:"hul.co.in"},
-  {name:"ITC Limited",sym:"ITC",yahooSym:"ITC.NS",logo:"itcportal.com"},
-  {name:"State Bank of India",sym:"SBIN",yahooSym:"SBIN.NS",logo:"sbi.co.in"},
-  {name:"Bharti Airtel",sym:"BHARTIARTL",yahooSym:"BHARTIARTL.NS",logo:"airtel.in"},
-  {name:"Kotak Bank",sym:"KOTAKBANK",yahooSym:"KOTAKBANK.NS",logo:"kotak.com"},
-  {name:"Larsen & Toubro",sym:"LT",yahooSym:"LT.NS",logo:"larsentoubro.com"},
-  {name:"Axis Bank",sym:"AXISBANK",yahooSym:"AXISBANK.NS",logo:"axisbank.com"},
-  {name:"Asian Paints",sym:"ASIANPAINT",yahooSym:"ASIANPAINT.NS",logo:"asianpaints.com"},
-  {name:"Maruti Suzuki",sym:"MARUTI",yahooSym:"MARUTI.NS",logo:"marutisuzuki.com"},
-  {name:"Titan Company",sym:"TITAN",yahooSym:"TITAN.NS",logo:"titan.co.in"},
-  {name:"Bajaj Finance",sym:"BAJFINANCE",yahooSym:"BAJFINANCE.NS",logo:"bajajfinserv.in"},
-  {name:"Sun Pharma",sym:"SUNPHARMA",yahooSym:"SUNPHARMA.NS",logo:"sunpharma.com"},
-  {name:"Nestle India",sym:"NESTLEIND",yahooSym:"NESTLEIND.NS",logo:"nestle.in"},
-  {name:"Wipro",sym:"WIPRO",yahooSym:"WIPRO.NS",logo:"wipro.com"},
-  {name:"UltraTech Cement",sym:"ULTRACEMCO",yahooSym:"ULTRACEMCO.NS",logo:"ultratechcement.com"},
-  {name:"Tata Motors",sym:"TATAMOTORS",yahooSym:"TATAMOTORS.NS",logo:"tatamotors.com"},
-  {name:"NTPC",sym:"NTPC",yahooSym:"NTPC.NS",logo:"ntpc.co.in"},
-  {name:"Power Grid",sym:"POWERGRID",yahooSym:"POWERGRID.NS",logo:"powergrid.in"},
-  {name:"Tata Steel",sym:"TATASTEEL",yahooSym:"TATASTEEL.NS",logo:"tatasteel.com"},
-  {name:"HCL Tech",sym:"HCLTECH",yahooSym:"HCLTECH.NS",logo:"hcltech.com"},
-  {name:"Bajaj Finserv",sym:"BAJAJFINSV",yahooSym:"BAJAJFINSV.NS",logo:"bajajfinserv.in"},
-  {name:"IndusInd Bank",sym:"INDUSINDBK",yahooSym:"INDUSINDBK.NS",logo:"indusind.com"},
-  {name:"Cipla",sym:"CIPLA",yahooSym:"CIPLA.NS",logo:"cipla.com"},
-  {name:"Adani Enterprises",sym:"ADANIENT",yahooSym:"ADANIENT.NS",logo:"adani.com"},
-  {name:"Adani Ports",sym:"ADANIPORTS",yahooSym:"ADANIPORTS.NS",logo:"adaniports.com"},
-  {name:"Tata Power",sym:"TATAPOWER",yahooSym:"TATAPOWER.NS",logo:"tatapower.com"},
-  {name:"Zomato",sym:"ZOMATO",yahooSym:"ZOMATO.NS",logo:"zomato.com"},
-  {name:"IRCTC",sym:"IRCTC",yahooSym:"IRCTC.NS",logo:"irctc.co.in"},
-  {name:"Coal India",sym:"COALINDIA",yahooSym:"COALINDIA.NS",logo:"coalindia.in"},
-  {name:"ONGC",sym:"ONGC",yahooSym:"ONGC.NS",logo:"ongcindia.com"},
-  {name:"JSW Steel",sym:"JSWSTEEL",yahooSym:"JSWSTEEL.NS",logo:"jsw.in"},
-  {name:"Tech Mahindra",sym:"TECHM",yahooSym:"TECHM.NS",logo:"techmahindra.com"},
-  {name:"Britannia",sym:"BRITANNIA",yahooSym:"BRITANNIA.NS",logo:"britannia.co.in"},
-  {name:"HDFC Life",sym:"HDFCLIFE",yahooSym:"HDFCLIFE.NS",logo:"hdfclife.com"},
-  {name:"SBI Life",sym:"SBILIFE",yahooSym:"SBILIFE.NS",logo:"sbilife.co.in"}
+/* ================= 300+ INDIAN STOCKS LIST ================= */
+const STOCK_DATA = [
+  // NIFTY 50
+  {name:"Reliance Industries",sym:"RELIANCE",yahoo:"RELIANCE.NS",logo:"ril.com"},
+  {name:"Tata Consultancy Services",sym:"TCS",yahoo:"TCS.NS",logo:"tcs.com"},
+  {name:"HDFC Bank",sym:"HDFCBANK",yahoo:"HDFCBANK.NS",logo:"hdfcbank.com"},
+  {name:"Infosys",sym:"INFY",yahoo:"INFY.NS",logo:"infosys.com"},
+  {name:"ICICI Bank",sym:"ICICIBANK",yahoo:"ICICIBANK.NS",logo:"icicibank.com"},
+  {name:"Hindustan Unilever",sym:"HINDUNILVR",yahoo:"HINDUNILVR.NS",logo:"hul.co.in"},
+  {name:"ITC Limited",sym:"ITC",yahoo:"ITC.NS",logo:"itcportal.com"},
+  {name:"State Bank of India",sym:"SBIN",yahoo:"SBIN.NS",logo:"sbi.co.in"},
+  {name:"Bharti Airtel",sym:"BHARTIARTL",yahoo:"BHARTIARTL.NS",logo:"airtel.in"},
+  {name:"Kotak Mahindra Bank",sym:"KOTAKBANK",yahoo:"KOTAKBANK.NS",logo:"kotak.com"},
+  {name:"Larsen & Toubro",sym:"LT",yahoo:"LT.NS",logo:"larsentoubro.com"},
+  {name:"Axis Bank",sym:"AXISBANK",yahoo:"AXISBANK.NS",logo:"axisbank.com"},
+  {name:"Asian Paints",sym:"ASIANPAINT",yahoo:"ASIANPAINT.NS",logo:"asianpaints.com"},
+  {name:"Maruti Suzuki",sym:"MARUTI",yahoo:"MARUTI.NS",logo:"marutisuzuki.com"},
+  {name:"Titan Company",sym:"TITAN",yahoo:"TITAN.NS",logo:"titan.co.in"},
+  {name:"Bajaj Finance",sym:"BAJFINANCE",yahoo:"BAJFINANCE.NS",logo:"bajajfinserv.in"},
+  {name:"Sun Pharma",sym:"SUNPHARMA",yahoo:"SUNPHARMA.NS",logo:"sunpharma.com"},
+  {name:"Nestle India",sym:"NESTLEIND",yahoo:"NESTLEIND.NS",logo:"nestle.in"},
+  {name:"Wipro",sym:"WIPRO",yahoo:"WIPRO.NS",logo:"wipro.com"},
+  {name:"UltraTech Cement",sym:"ULTRACEMCO",yahoo:"ULTRACEMCO.NS",logo:"ultratechcement.com"},
+  {name:"Tata Motors",sym:"TATAMOTORS",yahoo:"TATAMOTORS.NS",logo:"tatamotors.com"},
+  {name:"NTPC",sym:"NTPC",yahoo:"NTPC.NS",logo:"ntpc.co.in"},
+  {name:"Power Grid Corp",sym:"POWERGRID",yahoo:"POWERGRID.NS",logo:"powergrid.in"},
+  {name:"Tata Steel",sym:"TATASTEEL",yahoo:"TATASTEEL.NS",logo:"tatasteel.com"},
+  {name:"HCL Technologies",sym:"HCLTECH",yahoo:"HCLTECH.NS",logo:"hcltech.com"},
+  {name:"Bajaj Finserv",sym:"BAJAJFINSV",yahoo:"BAJAJFINSV.NS",logo:"bajajfinserv.in"},
+  {name:"IndusInd Bank",sym:"INDUSINDBK",yahoo:"INDUSINDBK.NS",logo:"indusind.com"},
+  {name:"Cipla",sym:"CIPLA",yahoo:"CIPLA.NS",logo:"cipla.com"},
+  {name:"Adani Enterprises",sym:"ADANIENT",yahoo:"ADANIENT.NS",logo:"adani.com"},
+  {name:"Adani Ports",sym:"ADANIPORTS",yahoo:"ADANIPORTS.NS",logo:"adaniports.com"},
+  {name:"Tata Power",sym:"TATAPOWER",yahoo:"TATAPOWER.NS",logo:"tatapower.com"},
+  {name:"JSW Steel",sym:"JSWSTEEL",yahoo:"JSWSTEEL.NS",logo:"jsw.in"},
+  {name:"Tech Mahindra",sym:"TECHM",yahoo:"TECHM.NS",logo:"techmahindra.com"},
+  {name:"Britannia Industries",sym:"BRITANNIA",yahoo:"BRITANNIA.NS",logo:"britannia.co.in"},
+  {name:"HDFC Life",sym:"HDFCLIFE",yahoo:"HDFCLIFE.NS",logo:"hdfclife.com"},
+  {name:"SBI Life Insurance",sym:"SBILIFE",yahoo:"SBILIFE.NS",logo:"sbilife.co.in"},
+  {name:"Grasim Industries",sym:"GRASIM",yahoo:"GRASIM.NS",logo:"grasim.com"},
+  {name:"Dr Reddy's Labs",sym:"DRREDDY",yahoo:"DRREDDY.NS",logo:"drreddys.com"},
+  {name:"Eicher Motors",sym:"EICHERMOT",yahoo:"EICHERMOT.NS",logo:"eicher.in"},
+  {name:"Hero MotoCorp",sym:"HEROMOTOCO",yahoo:"HEROMOTOCO.NS",logo:"heromotocorp.com"},
+  {name:"Divis Labs",sym:"DIVISLAB",yahoo:"DIVISLAB.NS",logo:"divislabs.com"},
+  {name:"Hindalco",sym:"HINDALCO",yahoo:"HINDALCO.NS",logo:"hindalco.com"},
+  {name:"Tata Consumer",sym:"TATACONSUM",yahoo:"TATACONSUM.NS",logo:"tataconsumer.com"},
+  {name:"Coal India",sym:"COALINDIA",yahoo:"COALINDIA.NS",logo:"coalindia.in"},
+  {name:"BPCL",sym:"BPCL",yahoo:"BPCL.NS",logo:"bharatpetroleum.in"},
+  {name:"ONGC",sym:"ONGC",yahoo:"ONGC.NS",logo:"ongcindia.com"},
+  {name:"Apollo Hospitals",sym:"APOLLOHOSP",yahoo:"APOLLOHOSP.NS",logo:"apollohospitals.com"},
+  {name:"UPL",sym:"UPL",yahoo:"UPL.NS",logo:"upl-ltd.com"},
+  {name:"Bajaj Auto",sym:"BAJAJ-AUTO",yahoo:"BAJAJ-AUTO.NS",logo:"bajajauto.com"},
+  {name:"LTIMindtree",sym:"LTIM",yahoo:"LTIM.NS",logo:"ltimindtree.com"},
+  
+  // NIFTY NEXT 50
+  {name:"Zomato",sym:"ZOMATO",yahoo:"ZOMATO.NS",logo:"zomato.com"},
+  {name:"IRCTC",sym:"IRCTC",yahoo:"IRCTC.NS",logo:"irctc.co.in"},
+  {name:"Paytm",sym:"PAYTM",yahoo:"PAYTM.NS",logo:"paytm.com"},
+  {name:"Adani Green",sym:"ADANIGREEN",yahoo:"ADANIGREEN.NS",logo:"adanigreenenergy.com"},
+  {name:"Adani Total Gas",sym:"ATGL",yahoo:"ATGL.NS",logo:"adanitotalgas.com"},
+  {name:"Avenue Supermarts",sym:"DMART",yahoo:"DMART.NS",logo:"dmartindia.com"},
+  {name:"Bank of Baroda",sym:"BANKBARODA",yahoo:"BANKBARODA.NS",logo:"bankofbaroda.in"},
+  {name:"Berger Paints",sym:"BERGEPAINT",yahoo:"BERGEPAINT.NS",logo:"bergerpaints.com"},
+  {name:"Biocon",sym:"BIOCON",yahoo:"BIOCON.NS",logo:"biocon.com"},
+  {name:"Bosch",sym:"BOSCHLTD",yahoo:"BOSCHLTD.NS",logo:"bosch.in"},
+  {name:"Canara Bank",sym:"CANBK",yahoo:"CANBK.NS",logo:"canarabank.com"},
+  {name:"Cholamandalam",sym:"CHOLAFIN",yahoo:"CHOLAFIN.NS",logo:"cholamandalam.com"},
+  {name:"Colgate-Palmolive",sym:"COLPAL",yahoo:"COLPAL.NS",logo:"colgate.co.in"},
+  {name:"DLF",sym:"DLF",yahoo:"DLF.NS",logo:"dlf.in"},
+  {name:"Dabur India",sym:"DABUR",yahoo:"DABUR.NS",logo:"dabur.com"},
+  {name:"Godrej Consumer",sym:"GODREJCP",yahoo:"GODREJCP.NS",logo:"godrejcp.com"},
+  {name:"GAIL India",sym:"GAIL",yahoo:"GAIL.NS",logo:"gailonline.com"},
+  {name:"Havells India",sym:"HAVELLS",yahoo:"HAVELLS.NS",logo:"havells.com"},
+  {name:"ICICI Lombard",sym:"ICICIGI",yahoo:"ICICIGI.NS",logo:"icicilombard.com"},
+  {name:"ICICI Prudential",sym:"ICICIPRULI",yahoo:"ICICIPRULI.NS",logo:"iciciprulife.com"},
+  {name:"Indian Oil Corp",sym:"IOC",yahoo:"IOC.NS",logo:"iocl.com"},
+  {name:"IndiGo",sym:"INDIGO",yahoo:"INDIGO.NS",logo:"goindigo.in"},
+  {name:"Info Edge",sym:"NAUKRI",yahoo:"NAUKRI.NS",logo:"infoedge.in"},
+  {name:"Jindal Steel",sym:"JINDALSTEL",yahoo:"JINDALSTEL.NS",logo:"jindalsteelpower.com"},
+  {name:"LIC",sym:"LICI",yahoo:"LICI.NS",logo:"licindia.in"},
+  {name:"Lupin",sym:"LUPIN",yahoo:"LUPIN.NS",logo:"lupin.com"},
+  {name:"Marico",sym:"MARICO",yahoo:"MARICO.NS",logo:"marico.com"},
+  {name:"Motherson Sumi",sym:"MOTHERSON",yahoo:"MOTHERSON.NS",logo:"motherson.com"},
+  {name:"Muthoot Finance",sym:"MUTHOOTFIN",yahoo:"MUTHOOTFIN.NS",logo:"muthootfinance.com"},
+  {name:"Pidilite",sym:"PIDILITIND",yahoo:"PIDILITIND.NS",logo:"pidilite.com"},
+  {name:"Punjab National Bank",sym:"PNB",yahoo:"PNB.NS",logo:"pnbindia.in"},
+  {name:"Shree Cement",sym:"SHREECEM",yahoo:"SHREECEM.NS",logo:"shreecement.com"},
+  {name:"Siemens",sym:"SIEMENS",yahoo:"SIEMENS.NS",logo:"siemens.co.in"},
+  {name:"SRF",sym:"SRF",yahoo:"SRF.NS",logo:"srf.com"},
+  {name:"Torrent Pharma",sym:"TORNTPHARM",yahoo:"TORNTPHARM.NS",logo:"torrentpharma.com"},
+  {name:"TVS Motor",sym:"TVSMOTOR",yahoo:"TVSMOTOR.NS",logo:"tvsmotor.com"},
+  {name:"Union Bank",sym:"UNIONBANK",yahoo:"UNIONBANK.NS",logo:"unionbankofindia.co.in"},
+  {name:"Vedanta",sym:"VEDL",yahoo:"VEDL.NS",logo:"vedantalimited.com"},
+  {name:"Zydus Lifesciences",sym:"ZYDUSLIFE",yahoo:"ZYDUSLIFE.NS",logo:"zyduslife.com"},
+  
+  // MIDCAP & SMALLCAP
+  {name:"Nykaa",sym:"NYKAA",yahoo:"NYKAA.NS",logo:"nykaa.com"},
+  {name:"PolicyBazaar",sym:"POLICYBZR",yahoo:"POLICYBZR.NS",logo:"policybazaar.com"},
+  {name:"Tata Elxsi",sym:"TATAELXSI",yahoo:"TATAELXSI.NS",logo:"tataelxsi.com"},
+  {name:"Trent",sym:"TRENT",yahoo:"TRENT.NS",logo:"trentlimited.com"},
+  {name:"Persistent",sym:"PERSISTENT",yahoo:"PERSISTENT.NS",logo:"persistent.com"},
+  {name:"Coforge",sym:"COFORGE",yahoo:"COFORGE.NS",logo:"coforge.com"},
+  {name:"Mphasis",sym:"MPHASIS",yahoo:"MPHASIS.NS",logo:"mphasis.com"},
+  {name:"L&T Technology",sym:"LTTS",yahoo:"LTTS.NS",logo:"ltts.com"},
+  {name:"Happiest Minds",sym:"HAPPSTMNDS",yahoo:"HAPPSTMNDS.NS",logo:"happiestminds.com"},
+  {name:"Dixon Tech",sym:"DIXON",yahoo:"DIXON.NS",logo:"dixoninfo.com"},
+  {name:"Polycab",sym:"POLYCAB",yahoo:"POLYCAB.NS",logo:"polycab.com"},
+  {name:"Voltas",sym:"VOLTAS",yahoo:"VOLTAS.NS",logo:"voltas.com"},
+  {name:"Crompton",sym:"CROMPTON",yahoo:"CROMPTON.NS",logo:"crompton.co.in"},
+  {name:"Page Industries",sym:"PAGEIND",yahoo:"PAGEIND.NS",logo:"pageindustries.com"},
+  {name:"Bata India",sym:"BATAINDIA",yahoo:"BATAINDIA.NS",logo:"bata.in"},
+  {name:"Jubilant FoodWorks",sym:"JUBLFOOD",yahoo:"JUBLFOOD.NS",logo:"jubilantfoodworks.com"},
+  {name:"Varun Beverages",sym:"VBL",yahoo:"VBL.NS",logo:"varunbeverages.com"},
+  {name:"Tata Chemicals",sym:"TATACHEM",yahoo:"TATACHEM.NS",logo:"tatachemicals.com"},
+  {name:"PI Industries",sym:"PIIND",yahoo:"PIIND.NS",logo:"piindustries.com"},
+  {name:"Deepak Nitrite",sym:"DEEPAKNTR",yahoo:"DEEPAKNTR.NS",logo:"deepaknitrite.com"},
+  
+  // PSU STOCKS
+  {name:"NHPC",sym:"NHPC",yahoo:"NHPC.NS",logo:"nhpcindia.com"},
+  {name:"BHEL",sym:"BHEL",yahoo:"BHEL.NS",logo:"bhel.com"},
+  {name:"HAL",sym:"HAL",yahoo:"HAL.NS",logo:"hal-india.co.in"},
+  {name:"Bharat Electronics",sym:"BEL",yahoo:"BEL.NS",logo:"bel-india.in"},
+  {name:"IRFC",sym:"IRFC",yahoo:"IRFC.NS",logo:"irfc.nic.in"},
+  {name:"REC Limited",sym:"RECLTD",yahoo:"RECLTD.NS",logo:"recindia.nic.in"},
+  {name:"Power Finance",sym:"PFC",yahoo:"PFC.NS",logo:"pfcindia.com"},
+  {name:"SAIL",sym:"SAIL",yahoo:"SAIL.NS",logo:"sail.co.in"},
+  {name:"NMDC",sym:"NMDC",yahoo:"NMDC.NS",logo:"nmdc.co.in"},
+  {name:"NALCO",sym:"NATIONALUM",yahoo:"NATIONALUM.NS",logo:"nalcoindia.com"},
+  {name:"HUDCO",sym:"HUDCO",yahoo:"HUDCO.NS",logo:"hudco.org"},
+  {name:"Mazagon Dock",sym:"MAZDOCK",yahoo:"MAZDOCK.NS",logo:"mazagondock.in"},
+  {name:"Cochin Shipyard",sym:"COCHINSHIP",yahoo:"COCHINSHIP.NS",logo:"cochinshipyard.in"},
+  
+  // BANKS & NBFC
+  {name:"Federal Bank",sym:"FEDERALBNK",yahoo:"FEDERALBNK.NS",logo:"federalbank.co.in"},
+  {name:"IDFC First Bank",sym:"IDFCFIRSTB",yahoo:"IDFCFIRSTB.NS",logo:"idfcfirstbank.com"},
+  {name:"Bandhan Bank",sym:"BANDHANBNK",yahoo:"BANDHANBNK.NS",logo:"bandhanbank.com"},
+  {name:"AU Small Finance",sym:"AUBANK",yahoo:"AUBANK.NS",logo:"aubank.in"},
+  {name:"IDBI Bank",sym:"IDBI",yahoo:"IDBI.NS",logo:"idbibank.in"},
+  {name:"Indian Bank",sym:"INDIANB",yahoo:"INDIANB.NS",logo:"indianbank.in"},
+  {name:"Bank of India",sym:"BANKINDIA",yahoo:"BANKINDIA.NS",logo:"bankofindia.co.in"},
+  {name:"Shriram Finance",sym:"SHRIRAMFIN",yahoo:"SHRIRAMFIN.NS",logo:"shriramfinance.in"},
+  {name:"L&T Finance",sym:"LTF",yahoo:"LTF.NS",logo:"ltfs.com"},
+  {name:"Manappuram",sym:"MANAPPURAM",yahoo:"MANAPPURAM.NS",logo:"manappuram.com"},
+  {name:"Ujjivan SFB",sym:"UJJIVANSFB",yahoo:"UJJIVANSFB.NS",logo:"ujjivansfb.in"},
+  {name:"Central Bank",sym:"CENTRALBK",yahoo:"CENTRALBK.NS",logo:"centralbankofindia.co.in"},
+  {name:"UCO Bank",sym:"UCOBANK",yahoo:"UCOBANK.NS",logo:"ucobank.com"},
+  {name:"IOB",sym:"IOB",yahoo:"IOB.NS",logo:"iob.in"},
+  
+  // PHARMA
+  {name:"Alkem Labs",sym:"ALKEM",yahoo:"ALKEM.NS",logo:"alkemlabs.com"},
+  {name:"Aurobindo Pharma",sym:"AUROPHARMA",yahoo:"AUROPHARMA.NS",logo:"aurobindo.com"},
+  {name:"Glenmark",sym:"GLENMARK",yahoo:"GLENMARK.NS",logo:"glenmarkpharma.com"},
+  {name:"IPCA Labs",sym:"IPCALAB",yahoo:"IPCALAB.NS",logo:"ipcalabs.com"},
+  {name:"Abbott India",sym:"ABBOTINDIA",yahoo:"ABBOTINDIA.NS",logo:"abbott.in"},
+  {name:"Laurus Labs",sym:"LAURUSLABS",yahoo:"LAURUSLABS.NS",logo:"lauruslabs.com"},
+  {name:"Granules India",sym:"GRANULES",yahoo:"GRANULES.NS",logo:"granulesindia.com"},
+  {name:"Natco Pharma",sym:"NATCOPHARM",yahoo:"NATCOPHARM.NS",logo:"natcopharma.co.in"},
+  {name:"Sanofi India",sym:"SANOFI",yahoo:"SANOFI.NS",logo:"sanofi.in"},
+  {name:"Pfizer",sym:"PFIZER",yahoo:"PFIZER.NS",logo:"pfizerindia.com"},
+  
+  // INSURANCE
+  {name:"Max Financial",sym:"MFSL",yahoo:"MFSL.NS",logo:"maxfinancialservices.com"},
+  {name:"Star Health",sym:"STARHEALTH",yahoo:"STARHEALTH.NS",logo:"starhealth.in"},
+  {name:"GIC Re",sym:"GICRE",yahoo:"GICRE.NS",logo:"gicofindia.com"},
+  {name:"New India Assurance",sym:"NIACL",yahoo:"NIACL.NS",logo:"newindia.co.in"},
+  
+  // REALTY
+  {name:"Godrej Properties",sym:"GODREJPROP",yahoo:"GODREJPROP.NS",logo:"godrejproperties.com"},
+  {name:"Oberoi Realty",sym:"OBEROIRLTY",yahoo:"OBEROIRLTY.NS",logo:"oberoirealty.com"},
+  {name:"Prestige Estates",sym:"PRESTIGE",yahoo:"PRESTIGE.NS",logo:"prestigeconstructions.com"},
+  {name:"Brigade Enterprises",sym:"BRIGADE",yahoo:"BRIGADE.NS",logo:"brigadegroup.com"},
+  {name:"Phoenix Mills",sym:"PHOENIXLTD",yahoo:"PHOENIXLTD.NS",logo:"phoenixmills.com"},
+  {name:"Macrotech (Lodha)",sym:"LODHA",yahoo:"LODHA.NS",logo:"lodhagroup.in"},
+  {name:"Sobha",sym:"SOBHA",yahoo:"SOBHA.NS",logo:"sobha.com"},
+  
+  // AUTO & ANCILLARY
+  {name:"Ashok Leyland",sym:"ASHOKLEY",yahoo:"ASHOKLEY.NS",logo:"ashokleyland.com"},
+  {name:"Bharat Forge",sym:"BHARATFORG",yahoo:"BHARATFORG.NS",logo:"bharatforge.com"},
+  {name:"Exide Industries",sym:"EXIDEIND",yahoo:"EXIDEIND.NS",logo:"exideindustries.com"},
+  {name:"Amara Raja",sym:"AMARAJABAT",yahoo:"AMARAJABAT.NS",logo:"amararaja.com"},
+  {name:"MRF",sym:"MRF",yahoo:"MRF.NS",logo:"mrftyres.com"},
+  {name:"Apollo Tyres",sym:"APOLLOTYRE",yahoo:"APOLLOTYRE.NS",logo:"apollotyres.com"},
+  {name:"Balkrishna Ind",sym:"BALKRISIND",yahoo:"BALKRISIND.NS",logo:"bfrub.in"},
+  {name:"Sona BLW",sym:"SONACOMS",yahoo:"SONACOMS.NS",logo:"sonablw.com"},
+  {name:"Tube Investments",sym:"TIINDIA",yahoo:"TIINDIA.NS",logo:"tiindia.com"},
+  {name:"Escorts Kubota",sym:"ESCORTS",yahoo:"ESCORTS.NS",logo:"escortsgroup.com"},
+  {name:"Force Motors",sym:"FORCEMOT",yahoo:"FORCEMOT.NS",logo:"forcemotors.com"},
+  {name:"CEAT",sym:"CEAT",yahoo:"CEAT.NS",logo:"ceat.com"},
+  {name:"JK Tyre",sym:"JKTYRE",yahoo:"JKTYRE.NS",logo:"jktyre.com"},
+  
+  // CEMENT
+  {name:"Ambuja Cements",sym:"AMBUJACEM",yahoo:"AMBUJACEM.NS",logo:"ambujacement.com"},
+  {name:"ACC",sym:"ACC",yahoo:"ACC.NS",logo:"acclimited.com"},
+  {name:"Dalmia Bharat",sym:"DALBHARAT",yahoo:"DALBHARAT.NS",logo:"dalmiacement.com"},
+  {name:"Ramco Cements",sym:"RAMCOCEM",yahoo:"RAMCOCEM.NS",logo:"ramcocements.in"},
+  {name:"JK Cement",sym:"JKCEMENT",yahoo:"JKCEMENT.NS",logo:"jkcement.com"},
+  {name:"Birla Corp",sym:"BIRLACORPN",yahoo:"BIRLACORPN.NS",logo:"birlacorporation.com"},
+  {name:"India Cements",sym:"INDIACEM",yahoo:"INDIACEM.NS",logo:"indiacements.co.in"},
+  
+  // METALS & MINING
+  {name:"Hindustan Zinc",sym:"HINDZINC",yahoo:"HINDZINC.NS",logo:"hzlindia.com"},
+  {name:"APL Apollo",sym:"APLAPOLLO",yahoo:"APLAPOLLO.NS",logo:"aplapollo.com"},
+  {name:"Hindalco",sym:"HINDALCO",yahoo:"HINDALCO.NS",logo:"hindalco.com"},
+  {name:"National Aluminium",sym:"NATIONALUM",yahoo:"NATIONALUM.NS",logo:"nalcoindia.com"},
+  
+  // ENERGY & OIL GAS
+  {name:"HPCL",sym:"HINDPETRO",yahoo:"HINDPETRO.NS",logo:"hindustanpetroleum.com"},
+  {name:"Petronet LNG",sym:"PETRONET",yahoo:"PETRONET.NS",logo:"petronetlng.in"},
+  {name:"Oil India",sym:"OIL",yahoo:"OIL.NS",logo:"oil-india.com"},
+  {name:"Gujarat Gas",sym:"GUJGASLTD",yahoo:"GUJGASLTD.NS",logo:"gujaratgas.com"},
+  {name:"Mahanagar Gas",sym:"MGL",yahoo:"MGL.NS",logo:"mahanagargas.com"},
+  {name:"IGL",sym:"IGL",yahoo:"IGL.NS",logo:"iglonline.net"},
+  
+  // POWER & UTILITIES
+  {name:"Adani Power",sym:"ADANIPOWER",yahoo:"ADANIPOWER.NS",logo:"adanipower.com"},
+  {name:"JSW Energy",sym:"JSWENERGY",yahoo:"JSWENERGY.NS",logo:"jsw.in"},
+  {name:"Torrent Power",sym:"TORNTPOWER",yahoo:"TORNTPOWER.NS",logo:"torrentpower.com"},
+  {name:"SJVN",sym:"SJVN",yahoo:"SJVN.NS",logo:"sjvn.nic.in"},
+  {name:"CESC",sym:"CESC",yahoo:"CESC.NS",logo:"cesc.co.in"},
+  
+  // TELECOM & MEDIA
+  {name:"Vodafone Idea",sym:"IDEA",yahoo:"IDEA.NS",logo:"myvi.in"},
+  {name:"Tata Comm",sym:"TATACOMM",yahoo:"TATACOMM.NS",logo:"tatacommunications.com"},
+  {name:"Indus Towers",sym:"INDUSTOWER",yahoo:"INDUSTOWER.NS",logo:"industowers.com"},
+  {name:"Zee Entertainment",sym:"ZEEL",yahoo:"ZEEL.NS",logo:"zee.com"},
+  {name:"Sun TV",sym:"SUNTV",yahoo:"SUNTV.NS",logo:"suntv.in"},
+  {name:"PVR INOX",sym:"PVRINOX",yahoo:"PVRINOX.NS",logo:"pvrcinemas.com"},
+  
+  // CONSUMER & FMCG
+  {name:"Emami",sym:"EMAMILTD",yahoo:"EMAMILTD.NS",logo:"emamiltd.in"},
+  {name:"Jyothy Labs",sym:"JYOTHYLAB",yahoo:"JYOTHYLAB.NS",logo:"jyothylabs.com"},
+  {name:"Radico Khaitan",sym:"RADICO",yahoo:"RADICO.NS",logo:"radicokhaitan.com"},
+  {name:"United Spirits",sym:"UNITDSPR",yahoo:"UNITDSPR.NS",logo:"diageoindia.com"},
+  {name:"United Breweries",sym:"UBL",yahoo:"UBL.NS",logo:"unitedbreweries.com"},
+  {name:"Tata Coffee",sym:"TATACOFFEE",yahoo:"TATACOFFEE.NS",logo:"tatacoffee.com"},
+  
+  // CHEMICALS
+  {name:"Aarti Industries",sym:"AARTIIND",yahoo:"AARTIIND.NS",logo:"aarti-industries.com"},
+  {name:"Navin Fluorine",sym:"NAVINFLUOR",yahoo:"NAVINFLUOR.NS",logo:"nfranca.com"},
+  {name:"Clean Science",sym:"CLEAN",yahoo:"CLEAN.NS",logo:"cleanscience.co.in"},
+  {name:"Sumitomo Chemical",sym:"SUMICHEM",yahoo:"SUMICHEM.NS",logo:"sumitomo-chem.co.in"},
+  {name:"Coromandel Intl",sym:"COROMANDEL",yahoo:"COROMANDEL.NS",logo:"coromandel.biz"},
+  {name:"Chambal Fert",sym:"CHAMBLFERT",yahoo:"CHAMBLFERT.NS",logo:"chambalfertilisers.com"},
+  
+  // IT & TECH
+  {name:"Cyient",sym:"CYIENT",yahoo:"CYIENT.NS",logo:"cyient.com"},
+  {name:"Birlasoft",sym:"BSOFT",yahoo:"BSOFT.NS",logo:"birlasoft.com"},
+  {name:"Zensar Tech",sym:"ZENSARTECH",yahoo:"ZENSARTECH.NS",logo:"zensar.com"},
+  {name:"NIIT",sym:"NIITLTD",yahoo:"NIITLTD.NS",logo:"niit.com"},
+  {name:"Mastek",sym:"MASTEK",yahoo:"MASTEK.NS",logo:"mastek.com"},
+  {name:"Sonata Software",sym:"SONATSOFTW",yahoo:"SONATSOFTW.NS",logo:"sonata-software.com"},
+  
+  // OTHERS
+  {name:"Affle India",sym:"AFFLE",yahoo:"AFFLE.NS",logo:"affle.com"},
+  {name:"Latent View",sym:"LATENTVIEW",yahoo:"LATENTVIEW.NS",logo:"latentview.com"},
+  {name:"Route Mobile",sym:"ROUTE",yahoo:"ROUTE.NS",logo:"routemobile.com"},
+  {name:"Tanla Platforms",sym:"TANLA",yahoo:"TANLA.NS",logo:"tanla.com"},
+  {name:"Easy Trip",sym:"EASEMYTRIP",yahoo:"EASEMYTRIP.NS",logo:"easemytrip.com"},
+  {name:"KPIT Technologies",sym:"KPITTECH",yahoo:"KPITTECH.NS",logo:"kpit.com"},
+  {name:"Tata Technologies",sym:"TATATECH",yahoo:"TATATECH.NS",logo:"tatatechnologies.com"},
+  {name:"Kaynes Technology",sym:"KAYNES",yahoo:"KAYNES.NS",logo:"kaynes.com"},
+  {name:"Data Patterns",sym:"DATAPATTNS",yahoo:"DATAPATTNS.NS",logo:"datapatterns.co.in"},
+  {name:"CE Info Systems",sym:"MAPMYINDIA",yahoo:"MAPMYINDIA.NS",logo:"mapmyindia.com"},
+  {name:"Syrma SGS",sym:"SYRMA",yahoo:"SYRMA.NS",logo:"syrmasgs.com"},
+  {name:"Honasa Consumer",sym:"HONASA",yahoo:"HONASA.NS",logo:"honasa.in"},
+  {name:"Mankind Pharma",sym:"MANKIND",yahoo:"MANKIND.NS",logo:"mankindpharma.com"},
+  {name:"Rainbow Children",sym:"RAINBOW",yahoo:"RAINBOW.NS",logo:"rainbowhospitals.in"},
+  {name:"Global Health",sym:"MEDANTA",yahoo:"MEDANTA.NS",logo:"medanta.org"},
+  {name:"Patanjali Foods",sym:"PATANJALI",yahoo:"PATANJALI.NS",logo:"patanjalifoods.co.in"},
+  {name:"Go Fashion",sym:"GOCOLORS",yahoo:"GOCOLORS.NS",logo:"gocolors.com"},
+  {name:"Campus Activewear",sym:"CAMPUS",yahoo:"CAMPUS.NS",logo:"campusshoes.com"},
+  {name:"Devyani Intl",sym:"DEVYANI",yahoo:"DEVYANI.NS",logo:"devyani.com"},
+  {name:"Sapphire Foods",sym:"SAPPHIRE",yahoo:"SAPPHIRE.NS",logo:"sapphirefoods.in"},
+  {name:"Westlife Dev",sym:"WESTLIFE",yahoo:"WESTLIFE.NS",logo:"westlife.co.in"},
+  {name:"Restaurant Brands",sym:"RBA",yahoo:"RBA.NS",logo:"rfrancia.com"},
+  {name:"Metro Brands",sym:"METROBRAND",yahoo:"METROBRAND.NS",logo:"metrobrands.com"},
+  {name:"VIP Industries",sym:"VIPIND",yahoo:"VIPIND.NS",logo:"vipindustries.co.in"},
+  {name:"Relaxo Footwear",sym:"RELAXO",yahoo:"RELAXO.NS",logo:"relaxofootwear.com"},
+  {name:"Whirlpool",sym:"WHIRLPOOL",yahoo:"WHIRLPOOL.NS",logo:"whirlpoolindia.com"},
+  {name:"Blue Star",sym:"BLUESTARCO",yahoo:"BLUESTARCO.NS",logo:"bluestarindia.com"},
+  {name:"Amber Enterprises",sym:"AMBER",yahoo:"AMBER.NS",logo:"ambergroupindia.com"},
+  {name:"V-Guard",sym:"VGUARD",yahoo:"VGUARD.NS",logo:"vguard.in"},
+  {name:"Finolex Cables",sym:"FINCABLES",yahoo:"FINCABLES.NS",logo:"finolexcables.com"},
+  {name:"KEI Industries",sym:"KEI",yahoo:"KEI.NS",logo:"kei-ind.com"},
+  {name:"Astral",sym:"ASTRAL",yahoo:"ASTRAL.NS",logo:"astralimited.com"},
+  {name:"Supreme Industries",sym:"SUPREMEIND",yahoo:"SUPREMEIND.NS",logo:"supreme.co.in"},
+  {name:"Prince Pipes",sym:"PRINCEPIPE",yahoo:"PRINCEPIPE.NS",logo:"princepipes.com"},
+  {name:"Cera Sanitaryware",sym:"CERA",yahoo:"CERA.NS",logo:"cera-india.com"},
+  {name:"Kajaria Ceramics",sym:"KAJARIACER",yahoo:"KAJARIACER.NS",logo:"kajariaceramics.com"},
+  {name:"Somany Ceramics",sym:"SOMANYCERA",yahoo:"SOMANYCERA.NS",logo:"somanyceramics.com"},
+  {name:"Orient Cement",sym:"ORIENTCEM",yahoo:"ORIENTCEM.NS",logo:"orientcement.com"},
+  {name:"Prism Johnson",sym:"PRSMJOHNSN",yahoo:"PRSMJOHNSN.NS",logo:"prismjohnson.in"},
+  {name:"Century Plyboards",sym:"CENTURYPLY",yahoo:"CENTURYPLY.NS",logo:"centuryply.com"},
+  {name:"Greenpanel",sym:"GREENPANEL",yahoo:"GREENPANEL.NS",logo:"greenpanel.com"},
+  {name:"Welspun Living",sym:"WELSPUNLIV",yahoo:"WELSPUNLIV.NS",logo:"welspunliving.com"},
+  {name:"Trident",sym:"TRIDENT",yahoo:"TRIDENT.NS",logo:"tridentindia.com"},
+  {name:"Arvind",sym:"ARVIND",yahoo:"ARVIND.NS",logo:"arvind.com"},
+  {name:"Raymond",sym:"RAYMOND",yahoo:"RAYMOND.NS",logo:"raymond.in"},
+  {name:"Aditya Birla Fashion",sym:"ABFRL",yahoo:"ABFRL.NS",logo:"abfrl.com"},
+  {name:"Shoppers Stop",sym:"SHOPERSTOP",yahoo:"SHOPERSTOP.NS",logo:"shoppersstop.com"},
+  {name:"Spencer's Retail",sym:"SPENCERS",yahoo:"SPENCERS.NS",logo:"spencers.in"},
+  {name:"V-Mart Retail",sym:"VMART",yahoo:"VMART.NS",logo:"vmartretail.com"},
+  {name:"Barbeque Nation",sym:"BARBEQUE",yahoo:"BARBEQUE.NS",logo:"barbequenation.com"},
+  {name:"Indian Hotels",sym:"INDHOTEL",yahoo:"INDHOTEL.NS",logo:"ihcltata.com"},
+  {name:"Lemon Tree Hotels",sym:"LEMONTREE",yahoo:"LEMONTREE.NS",logo:"lemontreehotels.com"},
+  {name:"EIH",sym:"EIH",yahoo:"EIH.NS",logo:"eihltd.com"},
+  {name:"Chalet Hotels",sym:"CHALET",yahoo:"CHALET.NS",logo:"chalethotels.com"},
+  {name:"Mahindra Holidays",sym:"MHRIL",yahoo:"MHRIL.NS",logo:"clubmahindra.com"},
+  {name:"Thomas Cook",sym:"THOMASCOOK",yahoo:"THOMASCOOK.NS",logo:"thomascook.in"},
+  {name:"Wonderla Holidays",sym:"WONDERLA",yahoo:"WONDERLA.NS",logo:"wonderla.com"},
+  {name:"Imagica",sym:"IMAGICAA",yahoo:"IMAGICAA.NS",logo:"imagicaa.com"}
 ];
 
-/* ================= GLOBALS ================= */
-let currentUser = null;
-let holdings = [];
-let priceCache = {};
-let oldPrices = {};
-let countdownTimer = 30;
-let refreshInterval = null;
-let countdownInterval = null;
-let isFetching = false;
-let currentChatPartner = null;
-let chatUnsubscribe = null;
-let addingStockData = null;
-let editingIndex = null;
+/* ================= GLOBAL VARIABLES ================= */
+let activeUser = null;
+let userHoldings = [];
+let pricesData = {};
+let prevPricesData = {};
+let refreshCountdown = 30;
+let autoRefreshTimer = null;
+let isFetchingData = false;
+let activeChatWith = null;
+let chatListener = null;
+let pendingAddStock = null;
+let pendingEditIndex = null;
 
-/* ================= INIT ================= */
-window.onload = function() {
+/* ================= INITIALIZATION ================= */
+document.addEventListener("DOMContentLoaded", function() {
   // Load cached prices
-  const cached = localStorage.getItem("priceCache");
-  if (cached) {
-    priceCache = JSON.parse(cached);
-    oldPrices = JSON.parse(cached);
+  const savedPrices = localStorage.getItem("stockPrices");
+  if (savedPrices) {
+    pricesData = JSON.parse(savedPrices);
+    prevPricesData = JSON.parse(savedPrices);
   }
   
-  // Load holdings
-  const savedHoldings = localStorage.getItem("holdings");
-  if (savedHoldings) {
-    holdings = JSON.parse(savedHoldings);
-  }
-  
-  // Tab switching
-  document.querySelectorAll(".tabs span").forEach(tab => {
-    tab.onclick = function() {
-      document.querySelectorAll(".tabs span").forEach(t => t.classList.remove("active"));
+  // Tab navigation
+  document.querySelectorAll(".nav-tabs span").forEach(function(tab) {
+    tab.addEventListener("click", function() {
+      document.querySelectorAll(".nav-tabs span").forEach(t => t.classList.remove("active"));
       this.classList.add("active");
-      showTab(this.dataset.tab);
-    };
+      switchTab(this.dataset.tab);
+    });
   });
   
-  // Chat tabs
-  document.querySelectorAll(".chat-tab").forEach(tab => {
-    tab.onclick = function() {
-      document.querySelectorAll(".chat-tab").forEach(t => t.classList.remove("active"));
-      document.querySelectorAll(".chat-list").forEach(l => l.classList.remove("active"));
+  // Chat list tabs
+  document.querySelectorAll(".chat-nav-tab").forEach(function(tab) {
+    tab.addEventListener("click", function() {
+      document.querySelectorAll(".chat-nav-tab").forEach(t => t.classList.remove("active"));
+      document.querySelectorAll(".chat-list-section").forEach(s => s.classList.remove("active"));
       this.classList.add("active");
-      document.getElementById(this.dataset.list + "List").classList.add("active");
-    };
+      document.getElementById(this.dataset.list + "ListContainer").classList.add("active");
+    });
   });
   
   // Stock search
-  document.getElementById("stockSearch").oninput = function() {
-    const q = this.value.toLowerCase();
-    const filtered = STOCK_LIST.filter(s => 
-      s.name.toLowerCase().includes(q) || s.sym.toLowerCase().includes(q)
+  document.getElementById("stockSearchInput").addEventListener("input", function() {
+    const query = this.value.toLowerCase();
+    const matches = STOCK_DATA.filter(s => 
+      s.name.toLowerCase().includes(query) || s.sym.toLowerCase().includes(query)
     );
-    renderStocks(filtered);
-  };
-  
-  // Modal close on outside click
-  document.querySelectorAll(".modal-overlay").forEach(m => {
-    m.onclick = function(e) {
-      if (e.target === this) this.style.display = "none";
-    };
+    displayStocks(matches);
   });
-};
+  
+  // Close modals on backdrop click
+  document.querySelectorAll(".modal-backdrop").forEach(function(modal) {
+    modal.addEventListener("click", function(e) {
+      if (e.target === this) this.style.display = "none";
+    });
+  });
+});
 
-/* ================= AUTH ================= */
-function loginWithGoogle() {
+/* ================= AUTHENTICATION ================= */
+function handleGoogleLogin() {
   auth.signInWithPopup(new firebase.auth.GoogleAuthProvider())
-    .catch(err => document.getElementById("loginError").textContent = err.message);
+    .catch(function(err) {
+      document.getElementById("loginError").textContent = err.message;
+    });
 }
 
-function loginWithEmail() {
-  const email = document.getElementById("loginEmail").value.trim();
-  const pass = document.getElementById("loginPassword").value.trim();
+function handleEmailLogin() {
+  const emailVal = document.getElementById("emailInput").value.trim();
+  const passVal = document.getElementById("passwordInput").value.trim();
   
-  if (!email || !pass) {
+  if (!emailVal || !passVal) {
     document.getElementById("loginError").textContent = "Please enter email and password";
     return;
   }
   
-  auth.signInWithEmailAndPassword(email, pass)
-    .catch(() => auth.createUserWithEmailAndPassword(email, pass))
-    .catch(err => document.getElementById("loginError").textContent = err.message);
+  auth.signInWithEmailAndPassword(emailVal, passVal)
+    .catch(function() {
+      return auth.createUserWithEmailAndPassword(emailVal, passVal);
+    })
+    .catch(function(err) {
+      document.getElementById("loginError").textContent = err.message;
+    });
 }
 
-auth.onAuthStateChanged(async user => {
+auth.onAuthStateChanged(async function(user) {
   if (!user) return;
   
-  currentUser = user;
-  document.getElementById("loginBox").style.display = "none";
-  document.getElementById("appMain").style.display = "block";
+  activeUser = user;
+  document.getElementById("loginPage").style.display = "none";
+  document.getElementById("mainApp").style.display = "block";
   
-  // Create user doc if not exists
-  const userRef = db.collection("users").doc(user.uid);
-  const userDoc = await userRef.get();
+  // Create/verify user document
+  const userDocRef = db.collection("users").doc(user.uid);
+  const userDocSnap = await userDocRef.get();
   
-  if (!userDoc.exists) {
-    await userRef.set({
+  if (!userDocSnap.exists) {
+    await userDocRef.set({
       email: user.email,
       name: user.displayName || "",
-      usercode: String(Math.floor(10000 + Math.random() * 90000))
+      usercode: String(Math.floor(10000 + Math.random() * 90000)),
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
     });
   }
   
-  // Render UI
-  renderStocks(STOCK_LIST);
-  renderHoldings();
-  loadFriends();
-  loadRequests();
+  // Load holdings from Firebase
+  await loadUserHoldings();
   
-  // Start auto-refresh
-  startAutoRefresh();
+  // Render stocks
+  displayStocks(STOCK_DATA);
   
-  // Fetch fresh prices after 2 seconds
-  setTimeout(() => fetchAllPrices(), 2000);
+  // Render holdings
+  displayHoldings();
+  
+  // Setup chat
+  setupFriendsListener();
+  setupRequestsListener();
+  
+  // Start auto refresh
+  initAutoRefresh();
+  
+  // Fetch fresh prices
+  setTimeout(function() {
+    fetchLatestPrices();
+  }, 1500);
 });
 
-function logoutUser() {
-  if (confirm("Logout?")) {
+function performLogout() {
+  if (confirm("Are you sure you want to logout?")) {
     auth.signOut();
     location.reload();
   }
 }
 
-/* ================= TABS ================= */
-function showTab(tabName) {
-  document.getElementById("stocksTab").style.display = tabName === "stocks" ? "block" : "none";
-  document.getElementById("holdingsTab").style.display = tabName === "holdings" ? "block" : "none";
-  document.getElementById("mfTab").style.display = tabName === "mf" ? "block" : "none";
-  document.getElementById("chatTab").style.display = tabName === "chat" ? "block" : "none";
+/* ================= LOAD/SAVE HOLDINGS FROM FIREBASE ================= */
+async function loadUserHoldings() {
+  try {
+    const holdingsRef = db.collection("users").doc(activeUser.uid).collection("holdings");
+    const snapshot = await holdingsRef.get();
+    
+    userHoldings = [];
+    snapshot.forEach(function(doc) {
+      userHoldings.push({
+        id: doc.id,
+        ...doc.data()
+      });
+    });
+  } catch (e) {
+    console.error("Error loading holdings:", e);
+    // Fallback to localStorage
+    const local = localStorage.getItem("holdings");
+    if (local) userHoldings = JSON.parse(local);
+  }
+}
+
+async function saveHoldingToFirebase(holdingData) {
+  try {
+    const holdingsRef = db.collection("users").doc(activeUser.uid).collection("holdings");
+    const docRef = await holdingsRef.add({
+      ...holdingData,
+      addedAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    return docRef.id;
+  } catch (e) {
+    console.error("Error saving holding:", e);
+    return null;
+  }
+}
+
+async function updateHoldingInFirebase(holdingId, updates) {
+  try {
+    await db.collection("users").doc(activeUser.uid).collection("holdings").doc(holdingId).update(updates);
+    return true;
+  } catch (e) {
+    console.error("Error updating holding:", e);
+    return false;
+  }
+}
+
+async function deleteHoldingFromFirebase(holdingId) {
+  try {
+    await db.collection("users").doc(activeUser.uid).collection("holdings").doc(holdingId).delete();
+    return true;
+  } catch (e) {
+    console.error("Error deleting holding:", e);
+    return false;
+  }
+}
+
+/* ================= TAB SWITCHING ================= */
+function switchTab(tabName) {
+  document.getElementById("stocksSection").style.display = tabName === "stocks" ? "block" : "none";
+  document.getElementById("holdingsSection").style.display = tabName === "holdings" ? "block" : "none";
+  document.getElementById("mfSection").style.display = tabName === "mf" ? "block" : "none";
+  document.getElementById("chatSection").style.display = tabName === "chat" ? "block" : "none";
   
-  if (tabName === "holdings") renderHoldings();
+  if (tabName === "holdings") displayHoldings();
 }
 
 /* ================= PRICE FETCHING ================= */
-async function fetchYahooPrice(symbol) {
+async function fetchSinglePrice(yahooSymbol) {
   try {
-    const proxy = "https://api.allorigins.win/raw?url=";
-    const url = `https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?interval=1d&range=1d`;
-    const res = await fetch(proxy + encodeURIComponent(url));
-    const data = await res.json();
+    const proxyUrl = "https://api.allorigins.win/raw?url=";
+    const apiUrl = `https://query1.finance.yahoo.com/v8/finance/chart/${yahooSymbol}?interval=1d&range=1d`;
     
-    if (data.chart?.result?.[0]?.meta) {
+    const response = await fetch(proxyUrl + encodeURIComponent(apiUrl));
+    const data = await response.json();
+    
+    if (data.chart && data.chart.result && data.chart.result[0]) {
       const meta = data.chart.result[0].meta;
-      const price = meta.regularMarketPrice || 0;
-      const prevClose = meta.previousClose || price;
-      const change = price - prevClose;
-      const changePct = prevClose > 0 ? (change / prevClose) * 100 : 0;
+      const currentPrice = meta.regularMarketPrice || 0;
+      const previousClose = meta.previousClose || currentPrice;
+      const priceChange = currentPrice - previousClose;
+      const changePercent = previousClose > 0 ? (priceChange / previousClose) * 100 : 0;
       
-      return { price, change, changePct, prevClose };
+      return {
+        price: currentPrice,
+        change: priceChange,
+        changePercent: changePercent,
+        prevClose: previousClose
+      };
     }
-  } catch (e) {
-    console.log("Fetch error:", symbol);
+  } catch (error) {
+    // Silent fail
   }
   return null;
 }
 
-async function fetchAllPrices() {
-  if (isFetching) return;
-  isFetching = true;
+async function fetchLatestPrices() {
+  if (isFetchingData) return;
   
-  updateStatus("Updating...", true);
-  oldPrices = JSON.parse(JSON.stringify(priceCache));
+  isFetchingData = true;
+  setRefreshStatus("Updating...", true);
+  
+  prevPricesData = JSON.parse(JSON.stringify(pricesData));
   
   // Prioritize holdings
-  const holdingSyms = holdings.map(h => h.sym);
-  const priorityStocks = STOCK_LIST.filter(s => holdingSyms.includes(s.sym));
-  const otherStocks = STOCK_LIST.filter(s => !holdingSyms.includes(s.sym));
-  const ordered = [...priorityStocks, ...otherStocks];
+  const holdingSyms = userHoldings.map(h => h.sym);
+  const holdingsFirst = STOCK_DATA.filter(s => holdingSyms.includes(s.sym));
+  const remaining = STOCK_DATA.filter(s => !holdingSyms.includes(s.sym));
+  const orderedList = [...holdingsFirst, ...remaining];
   
-  for (let i = 0; i < Math.min(ordered.length, 20); i++) {
-    const stock = ordered[i];
-    const data = await fetchYahooPrice(stock.yahooSym);
-    if (data && data.price > 0) {
-      priceCache[stock.sym] = data;
+  // Fetch in parallel batches
+  const batchSize = 5;
+  const maxFetch = 40;
+  
+  for (let i = 0; i < Math.min(orderedList.length, maxFetch); i += batchSize) {
+    const batch = orderedList.slice(i, i + batchSize);
+    const promises = batch.map(stock => 
+      fetchSinglePrice(stock.yahoo).then(data => ({sym: stock.sym, data}))
+    );
+    
+    const results = await Promise.all(promises);
+    
+    results.forEach(function(result) {
+      if (result.data && result.data.price > 0) {
+        pricesData[result.sym] = result.data;
+      }
+    });
+    
+    // Small delay between batches
+    if (i + batchSize < maxFetch) {
+      await new Promise(r => setTimeout(r, 200));
     }
-    await sleep(400);
   }
   
-  localStorage.setItem("priceCache", JSON.stringify(priceCache));
-  localStorage.setItem("lastUpdate", Date.now());
+  // Save to localStorage
+  localStorage.setItem("stockPrices", JSON.stringify(pricesData));
+  localStorage.setItem("lastPriceUpdate", Date.now().toString());
   
-  isFetching = false;
-  countdownTimer = 30;
-  updateStatus("Live", false);
-  updateLastUpdateText();
-  renderStocksWithFlash(STOCK_LIST);
-  renderHoldings();
-}
-
-function manualRefresh() {
-  fetchAllPrices();
-}
-
-function refreshHoldings() {
-  fetchAllPrices();
-}
-
-function startAutoRefresh() {
-  if (countdownInterval) clearInterval(countdownInterval);
+  isFetchingData = false;
+  refreshCountdown = 30;
+  setRefreshStatus("Live", false);
+  refreshLastUpdateDisplay();
   
-  countdownInterval = setInterval(() => {
-    countdownTimer--;
-    document.getElementById("countdownNum").textContent = countdownTimer;
-    updateLastUpdateText();
+  displayStocksWithAnimation(STOCK_DATA);
+  displayHoldings();
+}
+
+function triggerManualRefresh() {
+  fetchLatestPrices();
+}
+
+function refreshHoldingsData() {
+  fetchLatestPrices();
+}
+
+function initAutoRefresh() {
+  if (autoRefreshTimer) clearInterval(autoRefreshTimer);
+  
+  autoRefreshTimer = setInterval(function() {
+    refreshCountdown--;
+    document.getElementById("countdownDisplay").textContent = refreshCountdown;
+    refreshLastUpdateDisplay();
     
-    if (countdownTimer <= 0) {
-      countdownTimer = 30;
-      if (!isFetching && document.visibilityState === "visible") {
-        fetchAllPrices();
+    if (refreshCountdown <= 0) {
+      refreshCountdown = 30;
+      if (!isFetchingData && document.visibilityState === "visible") {
+        fetchLatestPrices();
       }
     }
   }, 1000);
 }
 
-function updateStatus(text, isLoading) {
-  const badge = document.getElementById("liveBadge");
-  const statusText = document.getElementById("liveStatus");
+function setRefreshStatus(text, isLoading) {
+  const badge = document.getElementById("liveStatusBadge");
+  const statusText = document.getElementById("liveStatusText");
+  
   statusText.textContent = text;
   badge.classList.toggle("updating", isLoading);
   
-  const btn = document.getElementById("refreshStocksBtn");
+  const btn = document.getElementById("mainRefreshBtn");
   btn.disabled = isLoading;
-  btn.innerHTML = isLoading ? '<div class="spinner"></div> Updating...' : '🔄 Refresh Now';
+  btn.innerHTML = isLoading ? '<div class="loading-spinner"></div> Updating...' : '🔄 Refresh Now';
 }
 
-function updateLastUpdateText() {
-  const last = localStorage.getItem("lastUpdate");
-  if (!last) return;
+function refreshLastUpdateDisplay() {
+  const lastUpdate = localStorage.getItem("lastPriceUpdate");
+  if (!lastUpdate) return;
   
-  const diff = Math.floor((Date.now() - parseInt(last)) / 1000);
-  let text = "";
-  if (diff < 5) text = "Just now";
-  else if (diff < 60) text = diff + "s ago";
-  else text = Math.floor(diff / 60) + "m ago";
+  const diffSec = Math.floor((Date.now() - parseInt(lastUpdate)) / 1000);
+  let displayText = "";
   
-  document.getElementById("lastUpdateText").textContent = text;
-  document.getElementById("holdingsUpdateText").textContent = text;
-}
-
-function sleep(ms) {
-  return new Promise(r => setTimeout(r, ms));
-}
-
-function getPrice(sym) {
-  return priceCache[sym]?.price || 0;
-}
-
-function getPriceData(sym) {
-  return priceCache[sym] || null;
-}
-
-/* ================= RENDER STOCKS ================= */
-function renderStocks(list) {
-  const grid = document.getElementById("stockGrid");
-  grid.innerHTML = "";
+  if (diffSec < 5) displayText = "Just now";
+  else if (diffSec < 60) displayText = diffSec + "s ago";
+  else if (diffSec < 3600) displayText = Math.floor(diffSec / 60) + "m ago";
+  else displayText = Math.floor(diffSec / 3600) + "h ago";
   
-  document.getElementById("visibleCount").textContent = list.length;
-  document.getElementById("totalCount").textContent = STOCK_LIST.length;
+  document.getElementById("lastUpdateDisplay").textContent = displayText;
+  document.getElementById("holdingsUpdateDisplay").textContent = displayText;
+}
+
+function getStockPrice(symbol) {
+  return pricesData[symbol]?.price || 0;
+}
+
+function getStockData(symbol) {
+  return pricesData[symbol] || null;
+}
+
+/* ================= DISPLAY STOCKS ================= */
+function displayStocks(stockList) {
+  const container = document.getElementById("stocksContainer");
+  container.innerHTML = "";
   
-  list.forEach(stock => {
-    const pd = getPriceData(stock.sym);
-    const price = pd?.price || 0;
-    const change = pd?.change || 0;
-    const changePct = pd?.changePct || 0;
-    const isUp = change >= 0;
+  document.getElementById("displayedCount").textContent = stockList.length;
+  document.getElementById("totalStockCount").textContent = STOCK_DATA.length;
+  
+  stockList.forEach(function(stock) {
+    const priceInfo = getStockData(stock.sym);
+    const currentPrice = priceInfo?.price || 0;
+    const priceChange = priceInfo?.change || 0;
+    const changePercent = priceInfo?.changePercent || 0;
+    const isPositive = priceChange >= 0;
     
     const card = document.createElement("div");
     card.className = "stock-card";
-    card.dataset.sym = stock.sym;
+    card.dataset.symbol = stock.sym;
     
     card.innerHTML = `
-      <div class="stock-top">
+      <div class="stock-header">
         <div class="stock-logo">
           <img src="https://logo.clearbit.com/${stock.logo}" 
-               onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"
+               onerror="this.style.display='none';this.nextElementSibling.style.display='block'"
                alt="${stock.sym}">
-          <div class="stock-logo-text" style="display:none">${stock.sym.charAt(0)}</div>
+          <div class="stock-logo-fallback" style="display:none">${stock.sym.charAt(0)}</div>
         </div>
-        <div class="stock-details">
-          <div class="stock-name" title="${stock.name}">${stock.name}</div>
+        <div class="stock-meta">
+          <div class="stock-title" title="${stock.name}">${stock.name}</div>
           <div class="stock-symbol">${stock.sym}</div>
         </div>
       </div>
-      <div class="stock-price-row">
-        <div class="stock-price">${price > 0 ? '₹' + price.toFixed(2) : '₹--'}</div>
-        <div class="stock-change">
-          ${price > 0 ? `
-            <div class="change-amount ${isUp ? 'up' : 'down'}">${isUp ? '+' : ''}₹${change.toFixed(2)}</div>
-            <div class="change-percent ${isUp ? 'up' : 'down'}">${isUp ? '▲' : '▼'} ${Math.abs(changePct).toFixed(2)}%</div>
-          ` : '<div style="color:#94a3b8">--</div>'}
+      <div class="price-display">
+        <div class="current-price">${currentPrice > 0 ? '₹' + currentPrice.toFixed(2) : '₹ --'}</div>
+        <div class="price-change">
+          ${currentPrice > 0 ? `
+            <div class="change-value ${isPositive ? 'positive' : 'negative'}">${isPositive ? '+' : ''}₹${priceChange.toFixed(2)}</div>
+            <div class="change-badge ${isPositive ? 'positive' : 'negative'}">${isPositive ? '▲' : '▼'} ${Math.abs(changePercent).toFixed(2)}%</div>
+          ` : '<div style="color:#94a3b8;font-size:13px">--</div>'}
         </div>
       </div>
-      <button class="add-btn" onclick="openAddModal('${stock.sym}')">➕ Add to Holdings</button>
+      <button class="add-stock-btn" onclick="showAddStockModal('${stock.sym}')">➕ Add to Holdings</button>
     `;
     
-    grid.appendChild(card);
+    container.appendChild(card);
   });
 }
 
-function renderStocksWithFlash(list) {
-  list.forEach(stock => {
-    const oldP = oldPrices[stock.sym]?.price || 0;
-    const newP = priceCache[stock.sym]?.price || 0;
+function displayStocksWithAnimation(stockList) {
+  stockList.forEach(function(stock) {
+    const oldPrice = prevPricesData[stock.sym]?.price || 0;
+    const newPrice = pricesData[stock.sym]?.price || 0;
     
-    if (oldP > 0 && newP > 0 && oldP !== newP) {
-      const card = document.querySelector(`[data-sym="${stock.sym}"]`);
+    if (oldPrice > 0 && newPrice > 0 && oldPrice !== newPrice) {
+      const card = document.querySelector(`[data-symbol="${stock.sym}"]`);
       if (card) {
-        card.classList.remove("flash-up", "flash-down");
+        card.classList.remove("price-up", "price-down");
         void card.offsetWidth;
-        card.classList.add(newP > oldP ? "flash-up" : "flash-down");
+        card.classList.add(newPrice > oldPrice ? "price-up" : "price-down");
       }
     }
   });
   
-  renderStocks(list);
+  displayStocks(stockList);
 }
 
 /* ================= ADD STOCK MODAL ================= */
-function openAddModal(sym) {
-  const stock = STOCK_LIST.find(s => s.sym === sym);
+function showAddStockModal(symbol) {
+  const stock = STOCK_DATA.find(s => s.sym === symbol);
   if (!stock) return;
   
-  addingStockData = stock;
-  const price = getPrice(sym);
+  pendingAddStock = stock;
+  const price = getStockPrice(symbol);
   
-  document.getElementById("addStockName").textContent = stock.name + " (" + sym + ")";
-  document.getElementById("addStockPrice").textContent = price > 0 ? "₹" + price.toFixed(2) : "₹--";
-  document.getElementById("buyPriceInput").value = price > 0 ? price.toFixed(2) : "";
-  document.getElementById("quantityInput").value = "";
+  document.getElementById("modalStockName").textContent = stock.name + " (" + symbol + ")";
+  document.getElementById("modalStockPrice").textContent = price > 0 ? "₹" + price.toFixed(2) : "₹ --";
+  document.getElementById("modalBuyPrice").value = price > 0 ? price.toFixed(2) : "";
+  document.getElementById("modalQuantity").value = "";
   document.getElementById("addStockModal").style.display = "flex";
 }
 
-function closeAddModal() {
+function hideAddModal() {
   document.getElementById("addStockModal").style.display = "none";
-  addingStockData = null;
+  pendingAddStock = null;
 }
 
-function confirmAddStock() {
-  const price = parseFloat(document.getElementById("buyPriceInput").value);
-  const qty = parseInt(document.getElementById("quantityInput").value);
+async function confirmStockAdd() {
+  const buyPrice = parseFloat(document.getElementById("modalBuyPrice").value);
+  const quantity = parseInt(document.getElementById("modalQuantity").value);
   
-  if (!price || price <= 0) return alert("Enter valid price");
-  if (!qty || qty <= 0) return alert("Enter valid quantity");
+  if (!buyPrice || buyPrice <= 0) {
+    alert("Please enter a valid buy price");
+    return;
+  }
+  if (!quantity || quantity <= 0) {
+    alert("Please enter a valid quantity");
+    return;
+  }
   
-  holdings.push({
-    name: addingStockData.name,
-    sym: addingStockData.sym,
-    price: price,
-    qty: qty,
-    date: Date.now()
-  });
+  const holdingData = {
+    name: pendingAddStock.name,
+    sym: pendingAddStock.sym,
+    buyPrice: buyPrice,
+    qty: quantity
+  };
   
-  localStorage.setItem("holdings", JSON.stringify(holdings));
-  closeAddModal();
-  renderHoldings();
+  // Save to Firebase
+  const docId = await saveHoldingToFirebase(holdingData);
+  
+  if (docId) {
+    userHoldings.push({
+      id: docId,
+      ...holdingData
+    });
+  } else {
+    // Fallback to local only
+    userHoldings.push(holdingData);
+    localStorage.setItem("holdings", JSON.stringify(userHoldings));
+  }
+  
+  hideAddModal();
+  displayHoldings();
 }
 
 /* ================= EDIT STOCK MODAL ================= */
-function openEditModal(idx) {
-  const h = holdings[idx];
-  editingIndex = idx;
+function showEditStockModal(index) {
+  const holding = userHoldings[index];
+  pendingEditIndex = index;
   
-  const currPrice = getPrice(h.sym);
+  const currentPrice = getStockPrice(holding.sym);
   
-  document.getElementById("editStockName").textContent = h.name + " (" + h.sym + ")";
-  document.getElementById("editStockPrice").textContent = currPrice > 0 ? "₹" + currPrice.toFixed(2) : "₹--";
-  document.getElementById("editBuyPrice").value = h.price;
-  document.getElementById("editQuantity").value = h.qty;
+  document.getElementById("editModalStockName").textContent = holding.name + " (" + holding.sym + ")";
+  document.getElementById("editModalStockPrice").textContent = currentPrice > 0 ? "₹" + currentPrice.toFixed(2) : "₹ --";
+  document.getElementById("editModalBuyPrice").value = holding.buyPrice;
+  document.getElementById("editModalQuantity").value = holding.qty;
   document.getElementById("editStockModal").style.display = "flex";
 }
 
-function closeEditModal() {
+function hideEditModal() {
   document.getElementById("editStockModal").style.display = "none";
-  editingIndex = null;
+  pendingEditIndex = null;
 }
 
-function confirmEditStock() {
-  const price = parseFloat(document.getElementById("editBuyPrice").value);
-  const qty = parseInt(document.getElementById("editQuantity").value);
+async function confirmStockEdit() {
+  const newPrice = parseFloat(document.getElementById("editModalBuyPrice").value);
+  const newQty = parseInt(document.getElementById("editModalQuantity").value);
   
-  if (!price || price <= 0) return alert("Enter valid price");
-  if (!qty || qty <= 0) return alert("Enter valid quantity");
-  
-  holdings[editingIndex].price = price;
-  holdings[editingIndex].qty = qty;
-  
-  localStorage.setItem("holdings", JSON.stringify(holdings));
-  closeEditModal();
-  renderHoldings();
-}
-
-function deleteHolding(idx) {
-  if (confirm("Delete this holding?")) {
-    holdings.splice(idx, 1);
-    localStorage.setItem("holdings", JSON.stringify(holdings));
-    renderHoldings();
+  if (!newPrice || newPrice <= 0) {
+    alert("Please enter a valid buy price");
+    return;
   }
+  if (!newQty || newQty <= 0) {
+    alert("Please enter a valid quantity");
+    return;
+  }
+  
+  const holding = userHoldings[pendingEditIndex];
+  
+  if (holding.id) {
+    await updateHoldingInFirebase(holding.id, {
+      buyPrice: newPrice,
+      qty: newQty
+    });
+  }
+  
+  userHoldings[pendingEditIndex].buyPrice = newPrice;
+  userHoldings[pendingEditIndex].qty = newQty;
+  
+  localStorage.setItem("holdings", JSON.stringify(userHoldings));
+  
+  hideEditModal();
+  displayHoldings();
 }
 
-/* ================= RENDER HOLDINGS ================= */
-function renderHoldings() {
-  const statsGrid = document.getElementById("statsGrid");
-  const tableWrap = document.getElementById("holdingsTableWrap");
+async function removeHolding(index) {
+  if (!confirm("Delete this holding?")) return;
   
-  if (holdings.length === 0) {
-    statsGrid.innerHTML = "";
-    tableWrap.innerHTML = '<div class="empty-holdings"><p>No holdings yet. Add stocks from the Stocks tab!</p></div>';
+  const holding = userHoldings[index];
+  
+  if (holding.id) {
+    await deleteHoldingFromFirebase(holding.id);
+  }
+  
+  userHoldings.splice(index, 1);
+  localStorage.setItem("holdings", JSON.stringify(userHoldings));
+  displayHoldings();
+}
+
+/* ================= DISPLAY HOLDINGS ================= */
+function displayHoldings() {
+  const statsContainer = document.getElementById("portfolioStats");
+  const tableContainer = document.getElementById("holdingsTableContainer");
+  
+  if (userHoldings.length === 0) {
+    statsContainer.innerHTML = "";
+    tableContainer.innerHTML = `
+      <div class="empty-holdings">
+        <h3>No Holdings Yet</h3>
+        <p>Add stocks from the Stocks tab to build your portfolio!</p>
+      </div>
+    `;
     return;
   }
   
   let totalInvested = 0;
-  let totalCurrent = 0;
+  let totalCurrentValue = 0;
   let totalDayChange = 0;
   
-  holdings.forEach(h => {
-    const invested = h.price * h.qty;
-    const currPrice = getPrice(h.sym);
-    const current = currPrice > 0 ? currPrice * h.qty : invested;
-    const pd = getPriceData(h.sym);
-    const dayChg = pd ? pd.change * h.qty : 0;
+  userHoldings.forEach(function(h) {
+    const invested = h.buyPrice * h.qty;
+    const currentPrice = getStockPrice(h.sym);
+    const currentValue = currentPrice > 0 ? currentPrice * h.qty : invested;
+    const priceData = getStockData(h.sym);
+    const dayChg = priceData ? priceData.change * h.qty : 0;
     
     totalInvested += invested;
-    totalCurrent += current;
+    totalCurrentValue += currentValue;
     totalDayChange += dayChg;
   });
   
-  const totalPL = totalCurrent - totalInvested;
-  const totalPLPct = totalInvested > 0 ? (totalPL / totalInvested) * 100 : 0;
-  const isProfit = totalPL >= 0;
+  const totalPnL = totalCurrentValue - totalInvested;
+  const totalPnLPercent = totalInvested > 0 ? (totalPnL / totalInvested) * 100 : 0;
+  const isProfit = totalPnL >= 0;
   const isDayUp = totalDayChange >= 0;
   
-  statsGrid.innerHTML = `
-    <div class="stat-box purple">
+  statsContainer.innerHTML = `
+    <div class="stat-card gradient-purple">
       <div class="stat-label">Total Invested</div>
-      <div class="stat-value">₹${totalInvested.toLocaleString("en-IN")}</div>
-      <div class="stat-sub">${holdings.length} stock${holdings.length > 1 ? 's' : ''}</div>
+      <div class="stat-value">₹${totalInvested.toLocaleString("en-IN", {maximumFractionDigits: 0})}</div>
+      <div class="stat-subtitle">${userHoldings.length} stock${userHoldings.length > 1 ? 's' : ''}</div>
     </div>
-    <div class="stat-box purple">
+    <div class="stat-card gradient-blue">
       <div class="stat-label">Current Value</div>
-      <div class="stat-value">₹${Math.round(totalCurrent).toLocaleString("en-IN")}</div>
-      <div class="stat-sub">Live market value</div>
+      <div class="stat-value">₹${Math.round(totalCurrentValue).toLocaleString("en-IN")}</div>
+      <div class="stat-subtitle">Live market value</div>
     </div>
-    <div class="stat-box ${isProfit ? 'green' : 'red'}">
+    <div class="stat-card ${isProfit ? 'gradient-green' : 'gradient-red'}">
       <div class="stat-label">Total P&L</div>
-      <div class="stat-value">${isProfit ? '+' : ''}₹${Math.round(totalPL).toLocaleString("en-IN")}</div>
-      <div class="stat-sub">${isProfit ? '+' : ''}${totalPLPct.toFixed(2)}%</div>
+      <div class="stat-value">${isProfit ? '+' : ''}₹${Math.round(totalPnL).toLocaleString("en-IN")}</div>
+      <div class="stat-subtitle">${isProfit ? '+' : ''}${totalPnLPercent.toFixed(2)}%</div>
     </div>
-    <div class="stat-box ${isDayUp ? 'green' : 'red'}">
+    <div class="stat-card ${isDayUp ? 'gradient-green' : 'gradient-red'}">
       <div class="stat-label">Today's Change</div>
       <div class="stat-value">${isDayUp ? '+' : ''}₹${Math.round(totalDayChange).toLocaleString("en-IN")}</div>
-      <div class="stat-sub">Day performance</div>
+      <div class="stat-subtitle">Day performance</div>
     </div>
   `;
   
   let tableHTML = `
-    <table>
-      <tr>
-        <th>Stock</th>
-        <th>Buy Price</th>
-        <th>Qty</th>
-        <th>Invested</th>
-        <th>LTP</th>
-        <th>Current</th>
-        <th>Day %</th>
-        <th>P&L</th>
-        <th>Actions</th>
-      </tr>
+    <table class="holdings-table">
+      <thead>
+        <tr>
+          <th>Stock</th>
+          <th>Buy Price</th>
+          <th>Qty</th>
+          <th>Invested</th>
+          <th>LTP</th>
+          <th>Current Value</th>
+          <th>Day %</th>
+          <th>P&L</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
   `;
   
-  holdings.forEach((h, i) => {
-    const invested = h.price * h.qty;
-    const currPrice = getPrice(h.sym);
-    const current = currPrice > 0 ? currPrice * h.qty : invested;
-    const pl = current - invested;
-    const plPct = invested > 0 ? (pl / invested) * 100 : 0;
-    const isPft = pl >= 0;
+  userHoldings.forEach(function(h, idx) {
+    const invested = h.buyPrice * h.qty;
+    const currentPrice = getStockPrice(h.sym);
+    const currentValue = currentPrice > 0 ? currentPrice * h.qty : invested;
+    const pnl = currentValue - invested;
+    const pnlPercent = invested > 0 ? (pnl / invested) * 100 : 0;
+    const isPft = pnl >= 0;
     
-    const pd = getPriceData(h.sym);
-    const dayPct = pd ? pd.changePct : 0;
-    const dayUp = dayPct >= 0;
+    const priceData = getStockData(h.sym);
+    const dayPercent = priceData ? priceData.changePercent : 0;
+    const isDayPositive = dayPercent >= 0;
     
     tableHTML += `
       <tr>
         <td>
-          <div class="holding-stock">
-            <div class="holding-icon">${h.sym.charAt(0)}</div>
-            <div class="holding-info">
-              <div class="holding-name">${h.name}</div>
-              <div class="holding-sym">${h.sym}</div>
+          <div class="holding-stock-cell">
+            <div class="holding-stock-icon">${h.sym.charAt(0)}</div>
+            <div class="holding-stock-info">
+              <div class="holding-stock-name">${h.name}</div>
+              <div class="holding-stock-sym">${h.sym}</div>
             </div>
           </div>
         </td>
-        <td>₹${h.price.toFixed(2)}</td>
+        <td>₹${h.buyPrice.toFixed(2)}</td>
         <td>${h.qty}</td>
-        <td>₹${invested.toLocaleString("en-IN")}</td>
-        <td>${currPrice > 0 ? '₹' + currPrice.toFixed(2) : '--'}</td>
-        <td><strong>₹${Math.round(current).toLocaleString("en-IN")}</strong></td>
-        <td class="${dayUp ? 'profit' : 'loss'}">${currPrice > 0 ? (dayUp ? '+' : '') + dayPct.toFixed(2) + '%' : '--'}</td>
-        <td class="${isPft ? 'profit' : 'loss'}">
-          ${isPft ? '+' : ''}₹${Math.round(pl).toLocaleString("en-IN")}<br>
-          <small>(${isPft ? '+' : ''}${plPct.toFixed(2)}%)</small>
+        <td>₹${invested.toLocaleString("en-IN", {maximumFractionDigits: 0})}</td>
+        <td>${currentPrice > 0 ? '₹' + currentPrice.toFixed(2) : '--'}</td>
+        <td><strong>₹${Math.round(currentValue).toLocaleString("en-IN")}</strong></td>
+        <td class="${isDayPositive ? 'text-profit' : 'text-loss'}">
+          ${currentPrice > 0 ? (isDayPositive ? '+' : '') + dayPercent.toFixed(2) + '%' : '--'}
+        </td>
+        <td class="${isPft ? 'text-profit' : 'text-loss'}">
+          ${isPft ? '+' : ''}₹${Math.round(pnl).toLocaleString("en-IN")}<br>
+          <small>(${isPft ? '+' : ''}${pnlPercent.toFixed(2)}%)</small>
         </td>
         <td>
-          <div class="action-btns">
-            <button class="edit-btn" onclick="openEditModal(${i})">✏️ Edit</button>
-            <button class="delete-btn" onclick="deleteHolding(${i})">🗑️</button>
+          <div class="action-buttons">
+            <button class="btn-edit" onclick="showEditStockModal(${idx})">✏️ Edit</button>
+            <button class="btn-delete" onclick="removeHolding(${idx})">🗑️</button>
           </div>
         </td>
       </tr>
     `;
   });
   
-  tableHTML += '</table>';
-  tableWrap.innerHTML = tableHTML;
+  tableHTML += '</tbody></table>';
+  tableContainer.innerHTML = tableHTML;
 }
 
-/* ================= CHAT: SEARCH USER ================= */
-async function searchUserById() {
-  const code = document.getElementById("userSearchInput").value.trim();
-  const resultDiv = document.getElementById("searchResult");
+/* ================= CHAT - USER SEARCH ================= */
+async function performUserSearch() {
+  const searchCode = document.getElementById("userIdSearchInput").value.trim();
+  const resultsDiv = document.getElementById("userSearchResults");
   
-  resultDiv.innerHTML = "";
+  resultsDiv.innerHTML = "";
   
-  if (code.length !== 5) {
-    resultDiv.innerHTML = '<div style="padding:10px;color:#64748b;font-size:13px">Enter exactly 5 digits</div>';
+  if (searchCode.length !== 5) {
+    resultsDiv.innerHTML = '<div style="padding:12px;color:#64748b;font-size:14px">Please enter exactly 5 digits</div>';
     return;
   }
   
   try {
-    const q = await db.collection("users").where("usercode", "==", code).get();
+    const querySnapshot = await db.collection("users").where("usercode", "==", searchCode).get();
     
-    if (q.empty) {
-      resultDiv.innerHTML = '<div style="padding:10px;color:#ef4444;font-size:13px">❌ User not found</div>';
+    if (querySnapshot.empty) {
+      resultsDiv.innerHTML = '<div style="padding:12px;color:#ef4444;font-size:14px">❌ No user found with this ID</div>';
       return;
     }
     
-    let found = false;
-    q.forEach(doc => {
-      if (doc.id === currentUser.uid) return;
-      found = true;
+    let foundUser = false;
+    
+    querySnapshot.forEach(function(docSnap) {
+      if (docSnap.id === activeUser.uid) return;
       
-      const u = doc.data();
-      const uid = doc.id;
+      foundUser = true;
+      const userData = docSnap.data();
+      const targetUid = docSnap.id;
       
-      resultDiv.innerHTML = `
-        <div class="search-user-card">
-          <div class="search-avatar">${(u.name || "U").charAt(0).toUpperCase()}</div>
-          <div class="search-info">
-            <div class="search-name">${u.name || "User"}</div>
-            <div class="search-code">ID: ${u.usercode}</div>
+      resultsDiv.innerHTML = `
+        <div class="search-result-card">
+          <div class="search-result-avatar">${(userData.name || "U").charAt(0).toUpperCase()}</div>
+          <div class="search-result-info">
+            <div class="search-result-name">${userData.name || "User"}</div>
+            <div class="search-result-code">ID: ${userData.usercode}</div>
           </div>
-          <button class="send-req-btn" onclick="sendFriendRequest('${uid}')">Send Request</button>
+          <button class="send-request-btn" onclick="sendFriendReq('${targetUid}')">Send Request</button>
         </div>
       `;
     });
     
-    if (!found) {
-      resultDiv.innerHTML = '<div style="padding:10px;color:#64748b;font-size:13px">That\'s your own ID</div>';
+    if (!foundUser) {
+      resultsDiv.innerHTML = '<div style="padding:12px;color:#64748b;font-size:14px">That\'s your own User ID</div>';
     }
-  } catch (e) {
-    console.error("Search error:", e);
-    resultDiv.innerHTML = '<div style="padding:10px;color:#ef4444;font-size:13px">Search failed</div>';
+    
+  } catch (error) {
+    console.error("Search error:", error);
+    resultsDiv.innerHTML = '<div style="padding:12px;color:#ef4444;font-size:14px">❌ Search failed. Please try again.</div>';
   }
 }
 
-/* ================= CHAT: SEND REQUEST ================= */
-async function sendFriendRequest(toUid) {
+/* ================= CHAT - SEND FRIEND REQUEST ================= */
+async function sendFriendReq(targetUid) {
   try {
-    // Check if already sent
-    const existing = await db.collection("requests")
-      .where("from", "==", currentUser.uid)
-      .where("to", "==", toUid).get();
+    // Check existing request
+    const existingReq = await db.collection("requests")
+      .where("from", "==", activeUser.uid)
+      .where("to", "==", targetUid)
+      .get();
     
-    if (!existing.empty) {
-      alert("Request already sent!");
+    if (!existingReq.empty) {
+      alert("You already sent a request to this user!");
       return;
     }
     
-    // Check if they sent us one
-    const reverse = await db.collection("requests")
-      .where("from", "==", toUid)
-      .where("to", "==", currentUser.uid).get();
+    // Check reverse request
+    const reverseReq = await db.collection("requests")
+      .where("from", "==", targetUid)
+      .where("to", "==", activeUser.uid)
+      .get();
     
-    if (!reverse.empty) {
-      alert("They already sent you a request! Check Requests tab.");
+    if (!reverseReq.empty) {
+      alert("This user already sent you a request! Check your Requests tab.");
       return;
     }
     
     // Check if already friends
-    const friend = await db.collection("friends")
-      .doc(currentUser.uid).collection("list").doc(toUid).get();
+    const friendDoc = await db.collection("friends")
+      .doc(activeUser.uid)
+      .collection("list")
+      .doc(targetUid)
+      .get();
     
-    if (friend.exists) {
-      alert("Already friends!");
+    if (friendDoc.exists) {
+      alert("You are already friends!");
       return;
     }
     
     // Send request
     await db.collection("requests").add({
-      from: currentUser.uid,
-      to: toUid,
-      time: firebase.firestore.FieldValue.serverTimestamp()
+      from: activeUser.uid,
+      to: targetUid,
+      timestamp: firebase.firestore.FieldValue.serverTimestamp()
     });
     
-    alert("✅ Request sent!");
-    document.getElementById("userSearchInput").value = "";
-    document.getElementById("searchResult").innerHTML = "";
+    alert("✅ Friend request sent successfully!");
+    document.getElementById("userIdSearchInput").value = "";
+    document.getElementById("userSearchResults").innerHTML = "";
     
-  } catch (e) {
-    console.error("Send request error:", e);
-    alert("Failed to send request");
+  } catch (error) {
+    console.error("Send request error:", error);
+    alert("Failed to send request. Please try again.");
   }
 }
 
-/* ================= CHAT: LOAD REQUESTS ================= */
-function loadRequests() {
+/* ================= CHAT - LOAD REQUESTS ================= */
+function setupRequestsListener() {
   db.collection("requests")
-    .where("to", "==", currentUser.uid)
-    .onSnapshot(async snap => {
-      const list = document.getElementById("requestsList");
-      const badge = document.getElementById("requestsBadge");
+    .where("to", "==", activeUser.uid)
+    .onSnapshot(async function(snapshot) {
+      const listContainer = document.getElementById("requestsListContainer");
+      const badge = document.getElementById("requestsCountBadge");
       
-      if (snap.empty) {
-        list.innerHTML = '<div class="empty-list">No pending requests</div>';
+      if (snapshot.empty) {
+        listContainer.innerHTML = '<div class="empty-list-msg">No pending friend requests</div>';
         badge.style.display = "none";
         return;
       }
       
-      badge.textContent = snap.size;
+      badge.textContent = snapshot.size;
       badge.style.display = "inline";
       
-      list.innerHTML = "";
+      listContainer.innerHTML = "";
       
-      for (const doc of snap.docs) {
+      for (const doc of snapshot.docs) {
         const reqId = doc.id;
         const fromUid = doc.data().from;
         
         const userSnap = await db.collection("users").doc(fromUid).get();
         if (!userSnap.exists) continue;
         
-        const u = userSnap.data();
+        const userData = userSnap.data();
         
         const item = document.createElement("div");
-        item.className = "chat-item";
+        item.className = "chat-list-item";
         item.innerHTML = `
-          <div class="chat-avatar">${(u.name || "U").charAt(0).toUpperCase()}</div>
-          <div class="chat-item-info">
-            <div class="chat-item-name">${u.name || "User"}</div>
-            <div class="chat-item-preview">ID: ${u.usercode || "--"}</div>
+          <div class="chat-item-avatar">${(userData.name || "U").charAt(0).toUpperCase()}</div>
+          <div class="chat-item-content">
+            <div class="chat-item-name">${userData.name || "User"}</div>
+            <div class="chat-item-preview">ID: ${userData.usercode || "--"}</div>
           </div>
-          <button class="accept-btn" onclick="acceptRequest('${reqId}', '${fromUid}')">Accept</button>
+          <button class="accept-request-btn" onclick="acceptFriendReq('${reqId}', '${fromUid}')">Accept</button>
         `;
-        list.appendChild(item);
+        listContainer.appendChild(item);
       }
     });
 }
 
-/* ================= CHAT: ACCEPT REQUEST ================= */
-async function acceptRequest(reqId, fromUid) {
+/* ================= CHAT - ACCEPT REQUEST ================= */
+async function acceptFriendReq(requestId, fromUid) {
   try {
-    const myDoc = await db.collection("users").doc(currentUser.uid).get();
+    const myDoc = await db.collection("users").doc(activeUser.uid).get();
     const theirDoc = await db.collection("users").doc(fromUid).get();
     
     if (!theirDoc.exists) {
@@ -1950,159 +2416,167 @@ async function acceptRequest(reqId, fromUid) {
     const myData = myDoc.data();
     const theirData = theirDoc.data();
     
-    // Add to both friend lists
-    await db.collection("friends").doc(currentUser.uid)
-      .collection("list").doc(fromUid).set({
-        name: theirData.name || "User",
-        usercode: theirData.usercode || ""
-      });
+    // Add to my friends
+    await db.collection("friends").doc(activeUser.uid).collection("list").doc(fromUid).set({
+      name: theirData.name || "User",
+      usercode: theirData.usercode || "",
+      addedAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
     
-    await db.collection("friends").doc(fromUid)
-      .collection("list").doc(currentUser.uid).set({
-        name: myData.name || "User",
-        usercode: myData.usercode || ""
-      });
+    // Add to their friends
+    await db.collection("friends").doc(fromUid).collection("list").doc(activeUser.uid).set({
+      name: myData.name || "User",
+      usercode: myData.usercode || "",
+      addedAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
     
     // Delete request
-    await db.collection("requests").doc(reqId).delete();
+    await db.collection("requests").doc(requestId).delete();
     
-  } catch (e) {
-    console.error("Accept error:", e);
-    alert("Failed to accept");
+  } catch (error) {
+    console.error("Accept request error:", error);
+    alert("Failed to accept request");
   }
 }
 
-/* ================= CHAT: LOAD FRIENDS ================= */
-function loadFriends() {
-  db.collection("friends").doc(currentUser.uid).collection("list")
-    .onSnapshot(snap => {
-      const list = document.getElementById("friendsList");
-      const badge = document.getElementById("friendsBadge");
+/* ================= CHAT - LOAD FRIENDS ================= */
+function setupFriendsListener() {
+  db.collection("friends").doc(activeUser.uid).collection("list")
+    .onSnapshot(function(snapshot) {
+      const listContainer = document.getElementById("friendsListContainer");
+      const badge = document.getElementById("friendsCountBadge");
       
-      if (snap.empty) {
-        list.innerHTML = '<div class="empty-list">No friends yet. Search by User ID to add friends!</div>';
+      if (snapshot.empty) {
+        listContainer.innerHTML = '<div class="empty-list-msg">No friends yet. Search by User ID to add friends!</div>';
         badge.style.display = "none";
         return;
       }
       
-      badge.textContent = snap.size;
+      badge.textContent = snapshot.size;
       badge.style.display = "inline";
       
-      list.innerHTML = "";
+      listContainer.innerHTML = "";
       
-      snap.forEach(doc => {
-        const fid = doc.id;
-        const fdata = doc.data();
-        const fname = fdata.name || "User";
+      snapshot.forEach(function(doc) {
+        const friendId = doc.id;
+        const friendData = doc.data();
+        const friendName = friendData.name || "User";
         
         const item = document.createElement("div");
-        item.className = "chat-item" + (currentChatPartner === fid ? " selected" : "");
+        item.className = "chat-list-item" + (activeChatWith === friendId ? " selected" : "");
         item.innerHTML = `
-          <div class="chat-avatar">${fname.charAt(0).toUpperCase()}</div>
-          <div class="chat-item-info">
-            <div class="chat-item-name">${fname}</div>
+          <div class="chat-item-avatar">${friendName.charAt(0).toUpperCase()}</div>
+          <div class="chat-item-content">
+            <div class="chat-item-name">${friendName}</div>
             <div class="chat-item-preview">Click to chat</div>
           </div>
         `;
-        item.onclick = () => openChatWith(fid, fname);
-        list.appendChild(item);
+        item.addEventListener("click", function() {
+          openChatConversation(friendId, friendName);
+        });
+        listContainer.appendChild(item);
       });
     });
 }
 
-/* ================= CHAT: OPEN CHAT ================= */
-function openChatWith(uid, name) {
-  currentChatPartner = uid;
+/* ================= CHAT - OPEN CONVERSATION ================= */
+function openChatConversation(friendId, friendName) {
+  activeChatWith = friendId;
   
-  document.getElementById("chatBoxHeader").style.display = "flex";
-  document.getElementById("chatPartnerName").textContent = name;
-  document.getElementById("chatPartnerAvatar").textContent = name.charAt(0).toUpperCase();
+  document.getElementById("chatMainHeader").style.display = "flex";
+  document.getElementById("chatPartnerName").textContent = friendName;
+  document.getElementById("chatPartnerAvatar").textContent = friendName.charAt(0).toUpperCase();
   
-  const msgBox = document.getElementById("chatMessages");
-  msgBox.innerHTML = '<div class="chat-empty"><p>Loading...</p></div>';
+  const messagesArea = document.getElementById("chatMessagesContainer");
+  messagesArea.innerHTML = '<div class="chat-placeholder"><p>Loading messages...</p></div>';
   
-  const chatId = [currentUser.uid, uid].sort().join("_");
+  const chatDocId = [activeUser.uid, friendId].sort().join("_");
   
-  if (chatUnsubscribe) chatUnsubscribe();
+  if (chatListener) chatListener();
   
-  chatUnsubscribe = db.collection("chats").doc(chatId)
-    .collection("messages").orderBy("time")
-    .onSnapshot(snap => {
-      msgBox.innerHTML = "";
+  chatListener = db.collection("chats").doc(chatDocId)
+    .collection("messages")
+    .orderBy("timestamp")
+    .onSnapshot(function(snapshot) {
+      messagesArea.innerHTML = "";
       
-      if (snap.empty) {
-        msgBox.innerHTML = '<div class="chat-empty"><p>No messages yet. Say hello! 👋</p></div>';
+      if (snapshot.empty) {
+        messagesArea.innerHTML = '<div class="chat-placeholder"><p>No messages yet. Say hello! 👋</p></div>';
         return;
       }
       
-      snap.forEach(doc => {
-        const m = doc.data();
-        const isMine = m.from === currentUser.uid;
-        const time = m.time ? new Date(m.time.toDate()).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : "";
-        const status = isMine ? (m.seen ? " • Seen ✓✓" : " • Sent ✓") : "";
+      snapshot.forEach(function(doc) {
+        const msg = doc.data();
+        const isMine = msg.from === activeUser.uid;
+        const timeStr = msg.timestamp 
+          ? new Date(msg.timestamp.toDate()).toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'})
+          : "";
+        const statusText = isMine ? (msg.seen ? " • Seen ✓✓" : " • Sent ✓") : "";
         
-        if (!isMine && !m.seen) {
+        if (!isMine && !msg.seen) {
           doc.ref.update({seen: true});
         }
         
-        const div = document.createElement("div");
-        div.className = "message " + (isMine ? "sent" : "received");
-        div.innerHTML = m.text + '<small>' + time + status + '</small>';
-        msgBox.appendChild(div);
+        const msgEl = document.createElement("div");
+        msgEl.className = "chat-message " + (isMine ? "outgoing" : "incoming");
+        msgEl.innerHTML = msg.text + '<span class="msg-time">' + timeStr + statusText + '</span>';
+        messagesArea.appendChild(msgEl);
       });
       
-      msgBox.scrollTop = msgBox.scrollHeight;
+      messagesArea.scrollTop = messagesArea.scrollHeight;
     });
   
-  // Refresh friends list to update selected
-  loadFriends();
+  // Refresh friends list to show selected state
+  setupFriendsListener();
 }
 
-/* ================= CHAT: SEND MESSAGE ================= */
-function sendChatMessage() {
-  const input = document.getElementById("messageInput");
-  const text = input.value.trim();
+/* ================= CHAT - SEND MESSAGE ================= */
+function sendChatMsg() {
+  const inputEl = document.getElementById("chatMessageInput");
+  const msgText = inputEl.value.trim();
   
-  if (!text || !currentChatPartner) return;
+  if (!msgText || !activeChatWith) return;
   
-  const chatId = [currentUser.uid, currentChatPartner].sort().join("_");
+  const chatDocId = [activeUser.uid, activeChatWith].sort().join("_");
   
-  db.collection("chats").doc(chatId).collection("messages").add({
-    from: currentUser.uid,
-    text: text,
-    time: firebase.firestore.FieldValue.serverTimestamp(),
+  db.collection("chats").doc(chatDocId).collection("messages").add({
+    from: activeUser.uid,
+    text: msgText,
+    timestamp: firebase.firestore.FieldValue.serverTimestamp(),
     seen: false
   });
   
-  input.value = "";
+  inputEl.value = "";
 }
 
 /* ================= SETTINGS ================= */
-function openSettings() {
-  document.getElementById("userEmail").textContent = currentUser.email;
+function showSettings() {
+  document.getElementById("displayUserEmail").textContent = activeUser.email;
   
-  db.collection("users").doc(currentUser.uid).get().then(doc => {
+  db.collection("users").doc(activeUser.uid).get().then(function(doc) {
     const data = doc.data();
-    document.getElementById("userCode").textContent = data.usercode || "--";
-    document.getElementById("userName").value = data.name || "";
+    document.getElementById("displayUserCode").textContent = data.usercode || "--";
+    document.getElementById("displayNameInput").value = data.name || "";
   });
   
   document.getElementById("settingsModal").style.display = "flex";
 }
 
-function closeSettings() {
+function hideSettings() {
   document.getElementById("settingsModal").style.display = "none";
 }
 
-function saveUserSettings() {
-  const name = document.getElementById("userName").value.trim();
+function saveUserProfile() {
+  const newName = document.getElementById("displayNameInput").value.trim();
   
-  db.collection("users").doc(currentUser.uid).update({name: name})
-    .then(() => {
-      alert("✅ Saved!");
-      closeSettings();
+  db.collection("users").doc(activeUser.uid).update({name: newName})
+    .then(function() {
+      alert("✅ Profile saved!");
+      hideSettings();
     })
-    .catch(e => alert("Error: " + e.message));
+    .catch(function(err) {
+      alert("Error: " + err.message);
+    });
 }
 </script>
 
