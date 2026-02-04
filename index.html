@@ -9,6 +9,7 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 
 <!-- ================= GOOGLE FONTS ================= -->
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -17,11 +18,13 @@
 const firebaseConfig = {
   apiKey: "AIzaSyDKWlkEcCskaGVMU4BZbE1LMR6HlhkCnz8",
   authDomain: "stock-portfolio-web-final.firebaseapp.com",
-  projectId: "stock-portfolio-web-final"
+  projectId: "stock-portfolio-web-final",
+  databaseURL: "https://stock-portfolio-web-final-default-rtdb.firebaseio.com"
 };
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.firestore();
+const rtdb = firebase.database();
 </script>
 
 <style>
@@ -32,6 +35,139 @@ body{
   background:linear-gradient(135deg,#f5f7fa 0%,#e4e8ec 100%);
   color:#1e293b;
   min-height:100vh;
+}
+
+/* ================= TOAST NOTIFICATION SYSTEM ================= */
+.toast-container{
+  position:fixed;
+  top:20px;
+  right:20px;
+  z-index:9999;
+  display:flex;
+  flex-direction:column;
+  gap:12px;
+  max-width:380px;
+  width:100%;
+  pointer-events:none;
+}
+.toast{
+  display:flex;
+  align-items:flex-start;
+  gap:14px;
+  padding:16px 20px;
+  border-radius:14px;
+  background:#fff;
+  box-shadow:0 10px 40px rgba(0,0,0,0.15), 0 4px 12px rgba(0,0,0,0.1);
+  animation:toastSlideIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  pointer-events:auto;
+  transform-origin:top right;
+  border-left:4px solid #64748b;
+  position:relative;
+  overflow:hidden;
+}
+.toast.toast-exit{
+  animation:toastSlideOut 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+@keyframes toastSlideIn{
+  from{
+    opacity:0;
+    transform:translateX(100%) scale(0.9);
+  }
+  to{
+    opacity:1;
+    transform:translateX(0) scale(1);
+  }
+}
+@keyframes toastSlideOut{
+  from{
+    opacity:1;
+    transform:translateX(0) scale(1);
+  }
+  to{
+    opacity:0;
+    transform:translateX(100%) scale(0.9);
+  }
+}
+.toast-success{
+  border-left-color:#10b981;
+  background:linear-gradient(135deg,#ecfdf5 0%,#fff 100%);
+}
+.toast-error{
+  border-left-color:#ef4444;
+  background:linear-gradient(135deg,#fef2f2 0%,#fff 100%);
+}
+.toast-warning{
+  border-left-color:#f59e0b;
+  background:linear-gradient(135deg,#fffbeb 0%,#fff 100%);
+}
+.toast-info{
+  border-left-color:#3b82f6;
+  background:linear-gradient(135deg,#eff6ff 0%,#fff 100%);
+}
+.toast-icon{
+  width:28px;
+  height:28px;
+  border-radius:50%;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:16px;
+  flex-shrink:0;
+}
+.toast-success .toast-icon{background:#d1fae5;color:#059669}
+.toast-error .toast-icon{background:#fee2e2;color:#dc2626}
+.toast-warning .toast-icon{background:#fef3c7;color:#d97706}
+.toast-info .toast-icon{background:#dbeafe;color:#2563eb}
+.toast-content{flex:1;min-width:0}
+.toast-title{
+  font-weight:600;
+  font-size:15px;
+  color:#1e293b;
+  margin-bottom:4px;
+}
+.toast-message{
+  font-size:14px;
+  color:#64748b;
+  line-height:1.4;
+  word-wrap:break-word;
+}
+.toast-close{
+  position:absolute;
+  top:12px;
+  right:12px;
+  width:24px;
+  height:24px;
+  border:none;
+  background:rgba(0,0,0,0.05);
+  border-radius:6px;
+  cursor:pointer;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:14px;
+  color:#94a3b8;
+  transition:all 0.2s;
+}
+.toast-close:hover{
+  background:rgba(0,0,0,0.1);
+  color:#64748b;
+}
+.toast-progress{
+  position:absolute;
+  bottom:0;
+  left:0;
+  height:3px;
+  background:currentColor;
+  opacity:0.3;
+  animation:toastProgress 4s linear forwards;
+}
+.toast-success .toast-progress{background:#10b981}
+.toast-error .toast-progress{background:#ef4444}
+.toast-warning .toast-progress{background:#f59e0b}
+.toast-info .toast-progress{background:#3b82f6}
+@keyframes toastProgress{
+  from{width:100%}
+  to{width:0%}
 }
 
 /* ================= SCROLLBAR ================= */
@@ -380,6 +516,11 @@ body{
   transform:scale(1.02);
   box-shadow:0 6px 20px rgba(79,70,229,0.4);
 }
+.add-stock-btn:disabled{
+  opacity:0.7;
+  cursor:not-allowed;
+  transform:none;
+}
 
 /* ================= HOLDINGS PAGE ================= */
 .holdings-header{
@@ -531,10 +672,14 @@ body{
   cursor:pointer;
   transition:all 0.2s;
 }
+.action-buttons button:disabled{
+  opacity:0.6;
+  cursor:not-allowed;
+}
 .btn-edit{background:#e0e7ff;color:#4338ca}
-.btn-edit:hover{background:#c7d2fe}
+.btn-edit:hover:not(:disabled){background:#c7d2fe}
 .btn-delete{background:#fee2e2;color:#dc2626}
-.btn-delete:hover{background:#fecaca}
+.btn-delete:hover:not(:disabled){background:#fecaca}
 
 .empty-holdings{
   text-align:center;
@@ -610,6 +755,7 @@ body{
 .search-btn:disabled{
   opacity:0.6;
   cursor:not-allowed;
+  transform:none;
 }
 .search-results{
   margin-top:16px;
@@ -652,6 +798,11 @@ body{
 .send-request-btn:hover{
   transform:scale(1.05);
   box-shadow:0 4px 12px rgba(16,185,129,0.4);
+}
+.send-request-btn:disabled{
+  opacity:0.6;
+  cursor:not-allowed;
+  transform:none;
 }
 .search-error{
   padding:14px;
@@ -747,6 +898,20 @@ body{
   font-weight:700;
   font-size:20px;
   flex-shrink:0;
+  position:relative;
+}
+.online-indicator{
+  position:absolute;
+  bottom:2px;
+  right:2px;
+  width:14px;
+  height:14px;
+  border-radius:50%;
+  background:#10b981;
+  border:3px solid #fff;
+}
+.online-indicator.offline{
+  background:#94a3b8;
 }
 .chat-item-content{flex:1;min-width:0}
 .chat-item-name{
@@ -762,6 +927,12 @@ body{
   overflow:hidden;
   text-overflow:ellipsis;
 }
+.chat-item-status{
+  font-size:12px;
+  margin-top:2px;
+}
+.chat-item-status.online{color:#10b981}
+.chat-item-status.offline{color:#94a3b8}
 .accept-request-btn{
   padding:10px 18px;
   border:none;
@@ -775,6 +946,11 @@ body{
 }
 .accept-request-btn:hover{
   transform:scale(1.05);
+}
+.accept-request-btn:disabled{
+  opacity:0.6;
+  cursor:not-allowed;
+  transform:none;
 }
 
 .empty-list-msg{
@@ -809,10 +985,20 @@ body{
   color:#1e293b;
   margin-bottom:3px;
 }
-.chat-partner-details span{
+.chat-partner-details .partner-status{
   font-size:13px;
-  color:#10b981;
   font-weight:500;
+  display:flex;
+  align-items:center;
+  gap:6px;
+}
+.chat-partner-details .partner-status.online{color:#10b981}
+.chat-partner-details .partner-status.offline{color:#94a3b8}
+.status-dot{
+  width:8px;
+  height:8px;
+  border-radius:50%;
+  background:currentColor;
 }
 
 .chat-messages-area{
@@ -904,6 +1090,11 @@ body{
   transform:scale(1.02);
   box-shadow:0 6px 20px rgba(79,70,229,0.4);
 }
+.send-msg-btn:disabled{
+  opacity:0.6;
+  cursor:not-allowed;
+  transform:none;
+}
 
 /* ================= LOGIN PAGE ================= */
 #loginPage{
@@ -954,11 +1145,15 @@ body{
   cursor:pointer;
   transition:all 0.3s;
 }
+#loginPage button:disabled{
+  opacity:0.7;
+  cursor:not-allowed;
+}
 .login-primary-btn{
   background:linear-gradient(135deg,#4f46e5,#7c3aed);
   color:#fff;
 }
-.login-primary-btn:hover{
+.login-primary-btn:hover:not(:disabled){
   box-shadow:0 6px 24px rgba(79,70,229,0.4);
   transform:translateY(-2px);
 }
@@ -971,7 +1166,7 @@ body{
   justify-content:center;
   gap:12px;
 }
-.login-google-btn:hover{background:#f8fafc}
+.login-google-btn:hover:not(:disabled){background:#f8fafc}
 #loginError{
   color:#dc2626;
   margin-top:16px;
@@ -1056,15 +1251,19 @@ body{
   cursor:pointer;
   transition:all 0.3s;
 }
+.modal-actions button:disabled{
+  opacity:0.7;
+  cursor:not-allowed;
+}
 .modal-primary{
   background:linear-gradient(135deg,#4f46e5,#7c3aed);
   color:#fff;
 }
-.modal-primary:hover{box-shadow:0 6px 20px rgba(79,70,229,0.4)}
+.modal-primary:hover:not(:disabled){box-shadow:0 6px 20px rgba(79,70,229,0.4)}
 .modal-secondary{background:#f1f5f9;color:#64748b}
-.modal-secondary:hover{background:#e2e8f0}
+.modal-secondary:hover:not(:disabled){background:#e2e8f0}
 .modal-danger{background:#fee2e2;color:#dc2626}
-.modal-danger:hover{background:#fecaca}
+.modal-danger:hover:not(:disabled){background:#fecaca}
 
 /* ================= MUTUAL FUNDS PAGE ================= */
 .mf-coming-soon{
@@ -1100,11 +1299,19 @@ body{
   .status-bar{flex-direction:column;text-align:center}
   .status-left,.status-right{justify-content:center}
   .action-buttons{flex-direction:column;gap:6px}
+  .toast-container{
+    left:12px;
+    right:12px;
+    max-width:none;
+  }
 }
 </style>
 </head>
 
 <body>
+
+<!-- ================= TOAST CONTAINER ================= -->
+<div class="toast-container" id="toastContainer"></div>
 
 <!-- ================= LOGIN PAGE ================= -->
 <div id="loginPage">
@@ -1112,8 +1319,8 @@ body{
   <p class="tagline">Your smart portfolio & chat companion</p>
   <input type="email" id="emailInput" placeholder="Email address">
   <input type="password" id="passwordInput" placeholder="Password">
-  <button class="login-primary-btn" onclick="handleEmailLogin()">Login / Sign Up</button>
-  <button class="login-google-btn" onclick="handleGoogleLogin()">🔵 Continue with Google</button>
+  <button class="login-primary-btn" id="emailLoginBtn" onclick="handleEmailLogin()">Login / Sign Up</button>
+  <button class="login-google-btn" id="googleLoginBtn" onclick="handleGoogleLogin()">🔵 Continue with Google</button>
   <div id="loginError"></div>
 </div>
 
@@ -1233,10 +1440,16 @@ body{
       <!-- Chat Main -->
       <div class="chat-main-box">
         <div class="chat-main-header" id="chatMainHeader" style="display:none">
-          <div class="chat-item-avatar" id="chatPartnerAvatar">U</div>
+          <div class="chat-item-avatar" id="chatPartnerAvatar">
+            U
+            <div class="online-indicator" id="chatPartnerOnlineIndicator"></div>
+          </div>
           <div class="chat-partner-details">
             <h3 id="chatPartnerName">User</h3>
-            <span>● Online</span>
+            <span class="partner-status online" id="chatPartnerStatus">
+              <span class="status-dot"></span>
+              <span id="chatPartnerStatusText">Online</span>
+            </span>
           </div>
         </div>
         <div class="chat-messages-area" id="chatMessagesContainer">
@@ -1246,7 +1459,7 @@ body{
         </div>
         <div class="chat-input-section">
           <input type="text" id="chatMessageInput" placeholder="Type a message..." onkeypress="if(event.key==='Enter')sendChatMsg()">
-          <button class="send-msg-btn" onclick="sendChatMsg()">Send ➤</button>
+          <button class="send-msg-btn" id="sendMsgBtn" onclick="sendChatMsg()">Send ➤</button>
         </div>
       </div>
       
@@ -1267,7 +1480,7 @@ body{
     <label>Display Name</label>
     <input type="text" id="displayNameInput" placeholder="Enter your name">
     <div class="modal-actions">
-      <button class="modal-primary" onclick="saveUserProfile()">Save</button>
+      <button class="modal-primary" id="saveProfileBtn" onclick="saveUserProfile()">Save</button>
       <button class="modal-secondary" onclick="hideSettings()">Close</button>
     </div>
     <button class="modal-danger" onclick="performLogout()" style="width:100%;margin-top:14px;padding:14px;border:none;border-radius:12px;cursor:pointer">Logout</button>
@@ -1287,7 +1500,7 @@ body{
     <label>Quantity</label>
     <input type="number" id="modalQuantity" placeholder="Enter quantity" step="1" min="1">
     <div class="modal-actions">
-      <button class="modal-primary" onclick="confirmStockAdd()">Add</button>
+      <button class="modal-primary" id="confirmAddBtn" onclick="confirmStockAdd()">Add</button>
       <button class="modal-secondary" onclick="hideAddModal()">Cancel</button>
     </div>
   </div>
@@ -1306,24 +1519,128 @@ body{
     <label>Quantity</label>
     <input type="number" id="editModalQuantity" placeholder="Quantity" step="1" min="1">
     <div class="modal-actions">
-      <button class="modal-primary" onclick="confirmStockEdit()">Save</button>
+      <button class="modal-primary" id="confirmEditBtn" onclick="confirmStockEdit()">Save</button>
       <button class="modal-secondary" onclick="hideEditModal()">Cancel</button>
     </div>
   </div>
 </div>
 
+<!-- ================= DELETE CONFIRMATION MODAL ================= -->
+<div class="modal-backdrop" id="deleteConfirmModal">
+  <div class="modal-container">
+    <h3>🗑️ Delete Holding</h3>
+    <div class="modal-info-box">
+      <p>Are you sure you want to delete <span id="deleteStockName" style="color:#ef4444;font-weight:700">--</span> from your holdings?</p>
+      <p style="margin-top:8px;font-size:13px;color:#94a3b8">This action cannot be undone.</p>
+    </div>
+    <div class="modal-actions">
+      <button class="modal-danger" id="confirmDeleteBtn" onclick="confirmHoldingDelete()">Yes, Delete</button>
+      <button class="modal-secondary" onclick="hideDeleteModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
 <script>
+/* ================= TOAST NOTIFICATION SYSTEM ================= */
+const ToastManager = {
+  container: null,
+  
+  init: function() {
+    this.container = document.getElementById("toastContainer");
+  },
+  
+  show: function(type, title, message, duration) {
+    if (!this.container) this.init();
+    
+    duration = duration || 4000;
+    
+    const icons = {
+      success: "✓",
+      error: "✕",
+      warning: "⚠",
+      info: "ℹ"
+    };
+    
+    const toast = document.createElement("div");
+    toast.className = "toast toast-" + type;
+    toast.innerHTML = `
+      <div class="toast-icon">${icons[type] || "ℹ"}</div>
+      <div class="toast-content">
+        <div class="toast-title">${title}</div>
+        <div class="toast-message">${message}</div>
+      </div>
+      <button class="toast-close" onclick="ToastManager.dismiss(this.parentElement)">×</button>
+      <div class="toast-progress"></div>
+    `;
+    
+    this.container.appendChild(toast);
+    
+    // Auto dismiss
+    const dismissTimeout = setTimeout(function() {
+      ToastManager.dismiss(toast);
+    }, duration);
+    
+    toast.dataset.timeout = dismissTimeout;
+    
+    return toast;
+  },
+  
+  dismiss: function(toast) {
+    if (!toast || toast.classList.contains("toast-exit")) return;
+    
+    clearTimeout(toast.dataset.timeout);
+    toast.classList.add("toast-exit");
+    
+    setTimeout(function() {
+      if (toast.parentElement) {
+        toast.parentElement.removeChild(toast);
+      }
+    }, 300);
+  },
+  
+  success: function(title, message, duration) {
+    return this.show("success", title, message, duration);
+  },
+  
+  error: function(title, message, duration) {
+    return this.show("error", title, message, duration);
+  },
+  
+  warning: function(title, message, duration) {
+    return this.show("warning", title, message, duration);
+  },
+  
+  info: function(title, message, duration) {
+    return this.show("info", title, message, duration);
+  }
+};
+
 /* ================= MULTIPLE API KEYS ================= */
+// User provided keys
+const ALPHA_VANTAGE_KEY = "30X7621M8XHIDT2W";
+const TWELVE_DATA_KEY = "849b655fa36e4a7aa07e5636fb46455b";
+
+// Backup Alpha Vantage keys
 const ALPHA_VANTAGE_KEYS = [
+  "30X7621M8XHIDT2W",
   "BH74ZWQO07ZCTGMN",
   "X86NOH6II01P7R24",
   "RIBXT3XYLI6FWNSK"
 ];
 let currentAlphaKeyIndex = 0;
 let lastUsedAPI = "none";
+let apiCallCounts = {
+  yahoo: 0,
+  twelveData: 0,
+  alphaVantage: 0
+};
 
 function getNextAlphaKey() {
   currentAlphaKeyIndex = (currentAlphaKeyIndex + 1) % ALPHA_VANTAGE_KEYS.length;
+  return ALPHA_VANTAGE_KEYS[currentAlphaKeyIndex];
+}
+
+function getCurrentAlphaKey() {
   return ALPHA_VANTAGE_KEYS[currentAlphaKeyIndex];
 }
 
@@ -1537,9 +1854,16 @@ let activeChatWith = null;
 let chatListener = null;
 let pendingAddStock = null;
 let pendingEditIndex = null;
+let pendingDeleteIndex = null;
+let holdingsListener = null;
+let friendsStatusListeners = {};
+let currentUserPresenceRef = null;
 
 /* ================= INITIALIZATION ================= */
 document.addEventListener("DOMContentLoaded", function() {
+  // Initialize toast manager
+  ToastManager.init();
+  
   // Load cached prices
   const savedPrices = localStorage.getItem("stockPricesCache");
   if (savedPrices) {
@@ -1590,27 +1914,59 @@ document.addEventListener("DOMContentLoaded", function() {
 
 /* ================= AUTHENTICATION ================= */
 function handleGoogleLogin() {
+  const btn = document.getElementById("googleLoginBtn");
+  btn.disabled = true;
+  btn.textContent = "Signing in...";
+  
   auth.signInWithPopup(new firebase.auth.GoogleAuthProvider())
+    .then(function() {
+      ToastManager.success("Welcome!", "Successfully signed in with Google");
+    })
     .catch(function(err) {
       document.getElementById("loginError").textContent = err.message;
+      ToastManager.error("Login Failed", err.message);
+    })
+    .finally(function() {
+      btn.disabled = false;
+      btn.innerHTML = "🔵 Continue with Google";
     });
 }
 
 function handleEmailLogin() {
   const emailVal = document.getElementById("emailInput").value.trim();
   const passVal = document.getElementById("passwordInput").value.trim();
+  const btn = document.getElementById("emailLoginBtn");
   
   if (!emailVal || !passVal) {
     document.getElementById("loginError").textContent = "Please enter email and password";
+    ToastManager.warning("Missing Info", "Please enter email and password");
     return;
   }
   
+  btn.disabled = true;
+  btn.textContent = "Signing in...";
+  
   auth.signInWithEmailAndPassword(emailVal, passVal)
-    .catch(function() {
-      return auth.createUserWithEmailAndPassword(emailVal, passVal);
+    .then(function() {
+      ToastManager.success("Welcome back!", "Successfully signed in");
+    })
+    .catch(function(signInError) {
+      // If sign in fails, try to create account
+      if (signInError.code === "auth/user-not-found" || signInError.code === "auth/invalid-credential") {
+        return auth.createUserWithEmailAndPassword(emailVal, passVal)
+          .then(function() {
+            ToastManager.success("Account Created!", "Welcome to FinzoTalk");
+          });
+      }
+      throw signInError;
     })
     .catch(function(err) {
       document.getElementById("loginError").textContent = err.message;
+      ToastManager.error("Login Failed", err.message);
+    })
+    .finally(function() {
+      btn.disabled = false;
+      btn.textContent = "Login / Sign Up";
     });
 }
 
@@ -1636,10 +1992,14 @@ auth.onAuthStateChanged(async function(user) {
     }
   } catch(e) {
     console.error("User doc error:", e);
+    ToastManager.error("Setup Error", "Failed to setup user profile");
   }
   
-  // Load holdings from Firebase
-  await loadUserHoldings();
+  // Setup online presence
+  setupPresenceSystem();
+  
+  // Setup real-time holdings listener
+  setupHoldingsListener();
   
   // Render stocks
   displayStocks(STOCK_DATA);
@@ -1662,40 +2022,134 @@ auth.onAuthStateChanged(async function(user) {
 
 function performLogout() {
   if (confirm("Are you sure you want to logout?")) {
+    // Set offline before logout
+    if (currentUserPresenceRef) {
+      currentUserPresenceRef.set({
+        state: "offline",
+        lastSeen: firebase.database.ServerValue.TIMESTAMP
+      });
+    }
+    
     auth.signOut();
-    location.reload();
+    ToastManager.info("Logged Out", "You have been signed out");
+    setTimeout(function() {
+      location.reload();
+    }, 1000);
   }
 }
 
-/* ================= LOAD/SAVE HOLDINGS FROM FIREBASE ================= */
-async function loadUserHoldings() {
-  try {
-    const holdingsRef = db.collection("users").doc(activeUser.uid).collection("holdings");
-    const snapshot = await holdingsRef.get();
+/* ================= PRESENCE SYSTEM (ONLINE/OFFLINE) ================= */
+function setupPresenceSystem() {
+  if (!activeUser) return;
+  
+  const uid = activeUser.uid;
+  
+  // Reference to user's presence in Realtime Database
+  currentUserPresenceRef = rtdb.ref("/status/" + uid);
+  
+  // Reference to .info/connected to detect connection state
+  const connectedRef = rtdb.ref(".info/connected");
+  
+  connectedRef.on("value", function(snapshot) {
+    if (snapshot.val() === false) {
+      return;
+    }
     
+    // When we disconnect, update the last seen time
+    currentUserPresenceRef.onDisconnect().set({
+      state: "offline",
+      lastSeen: firebase.database.ServerValue.TIMESTAMP
+    }).then(function() {
+      // Set as online now
+      currentUserPresenceRef.set({
+        state: "online",
+        lastSeen: firebase.database.ServerValue.TIMESTAMP
+      });
+    });
+  });
+}
+
+function watchFriendStatus(friendUid, callback) {
+  // Clean up existing listener
+  if (friendsStatusListeners[friendUid]) {
+    friendsStatusListeners[friendUid]();
+  }
+  
+  const statusRef = rtdb.ref("/status/" + friendUid);
+  
+  const listener = statusRef.on("value", function(snapshot) {
+    const status = snapshot.val();
+    if (status) {
+      callback(status.state === "online", status.lastSeen);
+    } else {
+      callback(false, null);
+    }
+  });
+  
+  // Store unsubscribe function
+  friendsStatusListeners[friendUid] = function() {
+    statusRef.off("value", listener);
+  };
+}
+
+function formatLastSeen(timestamp) {
+  if (!timestamp) return "Offline";
+  
+  const now = Date.now();
+  const diff = now - timestamp;
+  
+  if (diff < 60000) return "Just now";
+  if (diff < 3600000) return Math.floor(diff / 60000) + "m ago";
+  if (diff < 86400000) return Math.floor(diff / 3600000) + "h ago";
+  return new Date(timestamp).toLocaleDateString();
+}
+
+/* ================= HOLDINGS FIREBASE LISTENER ================= */
+function setupHoldingsListener() {
+  if (!activeUser) return;
+  
+  // Clean up existing listener
+  if (holdingsListener) {
+    holdingsListener();
+  }
+  
+  const holdingsRef = db.collection("users").doc(activeUser.uid).collection("holdings");
+  
+  holdingsListener = holdingsRef.onSnapshot(function(snapshot) {
     userHoldings = [];
+    
     snapshot.forEach(function(doc) {
       const data = doc.data();
       userHoldings.push({
         id: doc.id,
-        name: data.name || "",
+        name: data.name || data.stockName || "",
         sym: data.sym || data.symbol || "",
         buyPrice: parseFloat(data.buyPrice) || parseFloat(data.price) || 0,
         qty: parseInt(data.qty) || parseInt(data.quantity) || 0
       });
     });
-  } catch (e) {
-    console.error("Error loading holdings:", e);
+    
+    // Also save to localStorage as backup
+    localStorage.setItem("userHoldings", JSON.stringify(userHoldings));
+    
+    // Update display
+    displayHoldings();
+    
+  }, function(error) {
+    console.error("Holdings listener error:", error);
+    ToastManager.error("Sync Error", "Failed to sync holdings. Using cached data.");
+    
     // Fallback to localStorage
     const local = localStorage.getItem("userHoldings");
     if (local) {
       try {
         userHoldings = JSON.parse(local);
+        displayHoldings();
       } catch(err) {
         userHoldings = [];
       }
     }
-  }
+  });
 }
 
 async function saveHoldingToFirebase(holdingData) {
@@ -1711,7 +2165,7 @@ async function saveHoldingToFirebase(holdingData) {
     return docRef.id;
   } catch (e) {
     console.error("Error saving holding:", e);
-    return null;
+    throw e;
   }
 }
 
@@ -1721,7 +2175,7 @@ async function updateHoldingInFirebase(holdingId, updates) {
     return true;
   } catch (e) {
     console.error("Error updating holding:", e);
-    return false;
+    throw e;
   }
 }
 
@@ -1731,7 +2185,7 @@ async function deleteHoldingFromFirebase(holdingId) {
     return true;
   } catch (e) {
     console.error("Error deleting holding:", e);
-    return false;
+    throw e;
   }
 }
 
@@ -1745,17 +2199,23 @@ function switchTab(tabName) {
   if (tabName === "holdings") displayHoldings();
 }
 
-/* ================= DUAL API PRICE FETCHING ================= */
+/* ================= MULTI-SOURCE API PRICE FETCHING ================= */
 
-// Yahoo Finance API
+// Yahoo Finance API (Primary)
 async function fetchYahooPrice(yahooSymbol) {
   try {
     const proxyUrl = "https://api.allorigins.win/raw?url=";
     const apiUrl = `https://query1.finance.yahoo.com/v8/finance/chart/${yahooSymbol}?interval=1d&range=1d`;
     
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 8000);
+    
     const response = await fetch(proxyUrl + encodeURIComponent(apiUrl), {
-      signal: AbortSignal.timeout(8000)
+      signal: controller.signal
     });
+    
+    clearTimeout(timeoutId);
+    
     const data = await response.json();
     
     if (data.chart && data.chart.result && data.chart.result[0]) {
@@ -1766,6 +2226,7 @@ async function fetchYahooPrice(yahooSymbol) {
       const changePercent = previousClose > 0 ? (priceChange / previousClose) * 100 : 0;
       
       if (currentPrice > 0) {
+        apiCallCounts.yahoo++;
         return {
           price: currentPrice,
           change: priceChange,
@@ -1776,20 +2237,65 @@ async function fetchYahooPrice(yahooSymbol) {
       }
     }
   } catch (error) {
-    // Silent fail, will try Alpha Vantage
+    // Silent fail, will try next API
   }
   return null;
 }
 
-// Alpha Vantage API
-async function fetchAlphaVantagePrice(symbol) {
+// Twelve Data API (Secondary)
+async function fetchTwelveDataPrice(symbol) {
   try {
-    const apiKey = ALPHA_VANTAGE_KEYS[currentAlphaKeyIndex];
-    const url = `https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol=${symbol}.BSE&apikey=${apiKey}`;
+    const url = `https://api.twelvedata.com/quote?symbol=${symbol}&exchange=NSE&apikey=${TWELVE_DATA_KEY}`;
+    
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 8000);
     
     const response = await fetch(url, {
-      signal: AbortSignal.timeout(8000)
+      signal: controller.signal
     });
+    
+    clearTimeout(timeoutId);
+    
+    const data = await response.json();
+    
+    if (data && data.close && !data.code) {
+      const currentPrice = parseFloat(data.close) || 0;
+      const previousClose = parseFloat(data.previous_close) || currentPrice;
+      const priceChange = parseFloat(data.change) || (currentPrice - previousClose);
+      const changePercent = parseFloat(data.percent_change) || (previousClose > 0 ? ((currentPrice - previousClose) / previousClose) * 100 : 0);
+      
+      if (currentPrice > 0) {
+        apiCallCounts.twelveData++;
+        return {
+          price: currentPrice,
+          change: priceChange,
+          changePercent: changePercent,
+          prevClose: previousClose,
+          source: "TwelveData"
+        };
+      }
+    }
+  } catch (error) {
+    // Silent fail
+  }
+  return null;
+}
+
+// Alpha Vantage API (Tertiary)
+async function fetchAlphaVantagePrice(symbol) {
+  try {
+    const apiKey = getCurrentAlphaKey();
+    const url = `https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol=${symbol}.BSE&apikey=${apiKey}`;
+    
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 8000);
+    
+    const response = await fetch(url, {
+      signal: controller.signal
+    });
+    
+    clearTimeout(timeoutId);
+    
     const data = await response.json();
     
     if (data["Global Quote"] && data["Global Quote"]["05. price"]) {
@@ -1800,6 +2306,7 @@ async function fetchAlphaVantagePrice(symbol) {
       const previousClose = parseFloat(quote["08. previous close"]) || currentPrice;
       
       if (currentPrice > 0) {
+        apiCallCounts.alphaVantage++;
         return {
           price: currentPrice,
           change: priceChange,
@@ -1820,9 +2327,9 @@ async function fetchAlphaVantagePrice(symbol) {
   return null;
 }
 
-// Combined fetch with fallback
+// Combined fetch with fallback chain
 async function fetchStockPrice(stock) {
-  // Try Yahoo first
+  // 1. Try Yahoo Finance first (most reliable)
   let result = await fetchYahooPrice(stock.yahoo);
   
   if (result) {
@@ -1830,7 +2337,15 @@ async function fetchStockPrice(stock) {
     return result;
   }
   
-  // Fallback to Alpha Vantage
+  // 2. Try Twelve Data
+  result = await fetchTwelveDataPrice(stock.sym);
+  
+  if (result) {
+    lastUsedAPI = "TwelveData";
+    return result;
+  }
+  
+  // 3. Fallback to Alpha Vantage
   result = await fetchAlphaVantagePrice(stock.sym);
   
   if (result) {
@@ -1848,6 +2363,9 @@ async function fetchLatestPrices() {
   setRefreshStatus("Updating...", true);
   document.getElementById("apiIndicator").textContent = "API: Fetching...";
   
+  // Reset API call counts
+  apiCallCounts = { yahoo: 0, twelveData: 0, alphaVantage: 0 };
+  
   prevPricesData = JSON.parse(JSON.stringify(pricesData));
   
   // Prioritize holdings
@@ -1858,8 +2376,9 @@ async function fetchLatestPrices() {
   
   // Fetch in parallel batches
   const batchSize = 5;
-  const maxFetch = 50;
+  const maxFetch = 60;
   let successCount = 0;
+  let failCount = 0;
   
   for (let i = 0; i < Math.min(orderedList.length, maxFetch); i += batchSize) {
     const batch = orderedList.slice(i, i + batchSize);
@@ -1873,12 +2392,14 @@ async function fetchLatestPrices() {
       if (result.status === "fulfilled" && result.value.data && result.value.data.price > 0) {
         pricesData[result.value.sym] = result.value.data;
         successCount++;
+      } else {
+        failCount++;
       }
     });
     
-    // Small delay between batches
+    // Small delay between batches to avoid rate limits
     if (i + batchSize < maxFetch) {
-      await new Promise(r => setTimeout(r, 150));
+      await new Promise(r => setTimeout(r, 200));
     }
   }
   
@@ -1888,19 +2409,29 @@ async function fetchLatestPrices() {
   
   isFetchingData = false;
   refreshCountdown = 30;
-  setRefreshStatus("Live", false);
-  document.getElementById("apiIndicator").textContent = `API: ${lastUsedAPI} (${successCount} updated)`;
-  refreshLastUpdateDisplay();
   
+  if (successCount > 0) {
+    setRefreshStatus("Live", false);
+    const apiSummary = `Y:${apiCallCounts.yahoo} T:${apiCallCounts.twelveData} A:${apiCallCounts.alphaVantage}`;
+    document.getElementById("apiIndicator").textContent = `API: ${apiSummary} (${successCount} ✓)`;
+  } else {
+    setRefreshStatus("Cached", false);
+    document.getElementById("apiIndicator").textContent = "API: Using cached data";
+    ToastManager.warning("Limited Data", "Using cached prices. Live data may be temporarily unavailable.");
+  }
+  
+  refreshLastUpdateDisplay();
   displayStocksWithAnimation(STOCK_DATA);
   displayHoldings();
 }
 
 function triggerManualRefresh() {
+  ToastManager.info("Refreshing", "Fetching latest stock prices...");
   fetchLatestPrices();
 }
 
 function refreshHoldingsData() {
+  ToastManager.info("Refreshing", "Updating portfolio data...");
   fetchLatestPrices();
 }
 
@@ -2050,18 +2581,22 @@ function hideAddModal() {
 async function confirmStockAdd() {
   const buyPriceVal = document.getElementById("modalBuyPrice").value;
   const quantityVal = document.getElementById("modalQuantity").value;
+  const addBtn = document.getElementById("confirmAddBtn");
   
   const buyPrice = parseFloat(buyPriceVal);
   const quantity = parseInt(quantityVal);
   
   if (isNaN(buyPrice) || buyPrice <= 0) {
-    alert("Please enter a valid buy price");
+    ToastManager.warning("Invalid Input", "Please enter a valid buy price");
     return;
   }
   if (isNaN(quantity) || quantity <= 0) {
-    alert("Please enter a valid quantity");
+    ToastManager.warning("Invalid Input", "Please enter a valid quantity");
     return;
   }
+  
+  addBtn.disabled = true;
+  addBtn.textContent = "Adding...";
   
   const holdingData = {
     name: pendingAddStock.name,
@@ -2070,29 +2605,20 @@ async function confirmStockAdd() {
     qty: quantity
   };
   
-  // Save to Firebase
-  const docId = await saveHoldingToFirebase(holdingData);
-  
-  if (docId) {
-    userHoldings.push({
-      id: docId,
-      ...holdingData
-    });
-  } else {
-    // Fallback to local only
-    userHoldings.push({
-      id: "local_" + Date.now(),
-      ...holdingData
-    });
+  try {
+    // Save to Firebase
+    await saveHoldingToFirebase(holdingData);
+    
+    hideAddModal();
+    ToastManager.success("Stock Added!", `${pendingAddStock.name} added to your holdings`);
+    
+  } catch (error) {
+    console.error("Add holding error:", error);
+    ToastManager.error("Failed to Add", "Could not save to database. Please try again.");
+  } finally {
+    addBtn.disabled = false;
+    addBtn.textContent = "Add";
   }
-  
-  // Also save to localStorage as backup
-  localStorage.setItem("userHoldings", JSON.stringify(userHoldings));
-  
-  hideAddModal();
-  displayHoldings();
-  
-  alert("✅ Stock added to holdings!");
 }
 
 /* ================= EDIT STOCK MODAL ================= */
@@ -2119,51 +2645,87 @@ function hideEditModal() {
 async function confirmStockEdit() {
   const newPriceVal = document.getElementById("editModalBuyPrice").value;
   const newQtyVal = document.getElementById("editModalQuantity").value;
+  const editBtn = document.getElementById("confirmEditBtn");
   
   const newPrice = parseFloat(newPriceVal);
   const newQty = parseInt(newQtyVal);
   
   if (isNaN(newPrice) || newPrice <= 0) {
-    alert("Please enter a valid buy price");
+    ToastManager.warning("Invalid Input", "Please enter a valid buy price");
     return;
   }
   if (isNaN(newQty) || newQty <= 0) {
-    alert("Please enter a valid quantity");
+    ToastManager.warning("Invalid Input", "Please enter a valid quantity");
     return;
   }
   
+  editBtn.disabled = true;
+  editBtn.textContent = "Saving...";
+  
   const holding = userHoldings[pendingEditIndex];
   
-  if (holding.id && !holding.id.startsWith("local_")) {
-    await updateHoldingInFirebase(holding.id, {
-      buyPrice: newPrice,
-      qty: newQty
-    });
+  try {
+    if (holding.id && !holding.id.startsWith("local_")) {
+      await updateHoldingInFirebase(holding.id, {
+        buyPrice: newPrice,
+        qty: newQty
+      });
+    }
+    
+    hideEditModal();
+    ToastManager.success("Updated!", `${holding.name} has been updated`);
+    
+  } catch (error) {
+    console.error("Edit holding error:", error);
+    ToastManager.error("Update Failed", "Could not update holding. Please try again.");
+  } finally {
+    editBtn.disabled = false;
+    editBtn.textContent = "Save";
   }
-  
-  userHoldings[pendingEditIndex].buyPrice = newPrice;
-  userHoldings[pendingEditIndex].qty = newQty;
-  
-  localStorage.setItem("userHoldings", JSON.stringify(userHoldings));
-  
-  hideEditModal();
-  displayHoldings();
-  
-  alert("✅ Holding updated!");
 }
 
-async function removeHolding(index) {
-  if (!confirm("Delete this holding?")) return;
-  
+/* ================= DELETE HOLDING MODAL ================= */
+function showDeleteModal(index) {
   const holding = userHoldings[index];
+  if (!holding) return;
   
-  if (holding.id && !holding.id.startsWith("local_")) {
-    await deleteHoldingFromFirebase(holding.id);
+  pendingDeleteIndex = index;
+  document.getElementById("deleteStockName").textContent = holding.name + " (" + holding.sym + ")";
+  document.getElementById("deleteConfirmModal").style.display = "flex";
+}
+
+function hideDeleteModal() {
+  document.getElementById("deleteConfirmModal").style.display = "none";
+  pendingDeleteIndex = null;
+}
+
+async function confirmHoldingDelete() {
+  const deleteBtn = document.getElementById("confirmDeleteBtn");
+  const holding = userHoldings[pendingDeleteIndex];
+  
+  if (!holding) {
+    hideDeleteModal();
+    return;
   }
   
-  userHoldings.splice(index, 1);
-  localStorage.setItem("userHoldings", JSON.stringify(userHoldings));
-  displayHoldings();
+  deleteBtn.disabled = true;
+  deleteBtn.textContent = "Deleting...";
+  
+  try {
+    if (holding.id && !holding.id.startsWith("local_")) {
+      await deleteHoldingFromFirebase(holding.id);
+    }
+    
+    hideDeleteModal();
+    ToastManager.success("Deleted!", `${holding.name} removed from holdings`);
+    
+  } catch (error) {
+    console.error("Delete holding error:", error);
+    ToastManager.error("Delete Failed", "Could not delete holding. Please try again.");
+  } finally {
+    deleteBtn.disabled = false;
+    deleteBtn.textContent = "Yes, Delete";
+  }
 }
 
 /* ================= DISPLAY HOLDINGS ================= */
@@ -2286,7 +2848,7 @@ function displayHoldings() {
         <td>
           <div class="action-buttons">
             <button class="btn-edit" onclick="showEditStockModal(${idx})">✏️ Edit</button>
-            <button class="btn-delete" onclick="removeHolding(${idx})">🗑️</button>
+            <button class="btn-delete" onclick="showDeleteModal(${idx})">🗑️</button>
           </div>
         </td>
       </tr>
@@ -2297,7 +2859,7 @@ function displayHoldings() {
   tableContainer.innerHTML = tableHTML;
 }
 
-/* ================= CHAT - USER SEARCH (FIXED) ================= */
+/* ================= CHAT - USER SEARCH ================= */
 async function performUserSearch() {
   const searchInput = document.getElementById("userIdSearchInput");
   const searchBtn = document.getElementById("searchUserBtn");
@@ -2358,7 +2920,7 @@ async function performUserSearch() {
             <div class="search-result-name">${userName}</div>
             <div class="search-result-code">ID: ${userCode}</div>
           </div>
-          <button class="send-request-btn" onclick="sendFriendReq('${targetUid}', '${userName}')">Send Request</button>
+          <button class="send-request-btn" id="sendReqBtn_${targetUid}" onclick="sendFriendReq('${targetUid}', '${userName.replace(/'/g, "\\'")}')">Send Request</button>
         </div>
       `;
     });
@@ -2370,6 +2932,7 @@ async function performUserSearch() {
   } catch (error) {
     console.error("Search error details:", error);
     resultsDiv.innerHTML = `<div class="search-error">❌ Error: ${error.message || "Unable to search. Please try again."}</div>`;
+    ToastManager.error("Search Failed", error.message || "Unable to search users");
   }
   
   searchBtn.disabled = false;
@@ -2377,6 +2940,13 @@ async function performUserSearch() {
 
 /* ================= CHAT - SEND FRIEND REQUEST ================= */
 async function sendFriendReq(targetUid, targetName) {
+  const sendBtn = document.getElementById("sendReqBtn_" + targetUid);
+  
+  if (sendBtn) {
+    sendBtn.disabled = true;
+    sendBtn.textContent = "Sending...";
+  }
+  
   try {
     // Check if already sent request
     const existingReqQuery = await db.collection("requests")
@@ -2385,7 +2955,11 @@ async function sendFriendReq(targetUid, targetName) {
       .get();
     
     if (!existingReqQuery.empty) {
-      alert("You've already sent a request to this user!");
+      ToastManager.warning("Already Sent", "You've already sent a request to this user!");
+      if (sendBtn) {
+        sendBtn.disabled = false;
+        sendBtn.textContent = "Send Request";
+      }
       return;
     }
     
@@ -2396,7 +2970,11 @@ async function sendFriendReq(targetUid, targetName) {
       .get();
     
     if (!reverseReqQuery.empty) {
-      alert("This user has already sent you a request! Check the Requests tab.");
+      ToastManager.info("Check Requests", "This user has already sent you a request!");
+      if (sendBtn) {
+        sendBtn.disabled = false;
+        sendBtn.textContent = "Send Request";
+      }
       return;
     }
     
@@ -2408,7 +2986,11 @@ async function sendFriendReq(targetUid, targetName) {
       .get();
     
     if (friendDoc.exists) {
-      alert("You are already friends with this user!");
+      ToastManager.info("Already Friends", "You are already friends with this user!");
+      if (sendBtn) {
+        sendBtn.disabled = false;
+        sendBtn.textContent = "Send Request";
+      }
       return;
     }
     
@@ -2419,13 +3001,17 @@ async function sendFriendReq(targetUid, targetName) {
       timestamp: firebase.firestore.FieldValue.serverTimestamp()
     });
     
-    alert("✅ Friend request sent to " + targetName + "!");
+    ToastManager.success("Request Sent!", `Friend request sent to ${targetName}`);
     document.getElementById("userIdSearchInput").value = "";
     document.getElementById("userSearchResults").innerHTML = "";
     
   } catch (error) {
     console.error("Send request error:", error);
-    alert("Failed to send request: " + (error.message || "Unknown error"));
+    ToastManager.error("Failed to Send", error.message || "Could not send friend request");
+    if (sendBtn) {
+      sendBtn.disabled = false;
+      sendBtn.textContent = "Send Request";
+    }
   }
 }
 
@@ -2471,7 +3057,7 @@ function setupRequestsListener() {
               <div class="chat-item-name">${userName}</div>
               <div class="chat-item-preview">ID: ${userCode}</div>
             </div>
-            <button class="accept-request-btn" onclick="acceptFriendReq('${reqId}', '${fromUid}')">Accept</button>
+            <button class="accept-request-btn" id="acceptBtn_${reqId}" onclick="acceptFriendReq('${reqId}', '${fromUid}')">Accept</button>
           `;
           listContainer.appendChild(item);
         } catch(e) {
@@ -2485,12 +3071,19 @@ function setupRequestsListener() {
 
 /* ================= CHAT - ACCEPT REQUEST ================= */
 async function acceptFriendReq(requestId, fromUid) {
+  const acceptBtn = document.getElementById("acceptBtn_" + requestId);
+  
+  if (acceptBtn) {
+    acceptBtn.disabled = true;
+    acceptBtn.textContent = "Accepting...";
+  }
+  
   try {
     const myDoc = await db.collection("users").doc(activeUser.uid).get();
     const theirDoc = await db.collection("users").doc(fromUid).get();
     
     if (!theirDoc.exists) {
-      alert("User not found");
+      ToastManager.error("Error", "User not found");
       return;
     }
     
@@ -2514,11 +3107,15 @@ async function acceptFriendReq(requestId, fromUid) {
     // Delete request
     await db.collection("requests").doc(requestId).delete();
     
-    alert("✅ Friend request accepted!");
+    ToastManager.success("Friend Added!", `You are now friends with ${theirData.name || "User"}`);
     
   } catch (error) {
     console.error("Accept request error:", error);
-    alert("Failed to accept request: " + (error.message || "Unknown error"));
+    ToastManager.error("Failed", error.message || "Could not accept friend request");
+    if (acceptBtn) {
+      acceptBtn.disabled = false;
+      acceptBtn.textContent = "Accept";
+    }
   }
 }
 
@@ -2549,30 +3146,78 @@ function setupFriendsListener() {
         
         const item = document.createElement("div");
         item.className = "chat-list-item" + (activeChatWith === friendId ? " selected" : "");
+        item.id = "friendItem_" + friendId;
         item.innerHTML = `
-          <div class="chat-item-avatar">${friendName.charAt(0).toUpperCase()}</div>
+          <div class="chat-item-avatar">
+            ${friendName.charAt(0).toUpperCase()}
+            <div class="online-indicator offline" id="indicator_${friendId}"></div>
+          </div>
           <div class="chat-item-content">
             <div class="chat-item-name">${friendName}</div>
             <div class="chat-item-preview">Click to chat</div>
+            <div class="chat-item-status offline" id="status_${friendId}">Offline</div>
           </div>
         `;
         item.addEventListener("click", function() {
           openChatConversation(friendId, friendName);
         });
         listContainer.appendChild(item);
+        
+        // Watch this friend's online status
+        watchFriendStatus(friendId, function(isOnline, lastSeen) {
+          const indicator = document.getElementById("indicator_" + friendId);
+          const statusEl = document.getElementById("status_" + friendId);
+          
+          if (indicator) {
+            indicator.className = "online-indicator " + (isOnline ? "" : "offline");
+          }
+          
+          if (statusEl) {
+            statusEl.className = "chat-item-status " + (isOnline ? "online" : "offline");
+            statusEl.textContent = isOnline ? "Online" : formatLastSeen(lastSeen);
+          }
+          
+          // Update chat header if this is active chat
+          if (activeChatWith === friendId) {
+            updateChatPartnerStatus(isOnline, lastSeen);
+          }
+        });
       });
     }, function(error) {
       console.error("Friends listener error:", error);
     });
 }
 
+function updateChatPartnerStatus(isOnline, lastSeen) {
+  const statusEl = document.getElementById("chatPartnerStatus");
+  const statusTextEl = document.getElementById("chatPartnerStatusText");
+  const indicatorEl = document.getElementById("chatPartnerOnlineIndicator");
+  
+  if (statusEl) {
+    statusEl.className = "partner-status " + (isOnline ? "online" : "offline");
+  }
+  
+  if (statusTextEl) {
+    statusTextEl.textContent = isOnline ? "Online" : formatLastSeen(lastSeen);
+  }
+  
+  if (indicatorEl) {
+    indicatorEl.className = "online-indicator " + (isOnline ? "" : "offline");
+  }
+}
+
 /* ================= CHAT - OPEN CONVERSATION ================= */
 function openChatConversation(friendId, friendName) {
   activeChatWith = friendId;
   
+  // Update selection in list
+  document.querySelectorAll(".chat-list-item").forEach(item => item.classList.remove("selected"));
+  const friendItem = document.getElementById("friendItem_" + friendId);
+  if (friendItem) friendItem.classList.add("selected");
+  
   document.getElementById("chatMainHeader").style.display = "flex";
   document.getElementById("chatPartnerName").textContent = friendName;
-  document.getElementById("chatPartnerAvatar").textContent = friendName.charAt(0).toUpperCase();
+  document.getElementById("chatPartnerAvatar").innerHTML = friendName.charAt(0).toUpperCase() + '<div class="online-indicator" id="chatPartnerOnlineIndicator"></div>';
   
   const messagesArea = document.getElementById("chatMessagesContainer");
   messagesArea.innerHTML = '<div class="chat-placeholder"><p>Loading messages...</p></div>';
@@ -2614,18 +3259,19 @@ function openChatConversation(friendId, friendName) {
     }, function(error) {
       console.error("Chat listener error:", error);
       messagesArea.innerHTML = '<div class="chat-placeholder"><p>Error loading messages</p></div>';
+      ToastManager.error("Chat Error", "Failed to load messages");
     });
-  
-  // Refresh friends list to show selected state
-  setupFriendsListener();
 }
 
 /* ================= CHAT - SEND MESSAGE ================= */
 function sendChatMsg() {
   const inputEl = document.getElementById("chatMessageInput");
+  const sendBtn = document.getElementById("sendMsgBtn");
   const msgText = inputEl.value.trim();
   
   if (!msgText || !activeChatWith) return;
+  
+  sendBtn.disabled = true;
   
   const chatDocId = [activeUser.uid, activeChatWith].sort().join("_");
   
@@ -2636,9 +3282,11 @@ function sendChatMsg() {
     seen: false
   }).then(function() {
     inputEl.value = "";
+    sendBtn.disabled = false;
   }).catch(function(error) {
     console.error("Send message error:", error);
-    alert("Failed to send message");
+    ToastManager.error("Send Failed", "Failed to send message");
+    sendBtn.disabled = false;
   });
 }
 
@@ -2665,18 +3313,25 @@ function hideSettings() {
 
 function saveUserProfile() {
   const newName = document.getElementById("displayNameInput").value.trim();
+  const saveBtn = document.getElementById("saveProfileBtn");
+  
+  saveBtn.disabled = true;
+  saveBtn.textContent = "Saving...";
   
   db.collection("users").doc(activeUser.uid).update({name: newName})
     .then(function() {
-      alert("✅ Profile saved!");
+      ToastManager.success("Saved!", "Your profile has been updated");
       hideSettings();
     })
     .catch(function(err) {
-      alert("Error: " + err.message);
+      ToastManager.error("Save Failed", err.message);
+    })
+    .finally(function() {
+      saveBtn.disabled = false;
+      saveBtn.textContent = "Save";
     });
 }
 </script>
 
 </body>
 </html>
-
