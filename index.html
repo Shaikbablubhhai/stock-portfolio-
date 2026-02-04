@@ -14,14 +14,14 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
 <script>
-const firebaseConfig = {
+var firebaseConfig = {
   apiKey: "AIzaSyDKWlkEcCskaGVMU4BZbE1LMR6HlhkCnz8",
   authDomain: "stock-portfolio-web-final.firebaseapp.com",
   projectId: "stock-portfolio-web-final"
 };
 firebase.initializeApp(firebaseConfig);
-const auth = firebase.auth();
-const db = firebase.firestore();
+var auth = firebase.auth();
+var db = firebase.firestore();
 </script>
 
 <style>
@@ -823,10 +823,6 @@ body{
   align-items:flex-end;
   gap:4px;
 }
-.chat-item-time{
-  font-size:11px;
-  color:#94a3b8;
-}
 .unread-badge{
   background:#ef4444;
   color:#fff;
@@ -1345,7 +1341,6 @@ body{
         <div class="chat-nav-tabs">
           <div class="chat-nav-tab active" data-list="friends">
             👥 Friends
-            <span class="count-badge" id="friendsCountBadge" style="display:none">0</span>
           </div>
           <div class="chat-nav-tab" data-list="requests">
             📩 Requests
@@ -1460,6 +1455,7 @@ body{
 </div>
 
 <script>
+// ================= TOAST NOTIFICATION SYSTEM =================
 function showToast(message, type, duration) {
   type = type || 'info';
   duration = duration || 3000;
@@ -1478,6 +1474,7 @@ function showToast(message, type, duration) {
   }, duration);
 }
 
+// ================= CONFIRM DIALOG SYSTEM =================
 var confirmCallback = null;
 function showConfirmDialog(title, message, icon, buttonText, callback) {
   document.getElementById('confirmIcon').textContent = icon || '❓';
@@ -1496,14 +1493,30 @@ document.getElementById('confirmActionBtn').addEventListener('click', function()
   hideConfirmModal();
 });
 
-var ALPHA_VANTAGE_KEYS = ["BH74ZWQO07ZCTGMN", "X86NOH6II01P7R24", "RIBXT3XYLI6FWNSK"];
+// ================= MULTIPLE API KEYS FOR PRICE FETCHING =================
+var ALPHA_VANTAGE_KEYS = [
+  "BH74ZWQO07ZCTGMN",
+  "X86NOH6II01P7R24",
+  "RIBXT3XYLI6FWNSK",
+  "6MJWO9FVMK0MD4JW"
+];
 var currentAlphaKeyIndex = 0;
+
+var TWELVE_DATA_KEY = "849b655fa36e4a7aa07e5636fb46455b";
+
 var lastUsedAPI = "none";
+var apiCallCounts = {yahoo: 0, twelveData: 0, alphaVantage: 0};
+
 function getNextAlphaKey() {
   currentAlphaKeyIndex = (currentAlphaKeyIndex + 1) % ALPHA_VANTAGE_KEYS.length;
   return ALPHA_VANTAGE_KEYS[currentAlphaKeyIndex];
 }
 
+function getCurrentAlphaKey() {
+  return ALPHA_VANTAGE_KEYS[currentAlphaKeyIndex];
+}
+
+// ================= 150+ INDIAN STOCKS LIST =================
 var STOCK_DATA = [
   {name:"Reliance Industries",sym:"RELIANCE",yahoo:"RELIANCE.NS",logo:"ril.com"},
   {name:"Tata Consultancy Services",sym:"TCS",yahoo:"TCS.NS",logo:"tcs.com"},
@@ -1559,7 +1572,6 @@ var STOCK_DATA = [
   {name:"IRCTC",sym:"IRCTC",yahoo:"IRCTC.NS",logo:"irctc.co.in"},
   {name:"Paytm",sym:"PAYTM",yahoo:"PAYTM.NS",logo:"paytm.com"},
   {name:"Adani Green",sym:"ADANIGREEN",yahoo:"ADANIGREEN.NS",logo:"adanigreenenergy.com"},
-  {name:"Adani Total Gas",sym:"ATGL",yahoo:"ATGL.NS",logo:"adanitotalgas.com"},
   {name:"Avenue Supermarts",sym:"DMART",yahoo:"DMART.NS",logo:"dmartindia.com"},
   {name:"Bank of Baroda",sym:"BANKBARODA",yahoo:"BANKBARODA.NS",logo:"bankofbaroda.in"},
   {name:"Berger Paints",sym:"BERGEPAINT",yahoo:"BERGEPAINT.NS",logo:"bergerpaints.com"},
@@ -1582,7 +1594,6 @@ var STOCK_DATA = [
   {name:"LIC",sym:"LICI",yahoo:"LICI.NS",logo:"licindia.in"},
   {name:"Lupin",sym:"LUPIN",yahoo:"LUPIN.NS",logo:"lupin.com"},
   {name:"Marico",sym:"MARICO",yahoo:"MARICO.NS",logo:"marico.com"},
-  {name:"Motherson Sumi",sym:"MOTHERSON",yahoo:"MOTHERSON.NS",logo:"motherson.com"},
   {name:"Muthoot Finance",sym:"MUTHOOTFIN",yahoo:"MUTHOOTFIN.NS",logo:"muthootfinance.com"},
   {name:"Pidilite",sym:"PIDILITIND",yahoo:"PIDILITIND.NS",logo:"pidilite.com"},
   {name:"Punjab National Bank",sym:"PNB",yahoo:"PNB.NS",logo:"pnbindia.in"},
@@ -1591,29 +1602,21 @@ var STOCK_DATA = [
   {name:"SRF",sym:"SRF",yahoo:"SRF.NS",logo:"srf.com"},
   {name:"Torrent Pharma",sym:"TORNTPHARM",yahoo:"TORNTPHARM.NS",logo:"torrentpharma.com"},
   {name:"TVS Motor",sym:"TVSMOTOR",yahoo:"TVSMOTOR.NS",logo:"tvsmotor.com"},
-  {name:"Union Bank",sym:"UNIONBANK",yahoo:"UNIONBANK.NS",logo:"unionbankofindia.co.in"},
   {name:"Vedanta",sym:"VEDL",yahoo:"VEDL.NS",logo:"vedantalimited.com"},
   {name:"Zydus Lifesciences",sym:"ZYDUSLIFE",yahoo:"ZYDUSLIFE.NS",logo:"zyduslife.com"},
   {name:"Nykaa",sym:"NYKAA",yahoo:"NYKAA.NS",logo:"nykaa.com"},
-  {name:"PolicyBazaar",sym:"POLICYBZR",yahoo:"POLICYBZR.NS",logo:"policybazaar.com"},
   {name:"Tata Elxsi",sym:"TATAELXSI",yahoo:"TATAELXSI.NS",logo:"tataelxsi.com"},
   {name:"Trent",sym:"TRENT",yahoo:"TRENT.NS",logo:"trentlimited.com"},
   {name:"Persistent",sym:"PERSISTENT",yahoo:"PERSISTENT.NS",logo:"persistent.com"},
   {name:"Coforge",sym:"COFORGE",yahoo:"COFORGE.NS",logo:"coforge.com"},
   {name:"Mphasis",sym:"MPHASIS",yahoo:"MPHASIS.NS",logo:"mphasis.com"},
-  {name:"L&T Technology",sym:"LTTS",yahoo:"LTTS.NS",logo:"ltts.com"},
-  {name:"Happiest Minds",sym:"HAPPSTMNDS",yahoo:"HAPPSTMNDS.NS",logo:"happiestminds.com"},
   {name:"Dixon Tech",sym:"DIXON",yahoo:"DIXON.NS",logo:"dixoninfo.com"},
   {name:"Polycab",sym:"POLYCAB",yahoo:"POLYCAB.NS",logo:"polycab.com"},
   {name:"Voltas",sym:"VOLTAS",yahoo:"VOLTAS.NS",logo:"voltas.com"},
-  {name:"Crompton",sym:"CROMPTON",yahoo:"CROMPTON.NS",logo:"crompton.co.in"},
   {name:"Page Industries",sym:"PAGEIND",yahoo:"PAGEIND.NS",logo:"pageindustries.com"},
   {name:"Bata India",sym:"BATAINDIA",yahoo:"BATAINDIA.NS",logo:"bata.in"},
   {name:"Jubilant FoodWorks",sym:"JUBLFOOD",yahoo:"JUBLFOOD.NS",logo:"jubilantfoodworks.com"},
   {name:"Varun Beverages",sym:"VBL",yahoo:"VBL.NS",logo:"varunbeverages.com"},
-  {name:"Tata Chemicals",sym:"TATACHEM",yahoo:"TATACHEM.NS",logo:"tatachemicals.com"},
-  {name:"PI Industries",sym:"PIIND",yahoo:"PIIND.NS",logo:"piindustries.com"},
-  {name:"Deepak Nitrite",sym:"DEEPAKNTR",yahoo:"DEEPAKNTR.NS",logo:"deepaknitrite.com"},
   {name:"NHPC",sym:"NHPC",yahoo:"NHPC.NS",logo:"nhpcindia.com"},
   {name:"BHEL",sym:"BHEL",yahoo:"BHEL.NS",logo:"bhel.com"},
   {name:"HAL",sym:"HAL",yahoo:"HAL.NS",logo:"hal-india.co.in"},
@@ -1622,36 +1625,28 @@ var STOCK_DATA = [
   {name:"REC Limited",sym:"RECLTD",yahoo:"RECLTD.NS",logo:"recindia.nic.in"},
   {name:"Power Finance",sym:"PFC",yahoo:"PFC.NS",logo:"pfcindia.com"},
   {name:"SAIL",sym:"SAIL",yahoo:"SAIL.NS",logo:"sail.co.in"},
-  {name:"NMDC",sym:"NMDC",yahoo:"NMDC.NS",logo:"nmdc.co.in"},
-  {name:"NALCO",sym:"NATIONALUM",yahoo:"NATIONALUM.NS",logo:"nalcoindia.com"},
   {name:"Federal Bank",sym:"FEDERALBNK",yahoo:"FEDERALBNK.NS",logo:"federalbank.co.in"},
   {name:"IDFC First Bank",sym:"IDFCFIRSTB",yahoo:"IDFCFIRSTB.NS",logo:"idfcfirstbank.com"},
   {name:"Bandhan Bank",sym:"BANDHANBNK",yahoo:"BANDHANBNK.NS",logo:"bandhanbank.com"},
   {name:"AU Small Finance",sym:"AUBANK",yahoo:"AUBANK.NS",logo:"aubank.in"},
   {name:"Shriram Finance",sym:"SHRIRAMFIN",yahoo:"SHRIRAMFIN.NS",logo:"shriramfinance.in"},
   {name:"Alkem Labs",sym:"ALKEM",yahoo:"ALKEM.NS",logo:"alkemlabs.com"},
-  {name:"Aurobindo Pharma",sym:"AUROPHARMA",yahoo:"AUROPHARMA.NS",logo:"aurobindo.com"},
   {name:"Godrej Properties",sym:"GODREJPROP",yahoo:"GODREJPROP.NS",logo:"godrejproperties.com"},
   {name:"Oberoi Realty",sym:"OBEROIRLTY",yahoo:"OBEROIRLTY.NS",logo:"oberoirealty.com"},
-  {name:"Prestige Estates",sym:"PRESTIGE",yahoo:"PRESTIGE.NS",logo:"prestigeconstructions.com"},
   {name:"Ashok Leyland",sym:"ASHOKLEY",yahoo:"ASHOKLEY.NS",logo:"ashokleyland.com"},
-  {name:"Bharat Forge",sym:"BHARATFORG",yahoo:"BHARATFORG.NS",logo:"bharatforge.com"},
   {name:"MRF",sym:"MRF",yahoo:"MRF.NS",logo:"mrftyres.com"},
-  {name:"Apollo Tyres",sym:"APOLLOTYRE",yahoo:"APOLLOTYRE.NS",logo:"apollotyres.com"},
   {name:"Ambuja Cements",sym:"AMBUJACEM",yahoo:"AMBUJACEM.NS",logo:"ambujacement.com"},
   {name:"ACC",sym:"ACC",yahoo:"ACC.NS",logo:"acclimited.com"},
-  {name:"Petronet LNG",sym:"PETRONET",yahoo:"PETRONET.NS",logo:"petronetlng.in"},
   {name:"Gujarat Gas",sym:"GUJGASLTD",yahoo:"GUJGASLTD.NS",logo:"gujaratgas.com"},
   {name:"IGL",sym:"IGL",yahoo:"IGL.NS",logo:"iglonline.net"},
   {name:"Adani Power",sym:"ADANIPOWER",yahoo:"ADANIPOWER.NS",logo:"adanipower.com"},
   {name:"JSW Energy",sym:"JSWENERGY",yahoo:"JSWENERGY.NS",logo:"jsw.in"},
-  {name:"Torrent Power",sym:"TORNTPOWER",yahoo:"TORNTPOWER.NS",logo:"torrentpower.com"},
   {name:"Vodafone Idea",sym:"IDEA",yahoo:"IDEA.NS",logo:"myvi.in"},
-  {name:"Tata Comm",sym:"TATACOMM",yahoo:"TATACOMM.NS",logo:"tatacommunications.com"},
   {name:"Zee Entertainment",sym:"ZEEL",yahoo:"ZEEL.NS",logo:"zee.com"},
   {name:"PVR INOX",sym:"PVRINOX",yahoo:"PVRINOX.NS",logo:"pvrcinemas.com"}
 ];
 
+// ================= GLOBAL VARIABLES =================
 var activeUser = null;
 var userHoldings = [];
 var pricesData = {};
@@ -1670,6 +1665,7 @@ var partnerStatusListener = null;
 var unreadMessages = {};
 var holdingsListener = null;
 
+// ================= INITIALIZATION =================
 document.addEventListener("DOMContentLoaded", function() {
   var savedPrices = localStorage.getItem("stockPricesCache");
   if (savedPrices) {
@@ -1702,7 +1698,7 @@ document.addEventListener("DOMContentLoaded", function() {
   document.getElementById("stockSearchInput").addEventListener("input", function() {
     var query = this.value.toLowerCase();
     var matches = STOCK_DATA.filter(function(s) {
-      return s.name.toLowerCase().includes(query) || s.sym.toLowerCase().includes(query);
+      return s.name.toLowerCase().indexOf(query) !== -1 || s.sym.toLowerCase().indexOf(query) !== -1;
     });
     displayStocks(matches);
   });
@@ -1714,6 +1710,7 @@ document.addEventListener("DOMContentLoaded", function() {
   });
 });
 
+// ================= AUTHENTICATION =================
 function handleGoogleLogin() {
   auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()).catch(function(err) {
     document.getElementById("loginError").textContent = err.message;
@@ -1769,14 +1766,18 @@ auth.onAuthStateChanged(function(user) {
     }, 1000);
   }).catch(function(e) {
     console.error("User doc error:", e);
+    showToast("Error initializing user", "error");
   });
 });
 
+// ================= PRESENCE SYSTEM =================
 function startPresenceSystem() {
   if (presenceInterval) clearInterval(presenceInterval);
   updatePresence(true);
   presenceInterval = setInterval(function() {
-    updatePresence(true);
+    if (document.visibilityState === "visible") {
+      updatePresence(true);
+    }
   }, 30000);
   document.addEventListener("visibilitychange", function() {
     if (document.visibilityState === "visible") {
@@ -1812,6 +1813,7 @@ function performLogout() {
   });
 }
 
+// ================= HOLDINGS - FIREBASE REAL-TIME SYNC =================
 function setupHoldingsListener() {
   if (!activeUser) return;
   if (holdingsListener) holdingsListener();
@@ -1825,64 +1827,72 @@ function setupHoldingsListener() {
         userHoldings.push({
           id: doc.id,
           name: data.name || "",
-          sym: data.sym || data.symbol || "",
-          buyPrice: parseFloat(data.buyPrice) || parseFloat(data.price) || 0,
-          qty: parseInt(data.qty) || parseInt(data.quantity) || 0,
+          sym: data.sym || "",
+          buyPrice: parseFloat(data.buyPrice) || 0,
+          qty: parseInt(data.qty) || 0,
           addedAt: data.addedAt
         });
       });
-      var holdingsSection = document.getElementById("holdingsSection");
-      if (holdingsSection.style.display !== "none") {
-        displayHoldings();
-      }
+      console.log("Holdings synced from Firebase:", userHoldings.length);
+      displayHoldings();
     }, function(error) {
       console.error("Holdings listener error:", error);
+      showToast("Error syncing holdings", "error");
     });
 }
 
 function saveHoldingToFirebase(holdingData) {
-  if (!activeUser) return Promise.resolve(null);
+  if (!activeUser) {
+    console.error("No active user");
+    return Promise.resolve(null);
+  }
+  
+  console.log("Saving holding to Firebase:", holdingData);
+  
   return db.collection("users").doc(activeUser.uid).collection("holdings").add({
     name: holdingData.name,
     sym: holdingData.sym,
-    buyPrice: holdingData.buyPrice,
-    qty: holdingData.qty,
+    buyPrice: Number(holdingData.buyPrice),
+    qty: Number(holdingData.qty),
     addedAt: firebase.firestore.FieldValue.serverTimestamp()
   }).then(function(docRef) {
+    console.log("Holding saved successfully:", docRef.id);
     return docRef.id;
   }).catch(function(e) {
-    console.error("Error saving holding:", e);
-    showToast("Error saving holding", "error");
-    return null;
+    console.error("Firebase save error:", e);
+    throw e;
   });
 }
 
 function updateHoldingInFirebase(holdingId, updates) {
   if (!activeUser) return Promise.resolve(false);
+  
   return db.collection("users").doc(activeUser.uid).collection("holdings").doc(holdingId).update({
-    buyPrice: updates.buyPrice,
-    qty: updates.qty,
+    buyPrice: Number(updates.buyPrice),
+    qty: Number(updates.qty),
     updatedAt: firebase.firestore.FieldValue.serverTimestamp()
   }).then(function() {
+    console.log("Holding updated successfully");
     return true;
   }).catch(function(e) {
-    console.error("Error updating holding:", e);
-    showToast("Error updating holding", "error");
-    return false;
+    console.error("Firebase update error:", e);
+    throw e;
   });
 }
 
 function deleteHoldingFromFirebase(holdingId) {
   if (!activeUser) return Promise.resolve(false);
+  
   return db.collection("users").doc(activeUser.uid).collection("holdings").doc(holdingId).delete().then(function() {
+    console.log("Holding deleted successfully");
     return true;
   }).catch(function(e) {
-    console.error("Error deleting holding:", e);
-    showToast("Error deleting holding", "error");
-    return false;
+    console.error("Firebase delete error:", e);
+    throw e;
   });
 }
 
+// ================= TAB SWITCHING =================
 function switchTab(tabName) {
   document.getElementById("stocksSection").style.display = tabName === "stocks" ? "block" : "none";
   document.getElementById("holdingsSection").style.display = tabName === "holdings" ? "block" : "none";
@@ -1891,6 +1901,9 @@ function switchTab(tabName) {
   if (tabName === "holdings") displayHoldings();
 }
 
+// ================= MULTI-API PRICE FETCHING =================
+
+// Yahoo Finance API (Primary)
 function fetchYahooPrice(yahooSymbol) {
   return new Promise(function(resolve) {
     var proxyUrl = "https://api.allorigins.win/raw?url=";
@@ -1909,7 +1922,8 @@ function fetchYahooPrice(yahooSymbol) {
           var priceChange = currentPrice - previousClose;
           var changePercent = previousClose > 0 ? (priceChange / previousClose) * 100 : 0;
           if (currentPrice > 0) {
-            resolve({ price: currentPrice, change: priceChange, changePercent: changePercent, prevClose: previousClose, source: "Yahoo" });
+            apiCallCounts.yahoo++;
+            resolve({ price: currentPrice, change: priceChange, changePercent: changePercent, source: "Yahoo" });
             return;
           }
         }
@@ -1922,13 +1936,92 @@ function fetchYahooPrice(yahooSymbol) {
   });
 }
 
+// Twelve Data API (Secondary)
+function fetchTwelveDataPrice(symbol) {
+  return new Promise(function(resolve) {
+    var apiUrl = "https://api.twelvedata.com/quote?symbol=" + symbol + "&apikey=" + TWELVE_DATA_KEY;
+    var controller = new AbortController();
+    var timeoutId = setTimeout(function() { controller.abort(); }, 8000);
+    
+    fetch(apiUrl, { signal: controller.signal })
+      .then(function(response) { return response.json(); })
+      .then(function(data) {
+        clearTimeout(timeoutId);
+        if (data && data.close && !data.code) {
+          var currentPrice = parseFloat(data.close) || 0;
+          var previousClose = parseFloat(data.previous_close) || currentPrice;
+          var priceChange = parseFloat(data.change) || (currentPrice - previousClose);
+          var changePercent = parseFloat(data.percent_change) || (previousClose > 0 ? (priceChange / previousClose) * 100 : 0);
+          if (currentPrice > 0) {
+            apiCallCounts.twelveData++;
+            resolve({ price: currentPrice, change: priceChange, changePercent: changePercent, source: "TwelveData" });
+            return;
+          }
+        }
+        resolve(null);
+      })
+      .catch(function() {
+        clearTimeout(timeoutId);
+        resolve(null);
+      });
+  });
+}
+
+// Alpha Vantage API (Tertiary)
+function fetchAlphaVantagePrice(symbol) {
+  return new Promise(function(resolve) {
+    var apiKey = getCurrentAlphaKey();
+    var apiUrl = "https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol=" + symbol + ".BSE&apikey=" + apiKey;
+    var controller = new AbortController();
+    var timeoutId = setTimeout(function() { controller.abort(); }, 10000);
+    
+    fetch(apiUrl, { signal: controller.signal })
+      .then(function(response) { return response.json(); })
+      .then(function(data) {
+        clearTimeout(timeoutId);
+        if (data["Global Quote"] && data["Global Quote"]["05. price"]) {
+          var quote = data["Global Quote"];
+          var currentPrice = parseFloat(quote["05. price"]) || 0;
+          var priceChange = parseFloat(quote["09. change"]) || 0;
+          var changePercent = parseFloat((quote["10. change percent"] || "0").replace("%", "")) || 0;
+          if (currentPrice > 0) {
+            apiCallCounts.alphaVantage++;
+            resolve({ price: currentPrice, change: priceChange, changePercent: changePercent, source: "AlphaVantage" });
+            return;
+          }
+        }
+        if (data["Note"] || data["Information"]) {
+          getNextAlphaKey();
+        }
+        resolve(null);
+      })
+      .catch(function() {
+        clearTimeout(timeoutId);
+        resolve(null);
+      });
+  });
+}
+
+// Combined fetch with fallback
 function fetchStockPrice(stock) {
   return fetchYahooPrice(stock.yahoo).then(function(result) {
-    if (result) {
+    if (result && result.price > 0) {
       lastUsedAPI = "Yahoo";
       return result;
     }
-    return null;
+    return fetchTwelveDataPrice(stock.sym + ":NSE").then(function(result2) {
+      if (result2 && result2.price > 0) {
+        lastUsedAPI = "TwelveData";
+        return result2;
+      }
+      return fetchAlphaVantagePrice(stock.sym).then(function(result3) {
+        if (result3 && result3.price > 0) {
+          lastUsedAPI = "AlphaVantage";
+          return result3;
+        }
+        return null;
+      });
+    });
   });
 }
 
@@ -1938,14 +2031,15 @@ function fetchLatestPrices() {
   setRefreshStatus("Updating...", true);
   document.getElementById("apiIndicator").textContent = "API: Fetching...";
   prevPricesData = JSON.parse(JSON.stringify(pricesData));
+  apiCallCounts = {yahoo: 0, twelveData: 0, alphaVantage: 0};
   
   var holdingSyms = userHoldings.map(function(h) { return h.sym; });
-  var holdingsFirst = STOCK_DATA.filter(function(s) { return holdingSyms.includes(s.sym); });
-  var remaining = STOCK_DATA.filter(function(s) { return !holdingSyms.includes(s.sym); });
+  var holdingsFirst = STOCK_DATA.filter(function(s) { return holdingSyms.indexOf(s.sym) !== -1; });
+  var remaining = STOCK_DATA.filter(function(s) { return holdingSyms.indexOf(s.sym) === -1; });
   var orderedList = holdingsFirst.concat(remaining);
   
   var batchSize = 5;
-  var maxFetch = 50;
+  var maxFetch = 60;
   var successCount = 0;
   var currentIndex = 0;
   
@@ -1968,7 +2062,7 @@ function fetchLatestPrices() {
         }
       });
       currentIndex += batchSize;
-      setTimeout(processBatch, 150);
+      setTimeout(processBatch, 200);
     });
   }
   
@@ -1978,7 +2072,8 @@ function fetchLatestPrices() {
     isFetchingData = false;
     refreshCountdown = 30;
     setRefreshStatus("Live", false);
-    document.getElementById("apiIndicator").textContent = "API: " + lastUsedAPI + " (" + successCount + " updated)";
+    var apiInfo = "Y:" + apiCallCounts.yahoo + " T:" + apiCallCounts.twelveData + " A:" + apiCallCounts.alphaVantage;
+    document.getElementById("apiIndicator").textContent = "API: " + successCount + " (" + apiInfo + ")";
     refreshLastUpdateDisplay();
     displayStocksWithAnimation(STOCK_DATA);
     displayHoldings();
@@ -2039,6 +2134,7 @@ function getStockData(symbol) {
   return pricesData[symbol] || null;
 }
 
+// ================= DISPLAY STOCKS =================
 function displayStocks(stockList) {
   var container = document.getElementById("stocksContainer");
   container.innerHTML = "";
@@ -2082,6 +2178,7 @@ function displayStocksWithAnimation(stockList) {
   displayStocks(stockList);
 }
 
+// ================= ADD STOCK MODAL =================
 function showAddStockModal(symbol) {
   var stock = STOCK_DATA.find(function(s) { return s.sym === symbol; });
   if (!stock) return;
@@ -2100,6 +2197,11 @@ function hideAddModal() {
 }
 
 function confirmStockAdd() {
+  if (!pendingAddStock) {
+    showToast("No stock selected", "error");
+    return;
+  }
+  
   var buyPriceVal = document.getElementById("modalBuyPrice").value;
   var quantityVal = document.getElementById("modalQuantity").value;
   var buyPrice = parseFloat(buyPriceVal);
@@ -2121,16 +2223,26 @@ function confirmStockAdd() {
     qty: quantity
   };
   
+  var addBtn = document.querySelector('#addStockModal .modal-primary');
+  addBtn.disabled = true;
+  addBtn.textContent = "Adding...";
+  
   saveHoldingToFirebase(holdingData).then(function(docId) {
+    addBtn.disabled = false;
+    addBtn.textContent = "Add";
     if (docId) {
       hideAddModal();
       showToast("Stock added to holdings!", "success");
-    } else {
-      showToast("Failed to add stock. Please try again.", "error");
     }
+  }).catch(function(error) {
+    addBtn.disabled = false;
+    addBtn.textContent = "Add";
+    console.error("Add stock error:", error);
+    showToast("Error: " + (error.message || "Failed to add stock"), "error");
   });
 }
 
+// ================= EDIT STOCK MODAL =================
 function showEditStockModal(index) {
   var holding = userHoldings[index];
   if (!holding) return;
@@ -2149,6 +2261,8 @@ function hideEditModal() {
 }
 
 function confirmStockEdit() {
+  if (pendingEditIndex === null) return;
+  
   var newPriceVal = document.getElementById("editModalBuyPrice").value;
   var newQtyVal = document.getElementById("editModalQuantity").value;
   var newPrice = parseFloat(newPriceVal);
@@ -2164,29 +2278,37 @@ function confirmStockEdit() {
   }
   
   var holding = userHoldings[pendingEditIndex];
-  updateHoldingInFirebase(holding.id, { buyPrice: newPrice, qty: newQty }).then(function(success) {
-    if (success) {
-      hideEditModal();
-      showToast("Holding updated!", "success");
-    } else {
-      showToast("Failed to update. Please try again.", "error");
-    }
+  
+  var editBtn = document.querySelector('#editStockModal .modal-primary');
+  editBtn.disabled = true;
+  editBtn.textContent = "Saving...";
+  
+  updateHoldingInFirebase(holding.id, { buyPrice: newPrice, qty: newQty }).then(function() {
+    editBtn.disabled = false;
+    editBtn.textContent = "Save";
+    hideEditModal();
+    showToast("Holding updated!", "success");
+  }).catch(function(error) {
+    editBtn.disabled = false;
+    editBtn.textContent = "Save";
+    console.error("Edit stock error:", error);
+    showToast("Error: " + (error.message || "Failed to update"), "error");
   });
 }
 
 function removeHolding(index) {
   var holding = userHoldings[index];
   showConfirmDialog("Delete Holding", "Are you sure you want to delete " + holding.name + "?", "🗑️", "Delete", function() {
-    deleteHoldingFromFirebase(holding.id).then(function(success) {
-      if (success) {
-        showToast("Holding deleted", "success");
-      } else {
-        showToast("Failed to delete. Please try again.", "error");
-      }
+    deleteHoldingFromFirebase(holding.id).then(function() {
+      showToast("Holding deleted", "success");
+    }).catch(function(error) {
+      console.error("Delete error:", error);
+      showToast("Error: " + (error.message || "Failed to delete"), "error");
     });
   });
 }
 
+// ================= DISPLAY HOLDINGS =================
 function displayHoldings() {
   var statsContainer = document.getElementById("portfolioStats");
   var tableContainer = document.getElementById("holdingsTableContainer");
@@ -2243,6 +2365,7 @@ function displayHoldings() {
   tableContainer.innerHTML = tableHTML;
 }
 
+// ================= CHAT - USER SEARCH =================
 function performUserSearch() {
   var searchInput = document.getElementById("userIdSearchInput");
   var searchBtn = document.getElementById("searchUserBtn");
@@ -2277,7 +2400,7 @@ function performUserSearch() {
       var targetUid = docSnap.id;
       var userName = userData.name || "User";
       var userCode = userData.usercode || searchCode;
-      resultsDiv.innerHTML = '<div class="search-result-card"><div class="search-result-avatar">' + userName.charAt(0).toUpperCase() + '</div><div class="search-result-info"><div class="search-result-name">' + userName + '</div><div class="search-result-code">ID: ' + userCode + '</div></div><button class="send-request-btn" onclick="sendFriendReq(\'' + targetUid + '\', \'' + userName + '\')">Send Request</button></div>';
+      resultsDiv.innerHTML = '<div class="search-result-card"><div class="search-result-avatar">' + userName.charAt(0).toUpperCase() + '</div><div class="search-result-info"><div class="search-result-name">' + userName + '</div><div class="search-result-code">ID: ' + userCode + '</div></div><button class="send-request-btn" onclick="sendFriendReq(\'' + targetUid + '\', \'' + userName.replace(/'/g, "\\'") + '\')">Send Request</button></div>';
     });
     
     if (!foundValidUser) {
@@ -2291,6 +2414,7 @@ function performUserSearch() {
   });
 }
 
+// ================= CHAT - SEND FRIEND REQUEST =================
 function sendFriendReq(targetUid, targetName) {
   db.collection("requests").where("from", "==", activeUser.uid).where("to", "==", targetUid).get().then(function(existingReqQuery) {
     if (!existingReqQuery.empty) {
@@ -2300,7 +2424,7 @@ function sendFriendReq(targetUid, targetName) {
     return db.collection("requests").where("from", "==", targetUid).where("to", "==", activeUser.uid).get();
   }).then(function(reverseReqQuery) {
     if (!reverseReqQuery.empty) {
-      showToast("This user has already sent you a request! Check the Requests tab.", "info");
+      showToast("This user has already sent you a request!", "info");
       return Promise.reject("reverse_exists");
     }
     return db.collection("friends").doc(activeUser.uid).collection("list").doc(targetUid).get();
@@ -2325,6 +2449,7 @@ function sendFriendReq(targetUid, targetName) {
   });
 }
 
+// ================= CHAT - REQUESTS LISTENER =================
 function setupRequestsListener() {
   if (!activeUser) return;
   db.collection("requests").where("to", "==", activeUser.uid).onSnapshot(function(snapshot) {
@@ -2361,6 +2486,7 @@ function setupRequestsListener() {
   });
 }
 
+// ================= CHAT - ACCEPT/REJECT REQUEST =================
 function acceptFriendReq(requestId, fromUid) {
   var myData, theirData;
   
@@ -2410,21 +2536,18 @@ function rejectFriendReq(requestId) {
   });
 }
 
+// ================= CHAT - FRIENDS LISTENER =================
 function setupFriendsListener() {
   if (!activeUser) return;
   
   db.collection("friends").doc(activeUser.uid).collection("list").onSnapshot(function(snapshot) {
     var listContainer = document.getElementById("friendsListContainer");
-    var badge = document.getElementById("friendsCountBadge");
     
     if (snapshot.empty) {
       listContainer.innerHTML = '<div class="empty-list-msg">No friends yet. Search by User ID to add friends!</div>';
-      badge.style.display = "none";
       return;
     }
     
-    badge.textContent = snapshot.size;
-    badge.style.display = "inline";
     listContainer.innerHTML = "";
     
     snapshot.forEach(function(doc) {
@@ -2450,54 +2573,25 @@ function setupFriendsListener() {
         }
         
         friendsOnlineStatus[friendId] = isOnline;
-        var chatId = [activeUser.uid, friendId].sort().join("_");
-        var unreadCount = unreadMessages[chatId] || 0;
-        var hasUnread = unreadCount > 0 && activeChatWith !== friendId;
         
         var item = document.createElement("div");
-        item.className = "chat-list-item" + (activeChatWith === friendId ? " selected" : "") + (hasUnread ? " has-unread" : "");
-        item.innerHTML = '<div class="chat-item-avatar">' + friendName.charAt(0).toUpperCase() + '<div class="online-indicator ' + (isOnline ? 'online' : 'offline') + '"></div></div><div class="chat-item-content"><div class="chat-item-name">' + friendName + '</div><div class="chat-item-preview">' + (isOnline ? '● Online' : lastSeenText) + '</div></div><div class="chat-item-meta">' + (hasUnread ? '<div class="unread-badge">' + unreadCount + '</div>' : '') + '</div>';
+        item.className = "chat-list-item" + (activeChatWith === friendId ? " selected" : "");
+        item.innerHTML = '<div class="chat-item-avatar">' + friendName.charAt(0).toUpperCase() + '<div class="online-indicator ' + (isOnline ? 'online' : 'offline') + '"></div></div><div class="chat-item-content"><div class="chat-item-name">' + friendName + '</div><div class="chat-item-preview">' + (isOnline ? '● Online' : lastSeenText) + '</div></div>';
         item.addEventListener("click", function() {
           openChatConversation(friendId, friendName);
         });
         listContainer.appendChild(item);
       });
     });
-    
-    setupUnreadMessagesListener();
   });
 }
 
-function setupUnreadMessagesListener() {
-  if (!activeUser) return;
-  
-  db.collection("friends").doc(activeUser.uid).collection("list").get().then(function(snapshot) {
-    snapshot.forEach(function(doc) {
-      var friendId = doc.id;
-      var chatId = [activeUser.uid, friendId].sort().join("_");
-      
-      db.collection("chats").doc(chatId).collection("messages")
-        .where("from", "==", friendId)
-        .where("seen", "==", false)
-        .onSnapshot(function(msgSnapshot) {
-          unreadMessages[chatId] = msgSnapshot.size;
-        });
-    });
-  });
-}
-
-function escapeHtml(text) {
-  var div = document.createElement('div');
-  div.textContent = text;
-  return div.innerHTML;
-}
-
+// ================= CHAT - OPEN CONVERSATION =================
 function openChatConversation(friendId, friendName) {
   activeChatWith = friendId;
   activeChatPartnerName = friendName;
   
   var chatId = [activeUser.uid, friendId].sort().join("_");
-  unreadMessages[chatId] = 0;
   
   document.getElementById("chatMainHeader").style.display = "flex";
   document.getElementById("chatPartnerName").textContent = friendName;
@@ -2548,6 +2642,12 @@ function openChatConversation(friendId, friendName) {
   setupFriendsListener();
 }
 
+function escapeHtml(text) {
+  var div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
+
 function setupPartnerStatusListener(friendId) {
   if (partnerStatusListener) partnerStatusListener();
   
@@ -2577,11 +2677,10 @@ function setupPartnerStatusListener(friendId) {
         statusText.textContent = "Offline";
       }
     }
-    
-    friendsOnlineStatus[friendId] = isOnline;
   });
 }
 
+// ================= CHAT - SEND MESSAGE =================
 function sendChatMsg() {
   var inputEl = document.getElementById("chatMessageInput");
   var msgText = inputEl.value.trim();
@@ -2598,9 +2697,10 @@ function sendChatMsg() {
   
   var chatDocId = [activeUser.uid, activeChatWith].sort().join("_");
   
+  inputEl.value = "";
+  
   db.collection("chats").doc(chatDocId).set({
     participants: [activeUser.uid, activeChatWith],
-    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
     updatedAt: firebase.firestore.FieldValue.serverTimestamp()
   }, { merge: true }).then(function() {
     return db.collection("chats").doc(chatDocId).collection("messages").add({
@@ -2609,22 +2709,13 @@ function sendChatMsg() {
       timestamp: firebase.firestore.FieldValue.serverTimestamp(),
       seen: false
     });
-  }).then(function() {
-    inputEl.value = "";
-    return db.collection("chats").doc(chatDocId).update({
-      lastMessage: {
-        text: msgText.substring(0, 100),
-        from: activeUser.uid,
-        timestamp: firebase.firestore.FieldValue.serverTimestamp()
-      },
-      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-    });
   }).catch(function(error) {
     console.error("Send message error:", error);
     showToast("Failed to send message", "error");
   });
 }
 
+// ================= SETTINGS =================
 function showSettings() {
   document.getElementById("displayUserEmail").textContent = activeUser.email || "--";
   db.collection("users").doc(activeUser.uid).get().then(function(doc) {
@@ -2669,14 +2760,6 @@ function saveUserProfile() {
     showToast("Error saving profile: " + err.message, "error");
   });
 }
-
-document.addEventListener("visibilitychange", function() {
-  if (document.visibilityState === "visible") {
-    updatePresence(true);
-  } else {
-    updatePresence(false);
-  }
-});
 </script>
 
 </body>
