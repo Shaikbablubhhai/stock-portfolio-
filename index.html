@@ -25,7 +25,6 @@ const db = firebase.firestore();
 </script>
 
 <style>
-/* ================= RESET & BASE ================= */
 *{box-sizing:border-box;margin:0;padding:0}
 body{
   font-family:'Inter',system-ui,-apple-system,sans-serif;
@@ -34,13 +33,60 @@ body{
   min-height:100vh;
 }
 
-/* ================= SCROLLBAR ================= */
 ::-webkit-scrollbar{width:8px;height:8px}
 ::-webkit-scrollbar-track{background:#f1f5f9;border-radius:10px}
 ::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:10px}
 ::-webkit-scrollbar-thumb:hover{background:#94a3b8}
 
-/* ================= NAV ================= */
+.toast-container{
+  position:fixed;
+  top:20px;
+  right:20px;
+  z-index:9999;
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+  pointer-events:none;
+}
+.toast{
+  padding:16px 24px;
+  border-radius:12px;
+  color:#fff;
+  font-weight:500;
+  font-size:14px;
+  box-shadow:0 10px 40px rgba(0,0,0,0.2);
+  animation:toastIn 0.3s ease, toastOut 0.3s ease 2.7s forwards;
+  pointer-events:auto;
+  display:flex;
+  align-items:center;
+  gap:10px;
+  max-width:350px;
+}
+.toast.success{background:linear-gradient(135deg,#10b981,#059669)}
+.toast.error{background:linear-gradient(135deg,#ef4444,#dc2626)}
+.toast.info{background:linear-gradient(135deg,#3b82f6,#2563eb)}
+.toast.warning{background:linear-gradient(135deg,#f59e0b,#d97706)}
+.toast-icon{font-size:20px}
+.toast-message{flex:1}
+.toast-close{
+  background:none;
+  border:none;
+  color:#fff;
+  font-size:18px;
+  cursor:pointer;
+  opacity:0.7;
+  transition:opacity 0.2s;
+}
+.toast-close:hover{opacity:1}
+@keyframes toastIn{
+  from{opacity:0;transform:translateX(100%)}
+  to{opacity:1;transform:translateX(0)}
+}
+@keyframes toastOut{
+  from{opacity:1;transform:translateX(0)}
+  to{opacity:0;transform:translateX(100%)}
+}
+
 .navbar{
   background:linear-gradient(135deg,#4f46e5 0%,#7c3aed 100%);
   color:#fff;
@@ -114,14 +160,12 @@ body{
   transform:rotate(45deg);
 }
 
-/* ================= MAIN CONTENT ================= */
 .main-content{
   padding:24px;
   max-width:1500px;
   margin:auto;
 }
 
-/* ================= STATUS BAR ================= */
 .status-bar{
   background:#fff;
   padding:16px 24px;
@@ -238,7 +282,6 @@ body{
 }
 @keyframes spin{to{transform:rotate(360deg)}}
 
-/* ================= STOCK GRID ================= */
 .stocks-grid{
   display:grid;
   grid-template-columns:repeat(auto-fill,minmax(300px,1fr));
@@ -381,7 +424,6 @@ body{
   box-shadow:0 6px 20px rgba(79,70,229,0.4);
 }
 
-/* ================= HOLDINGS PAGE ================= */
 .holdings-header{
   display:flex;
   justify-content:space-between;
@@ -553,7 +595,6 @@ body{
   margin-bottom:8px;
 }
 
-/* ================= CHAT PAGE ================= */
 .chat-wrapper{
   display:grid;
   grid-template-columns:400px 1fr;
@@ -571,7 +612,6 @@ body{
   box-shadow:0 4px 16px rgba(0,0,0,0.04);
 }
 
-/* Chat Search */
 .chat-search-section{
   padding:20px;
   border-bottom:1px solid #f1f5f9;
@@ -668,7 +708,6 @@ body{
   font-size:14px;
 }
 
-/* Chat Tabs */
 .chat-nav-tabs{
   display:flex;
   border-bottom:1px solid #f1f5f9;
@@ -707,7 +746,6 @@ body{
   font-weight:700;
 }
 
-/* Chat Lists */
 .chat-lists-container{
   flex:1;
   overflow-y:auto;
@@ -726,6 +764,7 @@ body{
   transition:all 0.2s;
   margin-bottom:10px;
   border:1px solid transparent;
+  position:relative;
 }
 .chat-list-item:hover{
   background:#f8fafc;
@@ -734,6 +773,10 @@ body{
 .chat-list-item.selected{
   background:#ede9fe;
   border-color:#c4b5fd;
+}
+.chat-list-item.has-unread{
+  background:#fef3c7;
+  border-color:#fcd34d;
 }
 .chat-item-avatar{
   width:52px;
@@ -747,7 +790,19 @@ body{
   font-weight:700;
   font-size:20px;
   flex-shrink:0;
+  position:relative;
 }
+.online-indicator{
+  position:absolute;
+  bottom:2px;
+  right:2px;
+  width:14px;
+  height:14px;
+  border-radius:50%;
+  border:2px solid #fff;
+}
+.online-indicator.online{background:#10b981}
+.online-indicator.offline{background:#94a3b8}
 .chat-item-content{flex:1;min-width:0}
 .chat-item-name{
   font-weight:600;
@@ -761,6 +816,26 @@ body{
   white-space:nowrap;
   overflow:hidden;
   text-overflow:ellipsis;
+}
+.chat-item-meta{
+  display:flex;
+  flex-direction:column;
+  align-items:flex-end;
+  gap:4px;
+}
+.chat-item-time{
+  font-size:11px;
+  color:#94a3b8;
+}
+.unread-badge{
+  background:#ef4444;
+  color:#fff;
+  font-size:11px;
+  font-weight:700;
+  padding:2px 8px;
+  border-radius:10px;
+  min-width:20px;
+  text-align:center;
 }
 .accept-request-btn{
   padding:10px 18px;
@@ -776,6 +851,21 @@ body{
 .accept-request-btn:hover{
   transform:scale(1.05);
 }
+.reject-request-btn{
+  padding:10px 14px;
+  border:none;
+  border-radius:10px;
+  background:#fee2e2;
+  color:#dc2626;
+  font-weight:600;
+  font-size:13px;
+  cursor:pointer;
+  transition:all 0.2s;
+  margin-left:8px;
+}
+.reject-request-btn:hover{
+  background:#fecaca;
+}
 
 .empty-list-msg{
   text-align:center;
@@ -784,7 +874,6 @@ body{
   font-size:15px;
 }
 
-/* Chat Main Box */
 .chat-main-box{
   background:#fff;
   border-radius:18px;
@@ -809,10 +898,20 @@ body{
   color:#1e293b;
   margin-bottom:3px;
 }
-.chat-partner-details span{
+.chat-partner-details .online-status{
   font-size:13px;
-  color:#10b981;
   font-weight:500;
+  display:flex;
+  align-items:center;
+  gap:6px;
+}
+.chat-partner-details .online-status.online{color:#10b981}
+.chat-partner-details .online-status.offline{color:#94a3b8}
+.status-dot{
+  width:8px;
+  height:8px;
+  border-radius:50%;
+  background:currentColor;
 }
 
 .chat-messages-area{
@@ -869,6 +968,12 @@ body{
   opacity:0.7;
 }
 .chat-message.outgoing .msg-time{text-align:right}
+.msg-status{
+  display:inline-block;
+  margin-left:6px;
+}
+.msg-status.sent{color:rgba(255,255,255,0.7)}
+.msg-status.seen{color:#a5f3fc}
 
 .chat-input-section{
   display:flex;
@@ -905,7 +1010,6 @@ body{
   box-shadow:0 6px 20px rgba(79,70,229,0.4);
 }
 
-/* ================= LOGIN PAGE ================= */
 #loginPage{
   max-width:460px;
   margin:80px auto;
@@ -979,7 +1083,6 @@ body{
   font-size:14px;
 }
 
-/* ================= MODALS ================= */
 .modal-backdrop{
   position:fixed;
   inset:0;
@@ -1066,7 +1169,47 @@ body{
 .modal-danger{background:#fee2e2;color:#dc2626}
 .modal-danger:hover{background:#fecaca}
 
-/* ================= MUTUAL FUNDS PAGE ================= */
+.confirm-dialog{
+  text-align:center;
+}
+.confirm-dialog .confirm-icon{
+  font-size:48px;
+  margin-bottom:16px;
+}
+.confirm-dialog .confirm-title{
+  font-size:20px;
+  font-weight:600;
+  color:#1e293b;
+  margin-bottom:8px;
+}
+.confirm-dialog .confirm-message{
+  font-size:14px;
+  color:#64748b;
+  margin-bottom:24px;
+}
+.confirm-dialog .confirm-actions{
+  display:flex;
+  gap:12px;
+  justify-content:center;
+}
+.confirm-dialog .confirm-actions button{
+  padding:12px 28px;
+  border-radius:12px;
+  border:none;
+  font-weight:600;
+  font-size:14px;
+  cursor:pointer;
+  transition:all 0.2s;
+}
+.confirm-dialog .btn-confirm{
+  background:linear-gradient(135deg,#ef4444,#dc2626);
+  color:#fff;
+}
+.confirm-dialog .btn-cancel{
+  background:#f1f5f9;
+  color:#64748b;
+}
+
 .mf-coming-soon{
   text-align:center;
   padding:100px 20px;
@@ -1083,7 +1226,6 @@ body{
 .mf-coming-soon h3{font-size:28px;color:#1e293b;margin-bottom:12px}
 .mf-coming-soon p{color:#64748b;font-size:16px}
 
-/* ================= RESPONSIVE ================= */
 @media(max-width:1100px){
   .navbar{flex-wrap:wrap;gap:14px}
   .nav-tabs{order:3;width:100%;overflow-x:auto}
@@ -1100,13 +1242,16 @@ body{
   .status-bar{flex-direction:column;text-align:center}
   .status-left,.status-right{justify-content:center}
   .action-buttons{flex-direction:column;gap:6px}
+  .toast-container{left:10px;right:10px;top:10px}
+  .toast{max-width:100%}
 }
 </style>
 </head>
 
 <body>
 
-<!-- ================= LOGIN PAGE ================= -->
+<div class="toast-container" id="toastContainer"></div>
+
 <div id="loginPage">
   <h2>FinzoTalk</h2>
   <p class="tagline">Your smart portfolio & chat companion</p>
@@ -1117,10 +1262,8 @@ body{
   <div id="loginError"></div>
 </div>
 
-<!-- ================= MAIN APPLICATION ================= -->
 <div id="mainApp" style="display:none">
 
-<!-- Navbar -->
 <nav class="navbar">
   <div class="brand">FinzoTalk</div>
   <div class="nav-tabs">
@@ -1135,10 +1278,8 @@ body{
   <div class="settings-icon" onclick="showSettings()">⚙️</div>
 </nav>
 
-<!-- Main Content -->
 <div class="main-content">
   
-  <!-- ========== STOCKS TAB ========== -->
   <section id="stocksSection">
     <div class="status-bar">
       <div class="status-left">
@@ -1164,7 +1305,6 @@ body{
     <div class="stocks-grid" id="stocksContainer"></div>
   </section>
 
-  <!-- ========== HOLDINGS TAB ========== -->
   <section id="holdingsSection" style="display:none">
     <div class="holdings-header">
       <h2>📊 Your Portfolio</h2>
@@ -1182,7 +1322,6 @@ body{
     </div>
   </section>
 
-  <!-- ========== MUTUAL FUNDS TAB ========== -->
   <section id="mfSection" style="display:none">
     <div class="mf-coming-soon">
       <h3>Mutual Funds</h3>
@@ -1190,14 +1329,11 @@ body{
     </div>
   </section>
 
-  <!-- ========== CHAT TAB ========== -->
   <section id="chatSection" style="display:none">
     <div class="chat-wrapper">
       
-      <!-- Sidebar -->
       <div class="chat-sidebar">
         
-        <!-- Search -->
         <div class="chat-search-section">
           <div class="search-input-group">
             <input type="text" id="userIdSearchInput" placeholder="Enter 5-digit User ID" maxlength="5" oninput="this.value = this.value.replace(/[^0-9]/g, '')">
@@ -1206,7 +1342,6 @@ body{
           <div class="search-results" id="userSearchResults"></div>
         </div>
         
-        <!-- Tabs -->
         <div class="chat-nav-tabs">
           <div class="chat-nav-tab active" data-list="friends">
             👥 Friends
@@ -1218,7 +1353,6 @@ body{
           </div>
         </div>
         
-        <!-- Lists -->
         <div class="chat-lists-container">
           <div class="chat-list-section active" id="friendsListContainer">
             <div class="empty-list-msg">No friends yet. Search by User ID to add friends!</div>
@@ -1230,13 +1364,15 @@ body{
         
       </div>
       
-      <!-- Chat Main -->
       <div class="chat-main-box">
         <div class="chat-main-header" id="chatMainHeader" style="display:none">
           <div class="chat-item-avatar" id="chatPartnerAvatar">U</div>
           <div class="chat-partner-details">
             <h3 id="chatPartnerName">User</h3>
-            <span>● Online</span>
+            <span class="online-status" id="chatPartnerStatus">
+              <span class="status-dot"></span>
+              <span id="chatPartnerStatusText">Offline</span>
+            </span>
           </div>
         </div>
         <div class="chat-messages-area" id="chatMessagesContainer">
@@ -1256,7 +1392,6 @@ body{
 </div>
 </div>
 
-<!-- ================= SETTINGS MODAL ================= -->
 <div class="modal-backdrop" id="settingsModal">
   <div class="modal-container">
     <h3>⚙️ Settings</h3>
@@ -1274,7 +1409,6 @@ body{
   </div>
 </div>
 
-<!-- ================= ADD STOCK MODAL ================= -->
 <div class="modal-backdrop" id="addStockModal">
   <div class="modal-container">
     <h3>➕ Add to Holdings</h3>
@@ -1293,7 +1427,6 @@ body{
   </div>
 </div>
 
-<!-- ================= EDIT STOCK MODAL ================= -->
 <div class="modal-backdrop" id="editStockModal">
   <div class="modal-container">
     <h3>✏️ Edit Holding</h3>
@@ -1312,24 +1445,66 @@ body{
   </div>
 </div>
 
-<script>
-/* ================= MULTIPLE API KEYS ================= */
-const ALPHA_VANTAGE_KEYS = [
-  "BH74ZWQO07ZCTGMN",
-  "X86NOH6II01P7R24",
-  "RIBXT3XYLI6FWNSK"
-];
-let currentAlphaKeyIndex = 0;
-let lastUsedAPI = "none";
+<div class="modal-backdrop" id="confirmModal">
+  <div class="modal-container">
+    <div class="confirm-dialog">
+      <div class="confirm-icon" id="confirmIcon">🗑️</div>
+      <div class="confirm-title" id="confirmTitle">Delete Holding?</div>
+      <div class="confirm-message" id="confirmMessage">This action cannot be undone.</div>
+      <div class="confirm-actions">
+        <button class="btn-cancel" onclick="hideConfirmModal()">Cancel</button>
+        <button class="btn-confirm" id="confirmActionBtn">Delete</button>
+      </div>
+    </div>
+  </div>
+</div>
 
+<script>
+function showToast(message, type, duration) {
+  type = type || 'info';
+  duration = duration || 3000;
+  var container = document.getElementById('toastContainer');
+  var toast = document.createElement('div');
+  toast.className = 'toast ' + type;
+  var icon = '💬';
+  if (type === 'success') icon = '✅';
+  else if (type === 'error') icon = '❌';
+  else if (type === 'warning') icon = '⚠️';
+  else if (type === 'info') icon = 'ℹ️';
+  toast.innerHTML = '<span class="toast-icon">' + icon + '</span><span class="toast-message">' + message + '</span><button class="toast-close" onclick="this.parentElement.remove()">×</button>';
+  container.appendChild(toast);
+  setTimeout(function() {
+    if (toast.parentElement) toast.remove();
+  }, duration);
+}
+
+var confirmCallback = null;
+function showConfirmDialog(title, message, icon, buttonText, callback) {
+  document.getElementById('confirmIcon').textContent = icon || '❓';
+  document.getElementById('confirmTitle').textContent = title || 'Confirm';
+  document.getElementById('confirmMessage').textContent = message || 'Are you sure?';
+  document.getElementById('confirmActionBtn').textContent = buttonText || 'Confirm';
+  confirmCallback = callback;
+  document.getElementById('confirmModal').style.display = 'flex';
+}
+function hideConfirmModal() {
+  document.getElementById('confirmModal').style.display = 'none';
+  confirmCallback = null;
+}
+document.getElementById('confirmActionBtn').addEventListener('click', function() {
+  if (confirmCallback) confirmCallback();
+  hideConfirmModal();
+});
+
+var ALPHA_VANTAGE_KEYS = ["BH74ZWQO07ZCTGMN", "X86NOH6II01P7R24", "RIBXT3XYLI6FWNSK"];
+var currentAlphaKeyIndex = 0;
+var lastUsedAPI = "none";
 function getNextAlphaKey() {
   currentAlphaKeyIndex = (currentAlphaKeyIndex + 1) % ALPHA_VANTAGE_KEYS.length;
   return ALPHA_VANTAGE_KEYS[currentAlphaKeyIndex];
 }
 
-/* ================= 300+ INDIAN STOCKS LIST ================= */
-const STOCK_DATA = [
-  // NIFTY 50
+var STOCK_DATA = [
   {name:"Reliance Industries",sym:"RELIANCE",yahoo:"RELIANCE.NS",logo:"ril.com"},
   {name:"Tata Consultancy Services",sym:"TCS",yahoo:"TCS.NS",logo:"tcs.com"},
   {name:"HDFC Bank",sym:"HDFCBANK",yahoo:"HDFCBANK.NS",logo:"hdfcbank.com"},
@@ -1380,8 +1555,6 @@ const STOCK_DATA = [
   {name:"UPL",sym:"UPL",yahoo:"UPL.NS",logo:"upl-ltd.com"},
   {name:"Bajaj Auto",sym:"BAJAJ-AUTO",yahoo:"BAJAJ-AUTO.NS",logo:"bajajauto.com"},
   {name:"LTIMindtree",sym:"LTIM",yahoo:"LTIM.NS",logo:"ltimindtree.com"},
-  
-  // NIFTY NEXT 50
   {name:"Zomato",sym:"ZOMATO",yahoo:"ZOMATO.NS",logo:"zomato.com"},
   {name:"IRCTC",sym:"IRCTC",yahoo:"IRCTC.NS",logo:"irctc.co.in"},
   {name:"Paytm",sym:"PAYTM",yahoo:"PAYTM.NS",logo:"paytm.com"},
@@ -1421,8 +1594,6 @@ const STOCK_DATA = [
   {name:"Union Bank",sym:"UNIONBANK",yahoo:"UNIONBANK.NS",logo:"unionbankofindia.co.in"},
   {name:"Vedanta",sym:"VEDL",yahoo:"VEDL.NS",logo:"vedantalimited.com"},
   {name:"Zydus Lifesciences",sym:"ZYDUSLIFE",yahoo:"ZYDUSLIFE.NS",logo:"zyduslife.com"},
-  
-  // MIDCAP & SMALLCAP
   {name:"Nykaa",sym:"NYKAA",yahoo:"NYKAA.NS",logo:"nykaa.com"},
   {name:"PolicyBazaar",sym:"POLICYBZR",yahoo:"POLICYBZR.NS",logo:"policybazaar.com"},
   {name:"Tata Elxsi",sym:"TATAELXSI",yahoo:"TATAELXSI.NS",logo:"tataelxsi.com"},
@@ -1443,8 +1614,6 @@ const STOCK_DATA = [
   {name:"Tata Chemicals",sym:"TATACHEM",yahoo:"TATACHEM.NS",logo:"tatachemicals.com"},
   {name:"PI Industries",sym:"PIIND",yahoo:"PIIND.NS",logo:"piindustries.com"},
   {name:"Deepak Nitrite",sym:"DEEPAKNTR",yahoo:"DEEPAKNTR.NS",logo:"deepaknitrite.com"},
-  
-  // PSU STOCKS
   {name:"NHPC",sym:"NHPC",yahoo:"NHPC.NS",logo:"nhpcindia.com"},
   {name:"BHEL",sym:"BHEL",yahoo:"BHEL.NS",logo:"bhel.com"},
   {name:"HAL",sym:"HAL",yahoo:"HAL.NS",logo:"hal-india.co.in"},
@@ -1455,93 +1624,54 @@ const STOCK_DATA = [
   {name:"SAIL",sym:"SAIL",yahoo:"SAIL.NS",logo:"sail.co.in"},
   {name:"NMDC",sym:"NMDC",yahoo:"NMDC.NS",logo:"nmdc.co.in"},
   {name:"NALCO",sym:"NATIONALUM",yahoo:"NATIONALUM.NS",logo:"nalcoindia.com"},
-  {name:"HUDCO",sym:"HUDCO",yahoo:"HUDCO.NS",logo:"hudco.org"},
-  {name:"Mazagon Dock",sym:"MAZDOCK",yahoo:"MAZDOCK.NS",logo:"mazagondock.in"},
-  {name:"Cochin Shipyard",sym:"COCHINSHIP",yahoo:"COCHINSHIP.NS",logo:"cochinshipyard.in"},
-  
-  // BANKS & NBFC
   {name:"Federal Bank",sym:"FEDERALBNK",yahoo:"FEDERALBNK.NS",logo:"federalbank.co.in"},
   {name:"IDFC First Bank",sym:"IDFCFIRSTB",yahoo:"IDFCFIRSTB.NS",logo:"idfcfirstbank.com"},
   {name:"Bandhan Bank",sym:"BANDHANBNK",yahoo:"BANDHANBNK.NS",logo:"bandhanbank.com"},
   {name:"AU Small Finance",sym:"AUBANK",yahoo:"AUBANK.NS",logo:"aubank.in"},
-  {name:"IDBI Bank",sym:"IDBI",yahoo:"IDBI.NS",logo:"idbibank.in"},
-  {name:"Indian Bank",sym:"INDIANB",yahoo:"INDIANB.NS",logo:"indianbank.in"},
-  {name:"Bank of India",sym:"BANKINDIA",yahoo:"BANKINDIA.NS",logo:"bankofindia.co.in"},
   {name:"Shriram Finance",sym:"SHRIRAMFIN",yahoo:"SHRIRAMFIN.NS",logo:"shriramfinance.in"},
-  {name:"L&T Finance",sym:"LTF",yahoo:"LTF.NS",logo:"ltfs.com"},
-  {name:"Manappuram",sym:"MANAPPURAM",yahoo:"MANAPPURAM.NS",logo:"manappuram.com"},
-  
-  // PHARMA
   {name:"Alkem Labs",sym:"ALKEM",yahoo:"ALKEM.NS",logo:"alkemlabs.com"},
   {name:"Aurobindo Pharma",sym:"AUROPHARMA",yahoo:"AUROPHARMA.NS",logo:"aurobindo.com"},
-  {name:"Glenmark",sym:"GLENMARK",yahoo:"GLENMARK.NS",logo:"glenmarkpharma.com"},
-  {name:"IPCA Labs",sym:"IPCALAB",yahoo:"IPCALAB.NS",logo:"ipcalabs.com"},
-  {name:"Abbott India",sym:"ABBOTINDIA",yahoo:"ABBOTINDIA.NS",logo:"abbott.in"},
-  {name:"Laurus Labs",sym:"LAURUSLABS",yahoo:"LAURUSLABS.NS",logo:"lauruslabs.com"},
-  
-  // REALTY
   {name:"Godrej Properties",sym:"GODREJPROP",yahoo:"GODREJPROP.NS",logo:"godrejproperties.com"},
   {name:"Oberoi Realty",sym:"OBEROIRLTY",yahoo:"OBEROIRLTY.NS",logo:"oberoirealty.com"},
   {name:"Prestige Estates",sym:"PRESTIGE",yahoo:"PRESTIGE.NS",logo:"prestigeconstructions.com"},
-  {name:"Brigade Enterprises",sym:"BRIGADE",yahoo:"BRIGADE.NS",logo:"brigadegroup.com"},
-  {name:"Phoenix Mills",sym:"PHOENIXLTD",yahoo:"PHOENIXLTD.NS",logo:"phoenixmills.com"},
-  
-  // AUTO
   {name:"Ashok Leyland",sym:"ASHOKLEY",yahoo:"ASHOKLEY.NS",logo:"ashokleyland.com"},
   {name:"Bharat Forge",sym:"BHARATFORG",yahoo:"BHARATFORG.NS",logo:"bharatforge.com"},
-  {name:"Exide Industries",sym:"EXIDEIND",yahoo:"EXIDEIND.NS",logo:"exideindustries.com"},
-  {name:"Amara Raja",sym:"AMARAJABAT",yahoo:"AMARAJABAT.NS",logo:"amararaja.com"},
   {name:"MRF",sym:"MRF",yahoo:"MRF.NS",logo:"mrftyres.com"},
   {name:"Apollo Tyres",sym:"APOLLOTYRE",yahoo:"APOLLOTYRE.NS",logo:"apollotyres.com"},
-  
-  // CEMENT
   {name:"Ambuja Cements",sym:"AMBUJACEM",yahoo:"AMBUJACEM.NS",logo:"ambujacement.com"},
   {name:"ACC",sym:"ACC",yahoo:"ACC.NS",logo:"acclimited.com"},
-  {name:"Dalmia Bharat",sym:"DALBHARAT",yahoo:"DALBHARAT.NS",logo:"dalmiacement.com"},
-  {name:"Ramco Cements",sym:"RAMCOCEM",yahoo:"RAMCOCEM.NS",logo:"ramcocements.in"},
-  {name:"JK Cement",sym:"JKCEMENT",yahoo:"JKCEMENT.NS",logo:"jkcement.com"},
-  
-  // ENERGY
-  {name:"HPCL",sym:"HINDPETRO",yahoo:"HINDPETRO.NS",logo:"hindustanpetroleum.com"},
   {name:"Petronet LNG",sym:"PETRONET",yahoo:"PETRONET.NS",logo:"petronetlng.in"},
-  {name:"Oil India",sym:"OIL",yahoo:"OIL.NS",logo:"oil-india.com"},
   {name:"Gujarat Gas",sym:"GUJGASLTD",yahoo:"GUJGASLTD.NS",logo:"gujaratgas.com"},
   {name:"IGL",sym:"IGL",yahoo:"IGL.NS",logo:"iglonline.net"},
-  
-  // POWER
   {name:"Adani Power",sym:"ADANIPOWER",yahoo:"ADANIPOWER.NS",logo:"adanipower.com"},
   {name:"JSW Energy",sym:"JSWENERGY",yahoo:"JSWENERGY.NS",logo:"jsw.in"},
   {name:"Torrent Power",sym:"TORNTPOWER",yahoo:"TORNTPOWER.NS",logo:"torrentpower.com"},
-  {name:"SJVN",sym:"SJVN",yahoo:"SJVN.NS",logo:"sjvn.nic.in"},
-  
-  // TELECOM
   {name:"Vodafone Idea",sym:"IDEA",yahoo:"IDEA.NS",logo:"myvi.in"},
   {name:"Tata Comm",sym:"TATACOMM",yahoo:"TATACOMM.NS",logo:"tatacommunications.com"},
-  {name:"Indus Towers",sym:"INDUSTOWER",yahoo:"INDUSTOWER.NS",logo:"industowers.com"},
-  
-  // MEDIA
   {name:"Zee Entertainment",sym:"ZEEL",yahoo:"ZEEL.NS",logo:"zee.com"},
-  {name:"Sun TV",sym:"SUNTV",yahoo:"SUNTV.NS",logo:"suntv.in"},
   {name:"PVR INOX",sym:"PVRINOX",yahoo:"PVRINOX.NS",logo:"pvrcinemas.com"}
 ];
 
-/* ================= GLOBAL VARIABLES ================= */
-let activeUser = null;
-let userHoldings = [];
-let pricesData = {};
-let prevPricesData = {};
-let refreshCountdown = 30;
-let autoRefreshTimer = null;
-let isFetchingData = false;
-let activeChatWith = null;
-let chatListener = null;
-let pendingAddStock = null;
-let pendingEditIndex = null;
+var activeUser = null;
+var userHoldings = [];
+var pricesData = {};
+var prevPricesData = {};
+var refreshCountdown = 30;
+var autoRefreshTimer = null;
+var isFetchingData = false;
+var activeChatWith = null;
+var activeChatPartnerName = null;
+var chatListener = null;
+var pendingAddStock = null;
+var pendingEditIndex = null;
+var friendsOnlineStatus = {};
+var presenceInterval = null;
+var partnerStatusListener = null;
+var unreadMessages = {};
+var holdingsListener = null;
 
-/* ================= INITIALIZATION ================= */
 document.addEventListener("DOMContentLoaded", function() {
-  // Load cached prices
-  const savedPrices = localStorage.getItem("stockPricesCache");
+  var savedPrices = localStorage.getItem("stockPricesCache");
   if (savedPrices) {
     try {
       pricesData = JSON.parse(savedPrices);
@@ -1552,35 +1682,31 @@ document.addEventListener("DOMContentLoaded", function() {
     }
   }
   
-  // Tab navigation
   document.querySelectorAll(".nav-tabs span").forEach(function(tab) {
     tab.addEventListener("click", function() {
-      document.querySelectorAll(".nav-tabs span").forEach(t => t.classList.remove("active"));
+      document.querySelectorAll(".nav-tabs span").forEach(function(t) { t.classList.remove("active"); });
       this.classList.add("active");
       switchTab(this.dataset.tab);
     });
   });
   
-  // Chat list tabs
   document.querySelectorAll(".chat-nav-tab").forEach(function(tab) {
     tab.addEventListener("click", function() {
-      document.querySelectorAll(".chat-nav-tab").forEach(t => t.classList.remove("active"));
-      document.querySelectorAll(".chat-list-section").forEach(s => s.classList.remove("active"));
+      document.querySelectorAll(".chat-nav-tab").forEach(function(t) { t.classList.remove("active"); });
+      document.querySelectorAll(".chat-list-section").forEach(function(s) { s.classList.remove("active"); });
       this.classList.add("active");
       document.getElementById(this.dataset.list + "ListContainer").classList.add("active");
     });
   });
   
-  // Stock search
   document.getElementById("stockSearchInput").addEventListener("input", function() {
-    const query = this.value.toLowerCase();
-    const matches = STOCK_DATA.filter(s => 
-      s.name.toLowerCase().includes(query) || s.sym.toLowerCase().includes(query)
-    );
+    var query = this.value.toLowerCase();
+    var matches = STOCK_DATA.filter(function(s) {
+      return s.name.toLowerCase().includes(query) || s.sym.toLowerCase().includes(query);
+    });
     displayStocks(matches);
   });
   
-  // Close modals on backdrop click
   document.querySelectorAll(".modal-backdrop").forEach(function(modal) {
     modal.addEventListener("click", function(e) {
       if (e.target === this) this.style.display = "none";
@@ -1588,330 +1714,288 @@ document.addEventListener("DOMContentLoaded", function() {
   });
 });
 
-/* ================= AUTHENTICATION ================= */
 function handleGoogleLogin() {
-  auth.signInWithPopup(new firebase.auth.GoogleAuthProvider())
-    .catch(function(err) {
-      document.getElementById("loginError").textContent = err.message;
-    });
+  auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()).catch(function(err) {
+    document.getElementById("loginError").textContent = err.message;
+  });
 }
 
 function handleEmailLogin() {
-  const emailVal = document.getElementById("emailInput").value.trim();
-  const passVal = document.getElementById("passwordInput").value.trim();
-  
+  var emailVal = document.getElementById("emailInput").value.trim();
+  var passVal = document.getElementById("passwordInput").value.trim();
   if (!emailVal || !passVal) {
     document.getElementById("loginError").textContent = "Please enter email and password";
     return;
   }
-  
-  auth.signInWithEmailAndPassword(emailVal, passVal)
-    .catch(function() {
-      return auth.createUserWithEmailAndPassword(emailVal, passVal);
-    })
-    .catch(function(err) {
-      document.getElementById("loginError").textContent = err.message;
-    });
+  auth.signInWithEmailAndPassword(emailVal, passVal).catch(function() {
+    return auth.createUserWithEmailAndPassword(emailVal, passVal);
+  }).catch(function(err) {
+    document.getElementById("loginError").textContent = err.message;
+  });
 }
 
-auth.onAuthStateChanged(async function(user) {
+auth.onAuthStateChanged(function(user) {
   if (!user) return;
-  
   activeUser = user;
   document.getElementById("loginPage").style.display = "none";
   document.getElementById("mainApp").style.display = "block";
   
-  // Create/verify user document
-  try {
-    const userDocRef = db.collection("users").doc(user.uid);
-    const userDocSnap = await userDocRef.get();
-    
+  var userDocRef = db.collection("users").doc(user.uid);
+  userDocRef.get().then(function(userDocSnap) {
     if (!userDocSnap.exists) {
-      await userDocRef.set({
+      return userDocRef.set({
         email: user.email,
         name: user.displayName || "",
         usercode: String(Math.floor(10000 + Math.random() * 90000)),
-        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+        isOnline: true,
+        lastSeen: firebase.firestore.FieldValue.serverTimestamp()
+      });
+    } else {
+      return userDocRef.update({
+        isOnline: true,
+        lastSeen: firebase.firestore.FieldValue.serverTimestamp()
       });
     }
-  } catch(e) {
+  }).then(function() {
+    startPresenceSystem();
+    setupHoldingsListener();
+    displayStocks(STOCK_DATA);
+    setupFriendsListener();
+    setupRequestsListener();
+    initAutoRefresh();
+    setTimeout(function() {
+      fetchLatestPrices();
+    }, 1000);
+  }).catch(function(e) {
     console.error("User doc error:", e);
-  }
-  
-  // Load holdings from Firebase
-  await loadUserHoldings();
-  
-  // Render stocks
-  displayStocks(STOCK_DATA);
-  
-  // Render holdings
-  displayHoldings();
-  
-  // Setup chat
-  setupFriendsListener();
-  setupRequestsListener();
-  
-  // Start auto refresh
-  initAutoRefresh();
-  
-  // Fetch fresh prices
-  setTimeout(function() {
-    fetchLatestPrices();
-  }, 1000);
+  });
 });
 
+function startPresenceSystem() {
+  if (presenceInterval) clearInterval(presenceInterval);
+  updatePresence(true);
+  presenceInterval = setInterval(function() {
+    updatePresence(true);
+  }, 30000);
+  document.addEventListener("visibilitychange", function() {
+    if (document.visibilityState === "visible") {
+      updatePresence(true);
+    } else {
+      updatePresence(false);
+    }
+  });
+  window.addEventListener("beforeunload", function() {
+    updatePresence(false);
+  });
+}
+
+function updatePresence(isOnline) {
+  if (!activeUser) return;
+  db.collection("users").doc(activeUser.uid).update({
+    isOnline: isOnline,
+    lastSeen: firebase.firestore.FieldValue.serverTimestamp()
+  }).catch(function(e) {
+    console.error("Presence update error:", e);
+  });
+}
+
 function performLogout() {
-  if (confirm("Are you sure you want to logout?")) {
+  showConfirmDialog("Logout", "Are you sure you want to logout?", "👋", "Logout", function() {
+    updatePresence(false);
+    if (presenceInterval) clearInterval(presenceInterval);
+    if (chatListener) chatListener();
+    if (partnerStatusListener) partnerStatusListener();
+    if (holdingsListener) holdingsListener();
     auth.signOut();
     location.reload();
-  }
+  });
 }
 
-/* ================= LOAD/SAVE HOLDINGS FROM FIREBASE ================= */
-async function loadUserHoldings() {
-  try {
-    const holdingsRef = db.collection("users").doc(activeUser.uid).collection("holdings");
-    const snapshot = await holdingsRef.get();
-    
-    userHoldings = [];
-    snapshot.forEach(function(doc) {
-      const data = doc.data();
-      userHoldings.push({
-        id: doc.id,
-        name: data.name || "",
-        sym: data.sym || data.symbol || "",
-        buyPrice: parseFloat(data.buyPrice) || parseFloat(data.price) || 0,
-        qty: parseInt(data.qty) || parseInt(data.quantity) || 0
+function setupHoldingsListener() {
+  if (!activeUser) return;
+  if (holdingsListener) holdingsListener();
+  
+  holdingsListener = db.collection("users").doc(activeUser.uid).collection("holdings")
+    .orderBy("addedAt", "desc")
+    .onSnapshot(function(snapshot) {
+      userHoldings = [];
+      snapshot.forEach(function(doc) {
+        var data = doc.data();
+        userHoldings.push({
+          id: doc.id,
+          name: data.name || "",
+          sym: data.sym || data.symbol || "",
+          buyPrice: parseFloat(data.buyPrice) || parseFloat(data.price) || 0,
+          qty: parseInt(data.qty) || parseInt(data.quantity) || 0,
+          addedAt: data.addedAt
+        });
       });
-    });
-  } catch (e) {
-    console.error("Error loading holdings:", e);
-    // Fallback to localStorage
-    const local = localStorage.getItem("userHoldings");
-    if (local) {
-      try {
-        userHoldings = JSON.parse(local);
-      } catch(err) {
-        userHoldings = [];
+      var holdingsSection = document.getElementById("holdingsSection");
+      if (holdingsSection.style.display !== "none") {
+        displayHoldings();
       }
-    }
-  }
-}
-
-async function saveHoldingToFirebase(holdingData) {
-  try {
-    const holdingsRef = db.collection("users").doc(activeUser.uid).collection("holdings");
-    const docRef = await holdingsRef.add({
-      name: holdingData.name,
-      sym: holdingData.sym,
-      buyPrice: holdingData.buyPrice,
-      qty: holdingData.qty,
-      addedAt: firebase.firestore.FieldValue.serverTimestamp()
+    }, function(error) {
+      console.error("Holdings listener error:", error);
     });
+}
+
+function saveHoldingToFirebase(holdingData) {
+  if (!activeUser) return Promise.resolve(null);
+  return db.collection("users").doc(activeUser.uid).collection("holdings").add({
+    name: holdingData.name,
+    sym: holdingData.sym,
+    buyPrice: holdingData.buyPrice,
+    qty: holdingData.qty,
+    addedAt: firebase.firestore.FieldValue.serverTimestamp()
+  }).then(function(docRef) {
     return docRef.id;
-  } catch (e) {
+  }).catch(function(e) {
     console.error("Error saving holding:", e);
+    showToast("Error saving holding", "error");
     return null;
-  }
+  });
 }
 
-async function updateHoldingInFirebase(holdingId, updates) {
-  try {
-    await db.collection("users").doc(activeUser.uid).collection("holdings").doc(holdingId).update(updates);
+function updateHoldingInFirebase(holdingId, updates) {
+  if (!activeUser) return Promise.resolve(false);
+  return db.collection("users").doc(activeUser.uid).collection("holdings").doc(holdingId).update({
+    buyPrice: updates.buyPrice,
+    qty: updates.qty,
+    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+  }).then(function() {
     return true;
-  } catch (e) {
+  }).catch(function(e) {
     console.error("Error updating holding:", e);
+    showToast("Error updating holding", "error");
     return false;
-  }
+  });
 }
 
-async function deleteHoldingFromFirebase(holdingId) {
-  try {
-    await db.collection("users").doc(activeUser.uid).collection("holdings").doc(holdingId).delete();
+function deleteHoldingFromFirebase(holdingId) {
+  if (!activeUser) return Promise.resolve(false);
+  return db.collection("users").doc(activeUser.uid).collection("holdings").doc(holdingId).delete().then(function() {
     return true;
-  } catch (e) {
+  }).catch(function(e) {
     console.error("Error deleting holding:", e);
+    showToast("Error deleting holding", "error");
     return false;
-  }
+  });
 }
 
-/* ================= TAB SWITCHING ================= */
 function switchTab(tabName) {
   document.getElementById("stocksSection").style.display = tabName === "stocks" ? "block" : "none";
   document.getElementById("holdingsSection").style.display = tabName === "holdings" ? "block" : "none";
   document.getElementById("mfSection").style.display = tabName === "mf" ? "block" : "none";
   document.getElementById("chatSection").style.display = tabName === "chat" ? "block" : "none";
-  
   if (tabName === "holdings") displayHoldings();
 }
 
-/* ================= DUAL API PRICE FETCHING ================= */
-
-// Yahoo Finance API
-async function fetchYahooPrice(yahooSymbol) {
-  try {
-    const proxyUrl = "https://api.allorigins.win/raw?url=";
-    const apiUrl = `https://query1.finance.yahoo.com/v8/finance/chart/${yahooSymbol}?interval=1d&range=1d`;
+function fetchYahooPrice(yahooSymbol) {
+  return new Promise(function(resolve) {
+    var proxyUrl = "https://api.allorigins.win/raw?url=";
+    var apiUrl = "https://query1.finance.yahoo.com/v8/finance/chart/" + yahooSymbol + "?interval=1d&range=1d";
+    var controller = new AbortController();
+    var timeoutId = setTimeout(function() { controller.abort(); }, 8000);
     
-    const response = await fetch(proxyUrl + encodeURIComponent(apiUrl), {
-      signal: AbortSignal.timeout(8000)
-    });
-    const data = await response.json();
-    
-    if (data.chart && data.chart.result && data.chart.result[0]) {
-      const meta = data.chart.result[0].meta;
-      const currentPrice = meta.regularMarketPrice || 0;
-      const previousClose = meta.previousClose || currentPrice;
-      const priceChange = currentPrice - previousClose;
-      const changePercent = previousClose > 0 ? (priceChange / previousClose) * 100 : 0;
-      
-      if (currentPrice > 0) {
-        return {
-          price: currentPrice,
-          change: priceChange,
-          changePercent: changePercent,
-          prevClose: previousClose,
-          source: "Yahoo"
-        };
-      }
-    }
-  } catch (error) {
-    // Silent fail, will try Alpha Vantage
-  }
-  return null;
+    fetch(proxyUrl + encodeURIComponent(apiUrl), { signal: controller.signal })
+      .then(function(response) { return response.json(); })
+      .then(function(data) {
+        clearTimeout(timeoutId);
+        if (data.chart && data.chart.result && data.chart.result[0]) {
+          var meta = data.chart.result[0].meta;
+          var currentPrice = meta.regularMarketPrice || 0;
+          var previousClose = meta.previousClose || currentPrice;
+          var priceChange = currentPrice - previousClose;
+          var changePercent = previousClose > 0 ? (priceChange / previousClose) * 100 : 0;
+          if (currentPrice > 0) {
+            resolve({ price: currentPrice, change: priceChange, changePercent: changePercent, prevClose: previousClose, source: "Yahoo" });
+            return;
+          }
+        }
+        resolve(null);
+      })
+      .catch(function() {
+        clearTimeout(timeoutId);
+        resolve(null);
+      });
+  });
 }
 
-// Alpha Vantage API
-async function fetchAlphaVantagePrice(symbol) {
-  try {
-    const apiKey = ALPHA_VANTAGE_KEYS[currentAlphaKeyIndex];
-    const url = `https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol=${symbol}.BSE&apikey=${apiKey}`;
-    
-    const response = await fetch(url, {
-      signal: AbortSignal.timeout(8000)
-    });
-    const data = await response.json();
-    
-    if (data["Global Quote"] && data["Global Quote"]["05. price"]) {
-      const quote = data["Global Quote"];
-      const currentPrice = parseFloat(quote["05. price"]) || 0;
-      const priceChange = parseFloat(quote["09. change"]) || 0;
-      const changePercent = parseFloat(quote["10. change percent"]?.replace("%", "")) || 0;
-      const previousClose = parseFloat(quote["08. previous close"]) || currentPrice;
-      
-      if (currentPrice > 0) {
-        return {
-          price: currentPrice,
-          change: priceChange,
-          changePercent: changePercent,
-          prevClose: previousClose,
-          source: "AlphaVantage"
-        };
-      }
+function fetchStockPrice(stock) {
+  return fetchYahooPrice(stock.yahoo).then(function(result) {
+    if (result) {
+      lastUsedAPI = "Yahoo";
+      return result;
     }
-    
-    // Rate limit - try next key
-    if (data["Note"] || data["Information"]) {
-      getNextAlphaKey();
-    }
-  } catch (error) {
-    // Silent fail
-  }
-  return null;
+    return null;
+  });
 }
 
-// Combined fetch with fallback
-async function fetchStockPrice(stock) {
-  // Try Yahoo first
-  let result = await fetchYahooPrice(stock.yahoo);
-  
-  if (result) {
-    lastUsedAPI = "Yahoo";
-    return result;
-  }
-  
-  // Fallback to Alpha Vantage
-  result = await fetchAlphaVantagePrice(stock.sym);
-  
-  if (result) {
-    lastUsedAPI = "AlphaVantage";
-    return result;
-  }
-  
-  return null;
-}
-
-async function fetchLatestPrices() {
+function fetchLatestPrices() {
   if (isFetchingData) return;
-  
   isFetchingData = true;
   setRefreshStatus("Updating...", true);
   document.getElementById("apiIndicator").textContent = "API: Fetching...";
-  
   prevPricesData = JSON.parse(JSON.stringify(pricesData));
   
-  // Prioritize holdings
-  const holdingSyms = userHoldings.map(h => h.sym);
-  const holdingsFirst = STOCK_DATA.filter(s => holdingSyms.includes(s.sym));
-  const remaining = STOCK_DATA.filter(s => !holdingSyms.includes(s.sym));
-  const orderedList = [...holdingsFirst, ...remaining];
+  var holdingSyms = userHoldings.map(function(h) { return h.sym; });
+  var holdingsFirst = STOCK_DATA.filter(function(s) { return holdingSyms.includes(s.sym); });
+  var remaining = STOCK_DATA.filter(function(s) { return !holdingSyms.includes(s.sym); });
+  var orderedList = holdingsFirst.concat(remaining);
   
-  // Fetch in parallel batches
-  const batchSize = 5;
-  const maxFetch = 50;
-  let successCount = 0;
+  var batchSize = 5;
+  var maxFetch = 50;
+  var successCount = 0;
+  var currentIndex = 0;
   
-  for (let i = 0; i < Math.min(orderedList.length, maxFetch); i += batchSize) {
-    const batch = orderedList.slice(i, i + batchSize);
-    const promises = batch.map(stock => 
-      fetchStockPrice(stock).then(data => ({sym: stock.sym, data}))
-    );
-    
-    const results = await Promise.allSettled(promises);
-    
-    results.forEach(function(result) {
-      if (result.status === "fulfilled" && result.value.data && result.value.data.price > 0) {
-        pricesData[result.value.sym] = result.value.data;
-        successCount++;
-      }
-    });
-    
-    // Small delay between batches
-    if (i + batchSize < maxFetch) {
-      await new Promise(r => setTimeout(r, 150));
+  function processBatch() {
+    if (currentIndex >= Math.min(orderedList.length, maxFetch)) {
+      finishFetching();
+      return;
     }
+    var batch = orderedList.slice(currentIndex, currentIndex + batchSize);
+    var promises = batch.map(function(stock) {
+      return fetchStockPrice(stock).then(function(data) {
+        return { sym: stock.sym, data: data };
+      });
+    });
+    Promise.all(promises).then(function(results) {
+      results.forEach(function(result) {
+        if (result.data && result.data.price > 0) {
+          pricesData[result.sym] = result.data;
+          successCount++;
+        }
+      });
+      currentIndex += batchSize;
+      setTimeout(processBatch, 150);
+    });
   }
   
-  // Save to localStorage
-  localStorage.setItem("stockPricesCache", JSON.stringify(pricesData));
-  localStorage.setItem("lastPriceUpdate", Date.now().toString());
+  function finishFetching() {
+    localStorage.setItem("stockPricesCache", JSON.stringify(pricesData));
+    localStorage.setItem("lastPriceUpdate", Date.now().toString());
+    isFetchingData = false;
+    refreshCountdown = 30;
+    setRefreshStatus("Live", false);
+    document.getElementById("apiIndicator").textContent = "API: " + lastUsedAPI + " (" + successCount + " updated)";
+    refreshLastUpdateDisplay();
+    displayStocksWithAnimation(STOCK_DATA);
+    displayHoldings();
+  }
   
-  isFetchingData = false;
-  refreshCountdown = 30;
-  setRefreshStatus("Live", false);
-  document.getElementById("apiIndicator").textContent = `API: ${lastUsedAPI} (${successCount} updated)`;
-  refreshLastUpdateDisplay();
-  
-  displayStocksWithAnimation(STOCK_DATA);
-  displayHoldings();
+  processBatch();
 }
 
-function triggerManualRefresh() {
-  fetchLatestPrices();
-}
-
-function refreshHoldingsData() {
-  fetchLatestPrices();
-}
+function triggerManualRefresh() { fetchLatestPrices(); }
+function refreshHoldingsData() { fetchLatestPrices(); }
 
 function initAutoRefresh() {
   if (autoRefreshTimer) clearInterval(autoRefreshTimer);
-  
   autoRefreshTimer = setInterval(function() {
     refreshCountdown--;
     document.getElementById("countdownDisplay").textContent = refreshCountdown;
     refreshLastUpdateDisplay();
-    
     if (refreshCountdown <= 0) {
       refreshCountdown = 30;
       if (!isFetchingData && document.visibilityState === "visible") {
@@ -1922,38 +2006,32 @@ function initAutoRefresh() {
 }
 
 function setRefreshStatus(text, isLoading) {
-  const badge = document.getElementById("liveStatusBadge");
-  const statusText = document.getElementById("liveStatusText");
-  
+  var badge = document.getElementById("liveStatusBadge");
+  var statusText = document.getElementById("liveStatusText");
   statusText.textContent = text;
-  badge.classList.toggle("updating", isLoading);
-  
-  const btn = document.getElementById("mainRefreshBtn");
+  if (isLoading) badge.classList.add("updating");
+  else badge.classList.remove("updating");
+  var btn = document.getElementById("mainRefreshBtn");
   btn.disabled = isLoading;
   btn.innerHTML = isLoading ? '<div class="loading-spinner"></div> Updating...' : '🔄 Refresh Now';
 }
 
 function refreshLastUpdateDisplay() {
-  const lastUpdate = localStorage.getItem("lastPriceUpdate");
+  var lastUpdate = localStorage.getItem("lastPriceUpdate");
   if (!lastUpdate) return;
-  
-  const diffSec = Math.floor((Date.now() - parseInt(lastUpdate)) / 1000);
-  let displayText = "";
-  
+  var diffSec = Math.floor((Date.now() - parseInt(lastUpdate)) / 1000);
+  var displayText = "";
   if (diffSec < 5) displayText = "Just now";
   else if (diffSec < 60) displayText = diffSec + "s ago";
   else if (diffSec < 3600) displayText = Math.floor(diffSec / 60) + "m ago";
   else displayText = Math.floor(diffSec / 3600) + "h ago";
-  
   document.getElementById("lastUpdateDisplay").textContent = displayText;
   document.getElementById("holdingsUpdateDisplay").textContent = displayText;
 }
 
 function getStockPrice(symbol) {
-  const data = pricesData[symbol];
-  if (data && typeof data.price === "number" && !isNaN(data.price)) {
-    return data.price;
-  }
+  var data = pricesData[symbol];
+  if (data && typeof data.price === "number" && !isNaN(data.price)) return data.price;
   return 0;
 }
 
@@ -1961,49 +2039,28 @@ function getStockData(symbol) {
   return pricesData[symbol] || null;
 }
 
-/* ================= DISPLAY STOCKS ================= */
 function displayStocks(stockList) {
-  const container = document.getElementById("stocksContainer");
+  var container = document.getElementById("stocksContainer");
   container.innerHTML = "";
-  
   document.getElementById("displayedCount").textContent = stockList.length;
   document.getElementById("totalStockCount").textContent = STOCK_DATA.length;
   
   stockList.forEach(function(stock) {
-    const priceInfo = getStockData(stock.sym);
-    const currentPrice = priceInfo && priceInfo.price ? priceInfo.price : 0;
-    const priceChange = priceInfo && priceInfo.change ? priceInfo.change : 0;
-    const changePercent = priceInfo && priceInfo.changePercent ? priceInfo.changePercent : 0;
-    const isPositive = priceChange >= 0;
+    var priceInfo = getStockData(stock.sym);
+    var currentPrice = priceInfo && priceInfo.price ? priceInfo.price : 0;
+    var priceChange = priceInfo && priceInfo.change ? priceInfo.change : 0;
+    var changePercent = priceInfo && priceInfo.changePercent ? priceInfo.changePercent : 0;
+    var isPositive = priceChange >= 0;
     
-    const card = document.createElement("div");
+    var card = document.createElement("div");
     card.className = "stock-card";
     card.dataset.symbol = stock.sym;
     
-    card.innerHTML = `
-      <div class="stock-header">
-        <div class="stock-logo">
-          <img src="https://logo.clearbit.com/${stock.logo}" 
-               onerror="this.style.display='none';this.nextElementSibling.style.display='block'"
-               alt="${stock.sym}">
-          <div class="stock-logo-fallback" style="display:none">${stock.sym.charAt(0)}</div>
-        </div>
-        <div class="stock-meta">
-          <div class="stock-title" title="${stock.name}">${stock.name}</div>
-          <div class="stock-symbol">${stock.sym}</div>
-        </div>
-      </div>
-      <div class="price-display">
-        <div class="current-price">${currentPrice > 0 ? '₹' + currentPrice.toFixed(2) : '₹ --'}</div>
-        <div class="price-change">
-          ${currentPrice > 0 ? `
-            <div class="change-value ${isPositive ? 'positive' : 'negative'}">${isPositive ? '+' : ''}₹${priceChange.toFixed(2)}</div>
-            <div class="change-badge ${isPositive ? 'positive' : 'negative'}">${isPositive ? '▲' : '▼'} ${Math.abs(changePercent).toFixed(2)}%</div>
-          ` : '<div style="color:#94a3b8;font-size:13px">Loading...</div>'}
-        </div>
-      </div>
-      <button class="add-stock-btn" onclick="showAddStockModal('${stock.sym}')">➕ Add to Holdings</button>
-    `;
+    var priceHTML = currentPrice > 0 
+      ? '<div class="change-value ' + (isPositive ? 'positive' : 'negative') + '">' + (isPositive ? '+' : '') + '₹' + priceChange.toFixed(2) + '</div><div class="change-badge ' + (isPositive ? 'positive' : 'negative') + '">' + (isPositive ? '▲' : '▼') + ' ' + Math.abs(changePercent).toFixed(2) + '%</div>'
+      : '<div style="color:#94a3b8;font-size:13px">Loading...</div>';
+    
+    card.innerHTML = '<div class="stock-header"><div class="stock-logo"><img src="https://logo.clearbit.com/' + stock.logo + '" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'block\'" alt="' + stock.sym + '"><div class="stock-logo-fallback" style="display:none">' + stock.sym.charAt(0) + '</div></div><div class="stock-meta"><div class="stock-title" title="' + stock.name + '">' + stock.name + '</div><div class="stock-symbol">' + stock.sym + '</div></div></div><div class="price-display"><div class="current-price">' + (currentPrice > 0 ? '₹' + currentPrice.toFixed(2) : '₹ --') + '</div><div class="price-change">' + priceHTML + '</div></div><button class="add-stock-btn" onclick="showAddStockModal(\'' + stock.sym + '\')">➕ Add to Holdings</button>';
     
     container.appendChild(card);
   });
@@ -2011,11 +2068,10 @@ function displayStocks(stockList) {
 
 function displayStocksWithAnimation(stockList) {
   stockList.forEach(function(stock) {
-    const oldPrice = prevPricesData[stock.sym]?.price || 0;
-    const newPrice = pricesData[stock.sym]?.price || 0;
-    
+    var oldPrice = prevPricesData[stock.sym] ? prevPricesData[stock.sym].price : 0;
+    var newPrice = pricesData[stock.sym] ? pricesData[stock.sym].price : 0;
     if (oldPrice > 0 && newPrice > 0 && oldPrice !== newPrice) {
-      const card = document.querySelector(`[data-symbol="${stock.sym}"]`);
+      var card = document.querySelector('[data-symbol="' + stock.sym + '"]');
       if (card) {
         card.classList.remove("price-up", "price-down");
         void card.offsetWidth;
@@ -2023,18 +2079,14 @@ function displayStocksWithAnimation(stockList) {
       }
     }
   });
-  
   displayStocks(stockList);
 }
 
-/* ================= ADD STOCK MODAL ================= */
 function showAddStockModal(symbol) {
-  const stock = STOCK_DATA.find(s => s.sym === symbol);
+  var stock = STOCK_DATA.find(function(s) { return s.sym === symbol; });
   if (!stock) return;
-  
   pendingAddStock = stock;
-  const price = getStockPrice(symbol);
-  
+  var price = getStockPrice(symbol);
   document.getElementById("modalStockName").textContent = stock.name + " (" + symbol + ")";
   document.getElementById("modalStockPrice").textContent = price > 0 ? "₹" + price.toFixed(2) : "₹ --";
   document.getElementById("modalBuyPrice").value = price > 0 ? price.toFixed(2) : "";
@@ -2047,63 +2099,43 @@ function hideAddModal() {
   pendingAddStock = null;
 }
 
-async function confirmStockAdd() {
-  const buyPriceVal = document.getElementById("modalBuyPrice").value;
-  const quantityVal = document.getElementById("modalQuantity").value;
-  
-  const buyPrice = parseFloat(buyPriceVal);
-  const quantity = parseInt(quantityVal);
+function confirmStockAdd() {
+  var buyPriceVal = document.getElementById("modalBuyPrice").value;
+  var quantityVal = document.getElementById("modalQuantity").value;
+  var buyPrice = parseFloat(buyPriceVal);
+  var quantity = parseInt(quantityVal);
   
   if (isNaN(buyPrice) || buyPrice <= 0) {
-    alert("Please enter a valid buy price");
+    showToast("Please enter a valid buy price", "warning");
     return;
   }
   if (isNaN(quantity) || quantity <= 0) {
-    alert("Please enter a valid quantity");
+    showToast("Please enter a valid quantity", "warning");
     return;
   }
   
-  const holdingData = {
+  var holdingData = {
     name: pendingAddStock.name,
     sym: pendingAddStock.sym,
     buyPrice: buyPrice,
     qty: quantity
   };
   
-  // Save to Firebase
-  const docId = await saveHoldingToFirebase(holdingData);
-  
-  if (docId) {
-    userHoldings.push({
-      id: docId,
-      ...holdingData
-    });
-  } else {
-    // Fallback to local only
-    userHoldings.push({
-      id: "local_" + Date.now(),
-      ...holdingData
-    });
-  }
-  
-  // Also save to localStorage as backup
-  localStorage.setItem("userHoldings", JSON.stringify(userHoldings));
-  
-  hideAddModal();
-  displayHoldings();
-  
-  alert("✅ Stock added to holdings!");
+  saveHoldingToFirebase(holdingData).then(function(docId) {
+    if (docId) {
+      hideAddModal();
+      showToast("Stock added to holdings!", "success");
+    } else {
+      showToast("Failed to add stock. Please try again.", "error");
+    }
+  });
 }
 
-/* ================= EDIT STOCK MODAL ================= */
 function showEditStockModal(index) {
-  const holding = userHoldings[index];
+  var holding = userHoldings[index];
   if (!holding) return;
-  
   pendingEditIndex = index;
-  
-  const currentPrice = getStockPrice(holding.sym);
-  
+  var currentPrice = getStockPrice(holding.sym);
   document.getElementById("editModalStockName").textContent = holding.name + " (" + holding.sym + ")";
   document.getElementById("editModalStockPrice").textContent = currentPrice > 0 ? "₹" + currentPrice.toFixed(2) : "₹ --";
   document.getElementById("editModalBuyPrice").value = holding.buyPrice || "";
@@ -2116,546 +2148,492 @@ function hideEditModal() {
   pendingEditIndex = null;
 }
 
-async function confirmStockEdit() {
-  const newPriceVal = document.getElementById("editModalBuyPrice").value;
-  const newQtyVal = document.getElementById("editModalQuantity").value;
-  
-  const newPrice = parseFloat(newPriceVal);
-  const newQty = parseInt(newQtyVal);
+function confirmStockEdit() {
+  var newPriceVal = document.getElementById("editModalBuyPrice").value;
+  var newQtyVal = document.getElementById("editModalQuantity").value;
+  var newPrice = parseFloat(newPriceVal);
+  var newQty = parseInt(newQtyVal);
   
   if (isNaN(newPrice) || newPrice <= 0) {
-    alert("Please enter a valid buy price");
+    showToast("Please enter a valid buy price", "warning");
     return;
   }
   if (isNaN(newQty) || newQty <= 0) {
-    alert("Please enter a valid quantity");
+    showToast("Please enter a valid quantity", "warning");
     return;
   }
   
-  const holding = userHoldings[pendingEditIndex];
-  
-  if (holding.id && !holding.id.startsWith("local_")) {
-    await updateHoldingInFirebase(holding.id, {
-      buyPrice: newPrice,
-      qty: newQty
+  var holding = userHoldings[pendingEditIndex];
+  updateHoldingInFirebase(holding.id, { buyPrice: newPrice, qty: newQty }).then(function(success) {
+    if (success) {
+      hideEditModal();
+      showToast("Holding updated!", "success");
+    } else {
+      showToast("Failed to update. Please try again.", "error");
+    }
+  });
+}
+
+function removeHolding(index) {
+  var holding = userHoldings[index];
+  showConfirmDialog("Delete Holding", "Are you sure you want to delete " + holding.name + "?", "🗑️", "Delete", function() {
+    deleteHoldingFromFirebase(holding.id).then(function(success) {
+      if (success) {
+        showToast("Holding deleted", "success");
+      } else {
+        showToast("Failed to delete. Please try again.", "error");
+      }
     });
-  }
-  
-  userHoldings[pendingEditIndex].buyPrice = newPrice;
-  userHoldings[pendingEditIndex].qty = newQty;
-  
-  localStorage.setItem("userHoldings", JSON.stringify(userHoldings));
-  
-  hideEditModal();
-  displayHoldings();
-  
-  alert("✅ Holding updated!");
+  });
 }
 
-async function removeHolding(index) {
-  if (!confirm("Delete this holding?")) return;
-  
-  const holding = userHoldings[index];
-  
-  if (holding.id && !holding.id.startsWith("local_")) {
-    await deleteHoldingFromFirebase(holding.id);
-  }
-  
-  userHoldings.splice(index, 1);
-  localStorage.setItem("userHoldings", JSON.stringify(userHoldings));
-  displayHoldings();
-}
-
-/* ================= DISPLAY HOLDINGS ================= */
 function displayHoldings() {
-  const statsContainer = document.getElementById("portfolioStats");
-  const tableContainer = document.getElementById("holdingsTableContainer");
+  var statsContainer = document.getElementById("portfolioStats");
+  var tableContainer = document.getElementById("holdingsTableContainer");
   
   if (!userHoldings || userHoldings.length === 0) {
     statsContainer.innerHTML = "";
-    tableContainer.innerHTML = `
-      <div class="empty-holdings">
-        <h3>No Holdings Yet</h3>
-        <p>Add stocks from the Stocks tab to build your portfolio!</p>
-      </div>
-    `;
+    tableContainer.innerHTML = '<div class="empty-holdings"><h3>No Holdings Yet</h3><p>Add stocks from the Stocks tab to build your portfolio!</p></div>';
     return;
   }
   
-  let totalInvested = 0;
-  let totalCurrentValue = 0;
-  let totalDayChange = 0;
+  var totalInvested = 0;
+  var totalCurrentValue = 0;
+  var totalDayChange = 0;
   
   userHoldings.forEach(function(h) {
-    const buyPrice = parseFloat(h.buyPrice) || 0;
-    const qty = parseInt(h.qty) || 0;
-    const invested = buyPrice * qty;
-    const currentPrice = getStockPrice(h.sym);
-    const currentValue = currentPrice > 0 ? currentPrice * qty : invested;
-    const priceData = getStockData(h.sym);
-    const dayChg = priceData && priceData.change ? priceData.change * qty : 0;
-    
+    var buyPrice = parseFloat(h.buyPrice) || 0;
+    var qty = parseInt(h.qty) || 0;
+    var invested = buyPrice * qty;
+    var currentPrice = getStockPrice(h.sym);
+    var currentValue = currentPrice > 0 ? currentPrice * qty : invested;
+    var priceData = getStockData(h.sym);
+    var dayChg = priceData && priceData.change ? priceData.change * qty : 0;
     totalInvested += invested;
     totalCurrentValue += currentValue;
     totalDayChange += dayChg;
   });
   
-  const totalPnL = totalCurrentValue - totalInvested;
-  const totalPnLPercent = totalInvested > 0 ? (totalPnL / totalInvested) * 100 : 0;
-  const isProfit = totalPnL >= 0;
-  const isDayUp = totalDayChange >= 0;
+  var totalPnL = totalCurrentValue - totalInvested;
+  var totalPnLPercent = totalInvested > 0 ? (totalPnL / totalInvested) * 100 : 0;
+  var isProfit = totalPnL >= 0;
+  var isDayUp = totalDayChange >= 0;
   
-  statsContainer.innerHTML = `
-    <div class="stat-card gradient-purple">
-      <div class="stat-label">Total Invested</div>
-      <div class="stat-value">₹${totalInvested.toLocaleString("en-IN", {maximumFractionDigits: 0})}</div>
-      <div class="stat-subtitle">${userHoldings.length} stock${userHoldings.length > 1 ? 's' : ''}</div>
-    </div>
-    <div class="stat-card gradient-blue">
-      <div class="stat-label">Current Value</div>
-      <div class="stat-value">₹${Math.round(totalCurrentValue).toLocaleString("en-IN")}</div>
-      <div class="stat-subtitle">Live market value</div>
-    </div>
-    <div class="stat-card ${isProfit ? 'gradient-green' : 'gradient-red'}">
-      <div class="stat-label">Total P&L</div>
-      <div class="stat-value">${isProfit ? '+' : ''}₹${Math.round(totalPnL).toLocaleString("en-IN")}</div>
-      <div class="stat-subtitle">${isProfit ? '+' : ''}${totalPnLPercent.toFixed(2)}%</div>
-    </div>
-    <div class="stat-card ${isDayUp ? 'gradient-green' : 'gradient-red'}">
-      <div class="stat-label">Today's Change</div>
-      <div class="stat-value">${isDayUp ? '+' : ''}₹${Math.round(totalDayChange).toLocaleString("en-IN")}</div>
-      <div class="stat-subtitle">Day performance</div>
-    </div>
-  `;
+  statsContainer.innerHTML = '<div class="stat-card gradient-purple"><div class="stat-label">Total Invested</div><div class="stat-value">₹' + totalInvested.toLocaleString("en-IN", {maximumFractionDigits: 0}) + '</div><div class="stat-subtitle">' + userHoldings.length + ' stock' + (userHoldings.length > 1 ? 's' : '') + '</div></div><div class="stat-card gradient-blue"><div class="stat-label">Current Value</div><div class="stat-value">₹' + Math.round(totalCurrentValue).toLocaleString("en-IN") + '</div><div class="stat-subtitle">Live market value</div></div><div class="stat-card ' + (isProfit ? 'gradient-green' : 'gradient-red') + '"><div class="stat-label">Total P&L</div><div class="stat-value">' + (isProfit ? '+' : '') + '₹' + Math.round(totalPnL).toLocaleString("en-IN") + '</div><div class="stat-subtitle">' + (isProfit ? '+' : '') + totalPnLPercent.toFixed(2) + '%</div></div><div class="stat-card ' + (isDayUp ? 'gradient-green' : 'gradient-red') + '"><div class="stat-label">Today\'s Change</div><div class="stat-value">' + (isDayUp ? '+' : '') + '₹' + Math.round(totalDayChange).toLocaleString("en-IN") + '</div><div class="stat-subtitle">Day performance</div></div>';
   
-  let tableHTML = `
-    <table class="holdings-table">
-      <thead>
-        <tr>
-          <th>Stock</th>
-          <th>Buy Price</th>
-          <th>Qty</th>
-          <th>Invested</th>
-          <th>LTP</th>
-          <th>Current Value</th>
-          <th>Day %</th>
-          <th>P&L</th>
-          <th>Actions</th>
-        </tr>
-      </thead>
-      <tbody>
-  `;
+  var tableHTML = '<table class="holdings-table"><thead><tr><th>Stock</th><th>Buy Price</th><th>Qty</th><th>Invested</th><th>LTP</th><th>Current Value</th><th>Day %</th><th>P&L</th><th>Actions</th></tr></thead><tbody>';
   
   userHoldings.forEach(function(h, idx) {
-    const buyPrice = parseFloat(h.buyPrice) || 0;
-    const qty = parseInt(h.qty) || 0;
-    const invested = buyPrice * qty;
-    const currentPrice = getStockPrice(h.sym);
-    const currentValue = currentPrice > 0 ? currentPrice * qty : invested;
-    const pnl = currentValue - invested;
-    const pnlPercent = invested > 0 ? (pnl / invested) * 100 : 0;
-    const isPft = pnl >= 0;
+    var buyPrice = parseFloat(h.buyPrice) || 0;
+    var qty = parseInt(h.qty) || 0;
+    var invested = buyPrice * qty;
+    var currentPrice = getStockPrice(h.sym);
+    var currentValue = currentPrice > 0 ? currentPrice * qty : invested;
+    var pnl = currentValue - invested;
+    var pnlPercent = invested > 0 ? (pnl / invested) * 100 : 0;
+    var isPft = pnl >= 0;
+    var priceData = getStockData(h.sym);
+    var dayPercent = priceData && priceData.changePercent ? priceData.changePercent : 0;
+    var isDayPositive = dayPercent >= 0;
     
-    const priceData = getStockData(h.sym);
-    const dayPercent = priceData && priceData.changePercent ? priceData.changePercent : 0;
-    const isDayPositive = dayPercent >= 0;
-    
-    tableHTML += `
-      <tr>
-        <td>
-          <div class="holding-stock-cell">
-            <div class="holding-stock-icon">${(h.sym || "?").charAt(0)}</div>
-            <div class="holding-stock-info">
-              <div class="holding-stock-name">${h.name || "Unknown"}</div>
-              <div class="holding-stock-sym">${h.sym || "--"}</div>
-            </div>
-          </div>
-        </td>
-        <td>₹${buyPrice.toFixed(2)}</td>
-        <td>${qty}</td>
-        <td>₹${invested.toLocaleString("en-IN", {maximumFractionDigits: 0})}</td>
-        <td>${currentPrice > 0 ? '₹' + currentPrice.toFixed(2) : '--'}</td>
-        <td><strong>₹${Math.round(currentValue).toLocaleString("en-IN")}</strong></td>
-        <td class="${isDayPositive ? 'text-profit' : 'text-loss'}">
-          ${currentPrice > 0 ? (isDayPositive ? '+' : '') + dayPercent.toFixed(2) + '%' : '--'}
-        </td>
-        <td class="${isPft ? 'text-profit' : 'text-loss'}">
-          ${isPft ? '+' : ''}₹${Math.round(pnl).toLocaleString("en-IN")}<br>
-          <small>(${isPft ? '+' : ''}${pnlPercent.toFixed(2)}%)</small>
-        </td>
-        <td>
-          <div class="action-buttons">
-            <button class="btn-edit" onclick="showEditStockModal(${idx})">✏️ Edit</button>
-            <button class="btn-delete" onclick="removeHolding(${idx})">🗑️</button>
-          </div>
-        </td>
-      </tr>
-    `;
+    tableHTML += '<tr><td><div class="holding-stock-cell"><div class="holding-stock-icon">' + (h.sym || "?").charAt(0) + '</div><div class="holding-stock-info"><div class="holding-stock-name">' + (h.name || "Unknown") + '</div><div class="holding-stock-sym">' + (h.sym || "--") + '</div></div></div></td><td>₹' + buyPrice.toFixed(2) + '</td><td>' + qty + '</td><td>₹' + invested.toLocaleString("en-IN", {maximumFractionDigits: 0}) + '</td><td>' + (currentPrice > 0 ? '₹' + currentPrice.toFixed(2) : '--') + '</td><td><strong>₹' + Math.round(currentValue).toLocaleString("en-IN") + '</strong></td><td class="' + (isDayPositive ? 'text-profit' : 'text-loss') + '">' + (currentPrice > 0 ? (isDayPositive ? '+' : '') + dayPercent.toFixed(2) + '%' : '--') + '</td><td class="' + (isPft ? 'text-profit' : 'text-loss') + '">' + (isPft ? '+' : '') + '₹' + Math.round(pnl).toLocaleString("en-IN") + '<br><small>(' + (isPft ? '+' : '') + pnlPercent.toFixed(2) + '%)</small></td><td><div class="action-buttons"><button class="btn-edit" onclick="showEditStockModal(' + idx + ')">✏️ Edit</button><button class="btn-delete" onclick="removeHolding(' + idx + ')">🗑️</button></div></td></tr>';
   });
   
   tableHTML += '</tbody></table>';
   tableContainer.innerHTML = tableHTML;
 }
 
-/* ================= CHAT - USER SEARCH (FIXED) ================= */
-async function performUserSearch() {
-  const searchInput = document.getElementById("userIdSearchInput");
-  const searchBtn = document.getElementById("searchUserBtn");
-  const resultsDiv = document.getElementById("userSearchResults");
-  const searchCode = searchInput.value.trim();
-  
+function performUserSearch() {
+  var searchInput = document.getElementById("userIdSearchInput");
+  var searchBtn = document.getElementById("searchUserBtn");
+  var resultsDiv = document.getElementById("userSearchResults");
+  var searchCode = searchInput.value.trim();
   resultsDiv.innerHTML = "";
   
-  // Validate input
   if (searchCode.length === 0) {
     resultsDiv.innerHTML = '<div style="padding:12px;color:#64748b;font-size:14px">Please enter a User ID</div>';
     return;
   }
-  
-  if (searchCode.length !== 5) {
+  if (searchCode.length !== 5 || !/^\d{5}$/.test(searchCode)) {
     resultsDiv.innerHTML = '<div style="padding:12px;color:#64748b;font-size:14px">User ID must be exactly 5 digits</div>';
     return;
   }
   
-  if (!/^\d{5}$/.test(searchCode)) {
-    resultsDiv.innerHTML = '<div style="padding:12px;color:#64748b;font-size:14px">User ID must contain only numbers</div>';
-    return;
-  }
-  
-  // Show loading
   searchBtn.disabled = true;
   resultsDiv.innerHTML = '<div class="search-loading">🔍 Searching...</div>';
   
-  try {
-    // Query Firestore
-    const usersRef = db.collection("users");
-    const querySnapshot = await usersRef.where("usercode", "==", searchCode).get();
-    
+  db.collection("users").where("usercode", "==", searchCode).get().then(function(querySnapshot) {
     if (querySnapshot.empty) {
       resultsDiv.innerHTML = '<div class="search-error">❌ No user found with ID: ' + searchCode + '</div>';
       searchBtn.disabled = false;
       return;
     }
     
-    let foundValidUser = false;
-    
+    var foundValidUser = false;
     querySnapshot.forEach(function(docSnap) {
-      // Skip if it's the current user
-      if (docSnap.id === activeUser.uid) {
-        return;
-      }
-      
+      if (docSnap.id === activeUser.uid) return;
       foundValidUser = true;
-      const userData = docSnap.data();
-      const targetUid = docSnap.id;
-      const userName = userData.name || "User";
-      const userCode = userData.usercode || searchCode;
-      
-      resultsDiv.innerHTML = `
-        <div class="search-result-card">
-          <div class="search-result-avatar">${userName.charAt(0).toUpperCase()}</div>
-          <div class="search-result-info">
-            <div class="search-result-name">${userName}</div>
-            <div class="search-result-code">ID: ${userCode}</div>
-          </div>
-          <button class="send-request-btn" onclick="sendFriendReq('${targetUid}', '${userName}')">Send Request</button>
-        </div>
-      `;
+      var userData = docSnap.data();
+      var targetUid = docSnap.id;
+      var userName = userData.name || "User";
+      var userCode = userData.usercode || searchCode;
+      resultsDiv.innerHTML = '<div class="search-result-card"><div class="search-result-avatar">' + userName.charAt(0).toUpperCase() + '</div><div class="search-result-info"><div class="search-result-name">' + userName + '</div><div class="search-result-code">ID: ' + userCode + '</div></div><button class="send-request-btn" onclick="sendFriendReq(\'' + targetUid + '\', \'' + userName + '\')">Send Request</button></div>';
     });
     
     if (!foundValidUser) {
       resultsDiv.innerHTML = '<div style="padding:12px;color:#64748b;font-size:14px">That\'s your own User ID!</div>';
     }
-    
-  } catch (error) {
-    console.error("Search error details:", error);
-    resultsDiv.innerHTML = `<div class="search-error">❌ Error: ${error.message || "Unable to search. Please try again."}</div>`;
-  }
-  
-  searchBtn.disabled = false;
+    searchBtn.disabled = false;
+  }).catch(function(error) {
+    console.error("Search error:", error);
+    resultsDiv.innerHTML = '<div class="search-error">❌ Error searching. Please try again.</div>';
+    searchBtn.disabled = false;
+  });
 }
 
-/* ================= CHAT - SEND FRIEND REQUEST ================= */
-async function sendFriendReq(targetUid, targetName) {
-  try {
-    // Check if already sent request
-    const existingReqQuery = await db.collection("requests")
-      .where("from", "==", activeUser.uid)
-      .where("to", "==", targetUid)
-      .get();
-    
+function sendFriendReq(targetUid, targetName) {
+  db.collection("requests").where("from", "==", activeUser.uid).where("to", "==", targetUid).get().then(function(existingReqQuery) {
     if (!existingReqQuery.empty) {
-      alert("You've already sent a request to this user!");
-      return;
+      showToast("You've already sent a request to this user!", "warning");
+      return Promise.reject("already_sent");
     }
-    
-    // Check if they sent us a request
-    const reverseReqQuery = await db.collection("requests")
-      .where("from", "==", targetUid)
-      .where("to", "==", activeUser.uid)
-      .get();
-    
+    return db.collection("requests").where("from", "==", targetUid).where("to", "==", activeUser.uid).get();
+  }).then(function(reverseReqQuery) {
     if (!reverseReqQuery.empty) {
-      alert("This user has already sent you a request! Check the Requests tab.");
-      return;
+      showToast("This user has already sent you a request! Check the Requests tab.", "info");
+      return Promise.reject("reverse_exists");
     }
-    
-    // Check if already friends
-    const friendDoc = await db.collection("friends")
-      .doc(activeUser.uid)
-      .collection("list")
-      .doc(targetUid)
-      .get();
-    
+    return db.collection("friends").doc(activeUser.uid).collection("list").doc(targetUid).get();
+  }).then(function(friendDoc) {
     if (friendDoc.exists) {
-      alert("You are already friends with this user!");
-      return;
+      showToast("You are already friends with this user!", "info");
+      return Promise.reject("already_friends");
     }
-    
-    // Send the request
-    await db.collection("requests").add({
+    return db.collection("requests").add({
       from: activeUser.uid,
       to: targetUid,
       timestamp: firebase.firestore.FieldValue.serverTimestamp()
     });
-    
-    alert("✅ Friend request sent to " + targetName + "!");
+  }).then(function() {
+    showToast("Friend request sent to " + targetName + "!", "success");
     document.getElementById("userIdSearchInput").value = "";
     document.getElementById("userSearchResults").innerHTML = "";
-    
-  } catch (error) {
+  }).catch(function(error) {
+    if (typeof error === "string") return;
     console.error("Send request error:", error);
-    alert("Failed to send request: " + (error.message || "Unknown error"));
-  }
+    showToast("Failed to send request", "error");
+  });
 }
 
-/* ================= CHAT - LOAD REQUESTS ================= */
 function setupRequestsListener() {
   if (!activeUser) return;
-  
-  db.collection("requests")
-    .where("to", "==", activeUser.uid)
-    .onSnapshot(async function(snapshot) {
-      const listContainer = document.getElementById("requestsListContainer");
-      const badge = document.getElementById("requestsCountBadge");
-      
-      if (snapshot.empty) {
-        listContainer.innerHTML = '<div class="empty-list-msg">No pending friend requests</div>';
-        badge.style.display = "none";
-        return;
-      }
-      
-      badge.textContent = snapshot.size;
-      badge.style.display = "inline";
-      
-      listContainer.innerHTML = "";
-      
-      for (const doc of snapshot.docs) {
-        const reqId = doc.id;
-        const reqData = doc.data();
-        const fromUid = reqData.from;
-        
-        try {
-          const userSnap = await db.collection("users").doc(fromUid).get();
-          if (!userSnap.exists) continue;
-          
-          const userData = userSnap.data();
-          const userName = userData.name || "User";
-          const userCode = userData.usercode || "--";
-          
-          const item = document.createElement("div");
-          item.className = "chat-list-item";
-          item.innerHTML = `
-            <div class="chat-item-avatar">${userName.charAt(0).toUpperCase()}</div>
-            <div class="chat-item-content">
-              <div class="chat-item-name">${userName}</div>
-              <div class="chat-item-preview">ID: ${userCode}</div>
-            </div>
-            <button class="accept-request-btn" onclick="acceptFriendReq('${reqId}', '${fromUid}')">Accept</button>
-          `;
-          listContainer.appendChild(item);
-        } catch(e) {
-          console.error("Error loading request user:", e);
-        }
-      }
-    }, function(error) {
-      console.error("Requests listener error:", error);
-    });
-}
-
-/* ================= CHAT - ACCEPT REQUEST ================= */
-async function acceptFriendReq(requestId, fromUid) {
-  try {
-    const myDoc = await db.collection("users").doc(activeUser.uid).get();
-    const theirDoc = await db.collection("users").doc(fromUid).get();
+  db.collection("requests").where("to", "==", activeUser.uid).onSnapshot(function(snapshot) {
+    var listContainer = document.getElementById("requestsListContainer");
+    var badge = document.getElementById("requestsCountBadge");
     
-    if (!theirDoc.exists) {
-      alert("User not found");
+    if (snapshot.empty) {
+      listContainer.innerHTML = '<div class="empty-list-msg">No pending friend requests</div>';
+      badge.style.display = "none";
       return;
     }
     
-    const myData = myDoc.data();
-    const theirData = theirDoc.data();
+    badge.textContent = snapshot.size;
+    badge.style.display = "inline";
+    listContainer.innerHTML = "";
     
-    // Add to my friends
-    await db.collection("friends").doc(activeUser.uid).collection("list").doc(fromUid).set({
+    snapshot.forEach(function(doc) {
+      var reqId = doc.id;
+      var reqData = doc.data();
+      var fromUid = reqData.from;
+      
+      db.collection("users").doc(fromUid).get().then(function(userSnap) {
+        if (!userSnap.exists) return;
+        var userData = userSnap.data();
+        var userName = userData.name || "User";
+        var userCode = userData.usercode || "--";
+        
+        var item = document.createElement("div");
+        item.className = "chat-list-item";
+        item.innerHTML = '<div class="chat-item-avatar">' + userName.charAt(0).toUpperCase() + '</div><div class="chat-item-content"><div class="chat-item-name">' + userName + '</div><div class="chat-item-preview">ID: ' + userCode + '</div></div><button class="accept-request-btn" onclick="acceptFriendReq(\'' + reqId + '\', \'' + fromUid + '\')">Accept</button><button class="reject-request-btn" onclick="rejectFriendReq(\'' + reqId + '\')">✕</button>';
+        listContainer.appendChild(item);
+      });
+    });
+  });
+}
+
+function acceptFriendReq(requestId, fromUid) {
+  var myData, theirData;
+  
+  Promise.all([
+    db.collection("users").doc(activeUser.uid).get(),
+    db.collection("users").doc(fromUid).get()
+  ]).then(function(results) {
+    var myDoc = results[0];
+    var theirDoc = results[1];
+    
+    if (!theirDoc.exists) {
+      showToast("User not found", "error");
+      return Promise.reject("user_not_found");
+    }
+    
+    myData = myDoc.data();
+    theirData = theirDoc.data();
+    
+    return db.collection("friends").doc(activeUser.uid).collection("list").doc(fromUid).set({
       name: theirData.name || "User",
       usercode: theirData.usercode || "",
       addedAt: firebase.firestore.FieldValue.serverTimestamp()
     });
-    
-    // Add to their friends
-    await db.collection("friends").doc(fromUid).collection("list").doc(activeUser.uid).set({
+  }).then(function() {
+    return db.collection("friends").doc(fromUid).collection("list").doc(activeUser.uid).set({
       name: myData.name || "User",
       usercode: myData.usercode || "",
       addedAt: firebase.firestore.FieldValue.serverTimestamp()
     });
-    
-    // Delete request
-    await db.collection("requests").doc(requestId).delete();
-    
-    alert("✅ Friend request accepted!");
-    
-  } catch (error) {
+  }).then(function() {
+    return db.collection("requests").doc(requestId).delete();
+  }).then(function() {
+    showToast("Friend request accepted!", "success");
+  }).catch(function(error) {
+    if (typeof error === "string") return;
     console.error("Accept request error:", error);
-    alert("Failed to accept request: " + (error.message || "Unknown error"));
-  }
+    showToast("Failed to accept request", "error");
+  });
 }
 
-/* ================= CHAT - LOAD FRIENDS ================= */
+function rejectFriendReq(requestId) {
+  db.collection("requests").doc(requestId).delete().then(function() {
+    showToast("Request rejected", "info");
+  }).catch(function(error) {
+    console.error("Reject request error:", error);
+    showToast("Failed to reject request", "error");
+  });
+}
+
 function setupFriendsListener() {
   if (!activeUser) return;
   
-  db.collection("friends").doc(activeUser.uid).collection("list")
-    .onSnapshot(function(snapshot) {
-      const listContainer = document.getElementById("friendsListContainer");
-      const badge = document.getElementById("friendsCountBadge");
+  db.collection("friends").doc(activeUser.uid).collection("list").onSnapshot(function(snapshot) {
+    var listContainer = document.getElementById("friendsListContainer");
+    var badge = document.getElementById("friendsCountBadge");
+    
+    if (snapshot.empty) {
+      listContainer.innerHTML = '<div class="empty-list-msg">No friends yet. Search by User ID to add friends!</div>';
+      badge.style.display = "none";
+      return;
+    }
+    
+    badge.textContent = snapshot.size;
+    badge.style.display = "inline";
+    listContainer.innerHTML = "";
+    
+    snapshot.forEach(function(doc) {
+      var friendId = doc.id;
+      var friendData = doc.data();
+      var friendName = friendData.name || "User";
       
-      if (snapshot.empty) {
-        listContainer.innerHTML = '<div class="empty-list-msg">No friends yet. Search by User ID to add friends!</div>';
-        badge.style.display = "none";
-        return;
-      }
-      
-      badge.textContent = snapshot.size;
-      badge.style.display = "inline";
-      
-      listContainer.innerHTML = "";
-      
-      snapshot.forEach(function(doc) {
-        const friendId = doc.id;
-        const friendData = doc.data();
-        const friendName = friendData.name || "User";
+      db.collection("users").doc(friendId).get().then(function(friendUserDoc) {
+        var isOnline = false;
+        var lastSeenText = "Offline";
         
-        const item = document.createElement("div");
-        item.className = "chat-list-item" + (activeChatWith === friendId ? " selected" : "");
-        item.innerHTML = `
-          <div class="chat-item-avatar">${friendName.charAt(0).toUpperCase()}</div>
-          <div class="chat-item-content">
-            <div class="chat-item-name">${friendName}</div>
-            <div class="chat-item-preview">Click to chat</div>
-          </div>
-        `;
+        if (friendUserDoc.exists) {
+          var userData = friendUserDoc.data();
+          isOnline = userData.isOnline === true;
+          if (!isOnline && userData.lastSeen) {
+            var lastSeenDate = userData.lastSeen.toDate();
+            var diffMin = Math.floor((Date.now() - lastSeenDate.getTime()) / 60000);
+            if (diffMin < 1) lastSeenText = "Just now";
+            else if (diffMin < 60) lastSeenText = diffMin + "m ago";
+            else if (diffMin < 1440) lastSeenText = Math.floor(diffMin / 60) + "h ago";
+            else lastSeenText = Math.floor(diffMin / 1440) + "d ago";
+          }
+        }
+        
+        friendsOnlineStatus[friendId] = isOnline;
+        var chatId = [activeUser.uid, friendId].sort().join("_");
+        var unreadCount = unreadMessages[chatId] || 0;
+        var hasUnread = unreadCount > 0 && activeChatWith !== friendId;
+        
+        var item = document.createElement("div");
+        item.className = "chat-list-item" + (activeChatWith === friendId ? " selected" : "") + (hasUnread ? " has-unread" : "");
+        item.innerHTML = '<div class="chat-item-avatar">' + friendName.charAt(0).toUpperCase() + '<div class="online-indicator ' + (isOnline ? 'online' : 'offline') + '"></div></div><div class="chat-item-content"><div class="chat-item-name">' + friendName + '</div><div class="chat-item-preview">' + (isOnline ? '● Online' : lastSeenText) + '</div></div><div class="chat-item-meta">' + (hasUnread ? '<div class="unread-badge">' + unreadCount + '</div>' : '') + '</div>';
         item.addEventListener("click", function() {
           openChatConversation(friendId, friendName);
         });
         listContainer.appendChild(item);
       });
-    }, function(error) {
-      console.error("Friends listener error:", error);
     });
+    
+    setupUnreadMessagesListener();
+  });
 }
 
-/* ================= CHAT - OPEN CONVERSATION ================= */
+function setupUnreadMessagesListener() {
+  if (!activeUser) return;
+  
+  db.collection("friends").doc(activeUser.uid).collection("list").get().then(function(snapshot) {
+    snapshot.forEach(function(doc) {
+      var friendId = doc.id;
+      var chatId = [activeUser.uid, friendId].sort().join("_");
+      
+      db.collection("chats").doc(chatId).collection("messages")
+        .where("from", "==", friendId)
+        .where("seen", "==", false)
+        .onSnapshot(function(msgSnapshot) {
+          unreadMessages[chatId] = msgSnapshot.size;
+        });
+    });
+  });
+}
+
+function escapeHtml(text) {
+  var div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
+
 function openChatConversation(friendId, friendName) {
   activeChatWith = friendId;
+  activeChatPartnerName = friendName;
+  
+  var chatId = [activeUser.uid, friendId].sort().join("_");
+  unreadMessages[chatId] = 0;
   
   document.getElementById("chatMainHeader").style.display = "flex";
   document.getElementById("chatPartnerName").textContent = friendName;
   document.getElementById("chatPartnerAvatar").textContent = friendName.charAt(0).toUpperCase();
   
-  const messagesArea = document.getElementById("chatMessagesContainer");
+  var messagesArea = document.getElementById("chatMessagesContainer");
   messagesArea.innerHTML = '<div class="chat-placeholder"><p>Loading messages...</p></div>';
   
-  const chatDocId = [activeUser.uid, friendId].sort().join("_");
+  setupPartnerStatusListener(friendId);
   
   if (chatListener) chatListener();
   
-  chatListener = db.collection("chats").doc(chatDocId)
-    .collection("messages")
-    .orderBy("timestamp")
-    .onSnapshot(function(snapshot) {
-      messagesArea.innerHTML = "";
+  chatListener = db.collection("chats").doc(chatId).collection("messages").orderBy("timestamp").onSnapshot(function(snapshot) {
+    messagesArea.innerHTML = "";
+    
+    if (snapshot.empty) {
+      messagesArea.innerHTML = '<div class="chat-placeholder"><p>No messages yet. Say hello! 👋</p></div>';
+      return;
+    }
+    
+    snapshot.forEach(function(doc) {
+      var msg = doc.data();
+      var msgId = doc.id;
+      var isMine = msg.from === activeUser.uid;
+      var timeStr = msg.timestamp ? new Date(msg.timestamp.toDate()).toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'}) : "";
       
-      if (snapshot.empty) {
-        messagesArea.innerHTML = '<div class="chat-placeholder"><p>No messages yet. Say hello! 👋</p></div>';
-        return;
+      if (!isMine && !msg.seen) {
+        db.collection("chats").doc(chatId).collection("messages").doc(msgId).update({
+          seen: true,
+          seenAt: firebase.firestore.FieldValue.serverTimestamp()
+        }).catch(function() {});
       }
       
-      snapshot.forEach(function(doc) {
-        const msg = doc.data();
-        const isMine = msg.from === activeUser.uid;
-        const timeStr = msg.timestamp 
-          ? new Date(msg.timestamp.toDate()).toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'})
-          : "";
-        const statusText = isMine ? (msg.seen ? " • Seen ✓✓" : " • Sent ✓") : "";
-        
-        if (!isMine && !msg.seen) {
-          doc.ref.update({seen: true}).catch(e => {});
-        }
-        
-        const msgEl = document.createElement("div");
-        msgEl.className = "chat-message " + (isMine ? "outgoing" : "incoming");
-        msgEl.innerHTML = msg.text + '<span class="msg-time">' + timeStr + statusText + '</span>';
-        messagesArea.appendChild(msgEl);
-      });
+      var statusIcon = "";
+      if (isMine) {
+        statusIcon = msg.seen ? '<span class="msg-status seen">✓✓</span>' : '<span class="msg-status sent">✓</span>';
+      }
       
-      messagesArea.scrollTop = messagesArea.scrollHeight;
-    }, function(error) {
-      console.error("Chat listener error:", error);
-      messagesArea.innerHTML = '<div class="chat-placeholder"><p>Error loading messages</p></div>';
+      var msgEl = document.createElement("div");
+      msgEl.className = "chat-message " + (isMine ? "outgoing" : "incoming");
+      msgEl.innerHTML = escapeHtml(msg.text) + '<span class="msg-time">' + timeStr + statusIcon + '</span>';
+      messagesArea.appendChild(msgEl);
     });
+    
+    messagesArea.scrollTop = messagesArea.scrollHeight;
+  });
   
-  // Refresh friends list to show selected state
   setupFriendsListener();
 }
 
-/* ================= CHAT - SEND MESSAGE ================= */
-function sendChatMsg() {
-  const inputEl = document.getElementById("chatMessageInput");
-  const msgText = inputEl.value.trim();
+function setupPartnerStatusListener(friendId) {
+  if (partnerStatusListener) partnerStatusListener();
   
-  if (!msgText || !activeChatWith) return;
-  
-  const chatDocId = [activeUser.uid, activeChatWith].sort().join("_");
-  
-  db.collection("chats").doc(chatDocId).collection("messages").add({
-    from: activeUser.uid,
-    text: msgText,
-    timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-    seen: false
-  }).then(function() {
-    inputEl.value = "";
-  }).catch(function(error) {
-    console.error("Send message error:", error);
-    alert("Failed to send message");
+  partnerStatusListener = db.collection("users").doc(friendId).onSnapshot(function(doc) {
+    if (!doc.exists) return;
+    
+    var userData = doc.data();
+    var isOnline = userData.isOnline === true;
+    var statusContainer = document.getElementById("chatPartnerStatus");
+    var statusText = document.getElementById("chatPartnerStatusText");
+    
+    if (isOnline) {
+      statusContainer.className = "online-status online";
+      statusText.textContent = "Online";
+    } else {
+      statusContainer.className = "online-status offline";
+      if (userData.lastSeen) {
+        var lastSeenDate = userData.lastSeen.toDate();
+        var diffMin = Math.floor((Date.now() - lastSeenDate.getTime()) / 60000);
+        var lastSeenStr = "Offline";
+        if (diffMin < 1) lastSeenStr = "Last seen just now";
+        else if (diffMin < 60) lastSeenStr = "Last seen " + diffMin + "m ago";
+        else if (diffMin < 1440) lastSeenStr = "Last seen " + Math.floor(diffMin / 60) + "h ago";
+        else lastSeenStr = "Last seen " + Math.floor(diffMin / 1440) + "d ago";
+        statusText.textContent = lastSeenStr;
+      } else {
+        statusText.textContent = "Offline";
+      }
+    }
+    
+    friendsOnlineStatus[friendId] = isOnline;
   });
 }
 
-/* ================= SETTINGS ================= */
-function showSettings() {
-  document.getElementById("displayUserEmail").textContent = activeUser.email;
+function sendChatMsg() {
+  var inputEl = document.getElementById("chatMessageInput");
+  var msgText = inputEl.value.trim();
   
+  if (!msgText) return;
+  if (!activeChatWith) {
+    showToast("Please select a friend to chat with", "warning");
+    return;
+  }
+  if (msgText.length > 2000) {
+    showToast("Message is too long (max 2000 characters)", "warning");
+    return;
+  }
+  
+  var chatDocId = [activeUser.uid, activeChatWith].sort().join("_");
+  
+  db.collection("chats").doc(chatDocId).set({
+    participants: [activeUser.uid, activeChatWith],
+    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+  }, { merge: true }).then(function() {
+    return db.collection("chats").doc(chatDocId).collection("messages").add({
+      from: activeUser.uid,
+      text: msgText,
+      timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+      seen: false
+    });
+  }).then(function() {
+    inputEl.value = "";
+    return db.collection("chats").doc(chatDocId).update({
+      lastMessage: {
+        text: msgText.substring(0, 100),
+        from: activeUser.uid,
+        timestamp: firebase.firestore.FieldValue.serverTimestamp()
+      },
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+  }).catch(function(error) {
+    console.error("Send message error:", error);
+    showToast("Failed to send message", "error");
+  });
+}
+
+function showSettings() {
+  document.getElementById("displayUserEmail").textContent = activeUser.email || "--";
   db.collection("users").doc(activeUser.uid).get().then(function(doc) {
     if (doc.exists) {
-      const data = doc.data();
+      var data = doc.data();
       document.getElementById("displayUserCode").textContent = data.usercode || "--";
       document.getElementById("displayNameInput").value = data.name || "";
     }
-  }).catch(function(error) {
-    console.error("Settings load error:", error);
   });
-  
   document.getElementById("settingsModal").style.display = "flex";
 }
 
@@ -2664,17 +2642,41 @@ function hideSettings() {
 }
 
 function saveUserProfile() {
-  const newName = document.getElementById("displayNameInput").value.trim();
+  var newName = document.getElementById("displayNameInput").value.trim();
+  if (!newName) {
+    showToast("Please enter a display name", "warning");
+    return;
+  }
+  if (newName.length > 50) {
+    showToast("Name is too long (max 50 characters)", "warning");
+    return;
+  }
   
-  db.collection("users").doc(activeUser.uid).update({name: newName})
-    .then(function() {
-      alert("✅ Profile saved!");
-      hideSettings();
-    })
-    .catch(function(err) {
-      alert("Error: " + err.message);
+  db.collection("users").doc(activeUser.uid).update({
+    name: newName,
+    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+  }).then(function() {
+    showToast("Profile saved!", "success");
+    hideSettings();
+    
+    db.collection("friends").doc(activeUser.uid).collection("list").get().then(function(friendsSnapshot) {
+      friendsSnapshot.forEach(function(friendDoc) {
+        var friendId = friendDoc.id;
+        db.collection("friends").doc(friendId).collection("list").doc(activeUser.uid).update({ name: newName }).catch(function() {});
+      });
     });
+  }).catch(function(err) {
+    showToast("Error saving profile: " + err.message, "error");
+  });
 }
+
+document.addEventListener("visibilitychange", function() {
+  if (document.visibilityState === "visible") {
+    updatePresence(true);
+  } else {
+    updatePresence(false);
+  }
+});
 </script>
 
 </body>
