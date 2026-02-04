@@ -183,6 +183,13 @@ body{
   font-size:13px;
   color:#64748b;
 }
+.api-indicator{
+  font-size:11px;
+  padding:4px 10px;
+  border-radius:6px;
+  background:#f1f5f9;
+  color:#64748b;
+}
 .status-right{
   display:flex;
   align-items:center;
@@ -600,6 +607,10 @@ body{
   transform:scale(1.05);
   box-shadow:0 4px 16px rgba(79,70,229,0.4);
 }
+.search-btn:disabled{
+  opacity:0.6;
+  cursor:not-allowed;
+}
 .search-results{
   margin-top:16px;
 }
@@ -641,6 +652,20 @@ body{
 .send-request-btn:hover{
   transform:scale(1.05);
   box-shadow:0 4px 12px rgba(16,185,129,0.4);
+}
+.search-error{
+  padding:14px;
+  background:#fee2e2;
+  border-radius:12px;
+  color:#dc2626;
+  font-size:14px;
+  text-align:center;
+}
+.search-loading{
+  padding:14px;
+  text-align:center;
+  color:#64748b;
+  font-size:14px;
 }
 
 /* Chat Tabs */
@@ -1125,6 +1150,7 @@ body{
           <span id="liveStatusText">Ready</span>
         </div>
         <div class="update-time" id="lastUpdateDisplay">--</div>
+        <div class="api-indicator" id="apiIndicator">API: Ready</div>
       </div>
       <div class="status-right">
         <div class="countdown-display">
@@ -1174,8 +1200,8 @@ body{
         <!-- Search -->
         <div class="chat-search-section">
           <div class="search-input-group">
-            <input type="text" id="userIdSearchInput" placeholder="Enter 5-digit User ID" maxlength="5">
-            <button class="search-btn" onclick="performUserSearch()">🔍</button>
+            <input type="text" id="userIdSearchInput" placeholder="Enter 5-digit User ID" maxlength="5" oninput="this.value = this.value.replace(/[^0-9]/g, '')">
+            <button class="search-btn" id="searchUserBtn" onclick="performUserSearch()">🔍</button>
           </div>
           <div class="search-results" id="userSearchResults"></div>
         </div>
@@ -1257,9 +1283,9 @@ body{
       <p>Current Price: <span id="modalStockPrice" style="color:#10b981">₹--</span></p>
     </div>
     <label>Buy Price (₹)</label>
-    <input type="number" id="modalBuyPrice" placeholder="Enter your buy price" step="0.01">
+    <input type="number" id="modalBuyPrice" placeholder="Enter your buy price" step="0.01" min="0">
     <label>Quantity</label>
-    <input type="number" id="modalQuantity" placeholder="Enter quantity" step="1">
+    <input type="number" id="modalQuantity" placeholder="Enter quantity" step="1" min="1">
     <div class="modal-actions">
       <button class="modal-primary" onclick="confirmStockAdd()">Add</button>
       <button class="modal-secondary" onclick="hideAddModal()">Cancel</button>
@@ -1276,9 +1302,9 @@ body{
       <p>Current Price: <span id="editModalStockPrice" style="color:#10b981">₹--</span></p>
     </div>
     <label>Buy Price (₹)</label>
-    <input type="number" id="editModalBuyPrice" placeholder="Buy price" step="0.01">
+    <input type="number" id="editModalBuyPrice" placeholder="Buy price" step="0.01" min="0">
     <label>Quantity</label>
-    <input type="number" id="editModalQuantity" placeholder="Quantity" step="1">
+    <input type="number" id="editModalQuantity" placeholder="Quantity" step="1" min="1">
     <div class="modal-actions">
       <button class="modal-primary" onclick="confirmStockEdit()">Save</button>
       <button class="modal-secondary" onclick="hideEditModal()">Cancel</button>
@@ -1287,6 +1313,20 @@ body{
 </div>
 
 <script>
+/* ================= MULTIPLE API KEYS ================= */
+const ALPHA_VANTAGE_KEYS = [
+  "BH74ZWQO07ZCTGMN",
+  "X86NOH6II01P7R24",
+  "RIBXT3XYLI6FWNSK"
+];
+let currentAlphaKeyIndex = 0;
+let lastUsedAPI = "none";
+
+function getNextAlphaKey() {
+  currentAlphaKeyIndex = (currentAlphaKeyIndex + 1) % ALPHA_VANTAGE_KEYS.length;
+  return ALPHA_VANTAGE_KEYS[currentAlphaKeyIndex];
+}
+
 /* ================= 300+ INDIAN STOCKS LIST ================= */
 const STOCK_DATA = [
   // NIFTY 50
@@ -1430,10 +1470,6 @@ const STOCK_DATA = [
   {name:"Shriram Finance",sym:"SHRIRAMFIN",yahoo:"SHRIRAMFIN.NS",logo:"shriramfinance.in"},
   {name:"L&T Finance",sym:"LTF",yahoo:"LTF.NS",logo:"ltfs.com"},
   {name:"Manappuram",sym:"MANAPPURAM",yahoo:"MANAPPURAM.NS",logo:"manappuram.com"},
-  {name:"Ujjivan SFB",sym:"UJJIVANSFB",yahoo:"UJJIVANSFB.NS",logo:"ujjivansfb.in"},
-  {name:"Central Bank",sym:"CENTRALBK",yahoo:"CENTRALBK.NS",logo:"centralbankofindia.co.in"},
-  {name:"UCO Bank",sym:"UCOBANK",yahoo:"UCOBANK.NS",logo:"ucobank.com"},
-  {name:"IOB",sym:"IOB",yahoo:"IOB.NS",logo:"iob.in"},
   
   // PHARMA
   {name:"Alkem Labs",sym:"ALKEM",yahoo:"ALKEM.NS",logo:"alkemlabs.com"},
@@ -1442,16 +1478,6 @@ const STOCK_DATA = [
   {name:"IPCA Labs",sym:"IPCALAB",yahoo:"IPCALAB.NS",logo:"ipcalabs.com"},
   {name:"Abbott India",sym:"ABBOTINDIA",yahoo:"ABBOTINDIA.NS",logo:"abbott.in"},
   {name:"Laurus Labs",sym:"LAURUSLABS",yahoo:"LAURUSLABS.NS",logo:"lauruslabs.com"},
-  {name:"Granules India",sym:"GRANULES",yahoo:"GRANULES.NS",logo:"granulesindia.com"},
-  {name:"Natco Pharma",sym:"NATCOPHARM",yahoo:"NATCOPHARM.NS",logo:"natcopharma.co.in"},
-  {name:"Sanofi India",sym:"SANOFI",yahoo:"SANOFI.NS",logo:"sanofi.in"},
-  {name:"Pfizer",sym:"PFIZER",yahoo:"PFIZER.NS",logo:"pfizerindia.com"},
-  
-  // INSURANCE
-  {name:"Max Financial",sym:"MFSL",yahoo:"MFSL.NS",logo:"maxfinancialservices.com"},
-  {name:"Star Health",sym:"STARHEALTH",yahoo:"STARHEALTH.NS",logo:"starhealth.in"},
-  {name:"GIC Re",sym:"GICRE",yahoo:"GICRE.NS",logo:"gicofindia.com"},
-  {name:"New India Assurance",sym:"NIACL",yahoo:"NIACL.NS",logo:"newindia.co.in"},
   
   // REALTY
   {name:"Godrej Properties",sym:"GODREJPROP",yahoo:"GODREJPROP.NS",logo:"godrejproperties.com"},
@@ -1459,23 +1485,14 @@ const STOCK_DATA = [
   {name:"Prestige Estates",sym:"PRESTIGE",yahoo:"PRESTIGE.NS",logo:"prestigeconstructions.com"},
   {name:"Brigade Enterprises",sym:"BRIGADE",yahoo:"BRIGADE.NS",logo:"brigadegroup.com"},
   {name:"Phoenix Mills",sym:"PHOENIXLTD",yahoo:"PHOENIXLTD.NS",logo:"phoenixmills.com"},
-  {name:"Macrotech (Lodha)",sym:"LODHA",yahoo:"LODHA.NS",logo:"lodhagroup.in"},
-  {name:"Sobha",sym:"SOBHA",yahoo:"SOBHA.NS",logo:"sobha.com"},
   
-  // AUTO & ANCILLARY
+  // AUTO
   {name:"Ashok Leyland",sym:"ASHOKLEY",yahoo:"ASHOKLEY.NS",logo:"ashokleyland.com"},
   {name:"Bharat Forge",sym:"BHARATFORG",yahoo:"BHARATFORG.NS",logo:"bharatforge.com"},
   {name:"Exide Industries",sym:"EXIDEIND",yahoo:"EXIDEIND.NS",logo:"exideindustries.com"},
   {name:"Amara Raja",sym:"AMARAJABAT",yahoo:"AMARAJABAT.NS",logo:"amararaja.com"},
   {name:"MRF",sym:"MRF",yahoo:"MRF.NS",logo:"mrftyres.com"},
   {name:"Apollo Tyres",sym:"APOLLOTYRE",yahoo:"APOLLOTYRE.NS",logo:"apollotyres.com"},
-  {name:"Balkrishna Ind",sym:"BALKRISIND",yahoo:"BALKRISIND.NS",logo:"bfrub.in"},
-  {name:"Sona BLW",sym:"SONACOMS",yahoo:"SONACOMS.NS",logo:"sonablw.com"},
-  {name:"Tube Investments",sym:"TIINDIA",yahoo:"TIINDIA.NS",logo:"tiindia.com"},
-  {name:"Escorts Kubota",sym:"ESCORTS",yahoo:"ESCORTS.NS",logo:"escortsgroup.com"},
-  {name:"Force Motors",sym:"FORCEMOT",yahoo:"FORCEMOT.NS",logo:"forcemotors.com"},
-  {name:"CEAT",sym:"CEAT",yahoo:"CEAT.NS",logo:"ceat.com"},
-  {name:"JK Tyre",sym:"JKTYRE",yahoo:"JKTYRE.NS",logo:"jktyre.com"},
   
   // CEMENT
   {name:"Ambuja Cements",sym:"AMBUJACEM",yahoo:"AMBUJACEM.NS",logo:"ambujacement.com"},
@@ -1483,121 +1500,29 @@ const STOCK_DATA = [
   {name:"Dalmia Bharat",sym:"DALBHARAT",yahoo:"DALBHARAT.NS",logo:"dalmiacement.com"},
   {name:"Ramco Cements",sym:"RAMCOCEM",yahoo:"RAMCOCEM.NS",logo:"ramcocements.in"},
   {name:"JK Cement",sym:"JKCEMENT",yahoo:"JKCEMENT.NS",logo:"jkcement.com"},
-  {name:"Birla Corp",sym:"BIRLACORPN",yahoo:"BIRLACORPN.NS",logo:"birlacorporation.com"},
-  {name:"India Cements",sym:"INDIACEM",yahoo:"INDIACEM.NS",logo:"indiacements.co.in"},
   
-  // METALS & MINING
-  {name:"Hindustan Zinc",sym:"HINDZINC",yahoo:"HINDZINC.NS",logo:"hzlindia.com"},
-  {name:"APL Apollo",sym:"APLAPOLLO",yahoo:"APLAPOLLO.NS",logo:"aplapollo.com"},
-  {name:"Hindalco",sym:"HINDALCO",yahoo:"HINDALCO.NS",logo:"hindalco.com"},
-  {name:"National Aluminium",sym:"NATIONALUM",yahoo:"NATIONALUM.NS",logo:"nalcoindia.com"},
-  
-  // ENERGY & OIL GAS
+  // ENERGY
   {name:"HPCL",sym:"HINDPETRO",yahoo:"HINDPETRO.NS",logo:"hindustanpetroleum.com"},
   {name:"Petronet LNG",sym:"PETRONET",yahoo:"PETRONET.NS",logo:"petronetlng.in"},
   {name:"Oil India",sym:"OIL",yahoo:"OIL.NS",logo:"oil-india.com"},
   {name:"Gujarat Gas",sym:"GUJGASLTD",yahoo:"GUJGASLTD.NS",logo:"gujaratgas.com"},
-  {name:"Mahanagar Gas",sym:"MGL",yahoo:"MGL.NS",logo:"mahanagargas.com"},
   {name:"IGL",sym:"IGL",yahoo:"IGL.NS",logo:"iglonline.net"},
   
-  // POWER & UTILITIES
+  // POWER
   {name:"Adani Power",sym:"ADANIPOWER",yahoo:"ADANIPOWER.NS",logo:"adanipower.com"},
   {name:"JSW Energy",sym:"JSWENERGY",yahoo:"JSWENERGY.NS",logo:"jsw.in"},
   {name:"Torrent Power",sym:"TORNTPOWER",yahoo:"TORNTPOWER.NS",logo:"torrentpower.com"},
   {name:"SJVN",sym:"SJVN",yahoo:"SJVN.NS",logo:"sjvn.nic.in"},
-  {name:"CESC",sym:"CESC",yahoo:"CESC.NS",logo:"cesc.co.in"},
   
-  // TELECOM & MEDIA
+  // TELECOM
   {name:"Vodafone Idea",sym:"IDEA",yahoo:"IDEA.NS",logo:"myvi.in"},
   {name:"Tata Comm",sym:"TATACOMM",yahoo:"TATACOMM.NS",logo:"tatacommunications.com"},
   {name:"Indus Towers",sym:"INDUSTOWER",yahoo:"INDUSTOWER.NS",logo:"industowers.com"},
+  
+  // MEDIA
   {name:"Zee Entertainment",sym:"ZEEL",yahoo:"ZEEL.NS",logo:"zee.com"},
   {name:"Sun TV",sym:"SUNTV",yahoo:"SUNTV.NS",logo:"suntv.in"},
-  {name:"PVR INOX",sym:"PVRINOX",yahoo:"PVRINOX.NS",logo:"pvrcinemas.com"},
-  
-  // CONSUMER & FMCG
-  {name:"Emami",sym:"EMAMILTD",yahoo:"EMAMILTD.NS",logo:"emamiltd.in"},
-  {name:"Jyothy Labs",sym:"JYOTHYLAB",yahoo:"JYOTHYLAB.NS",logo:"jyothylabs.com"},
-  {name:"Radico Khaitan",sym:"RADICO",yahoo:"RADICO.NS",logo:"radicokhaitan.com"},
-  {name:"United Spirits",sym:"UNITDSPR",yahoo:"UNITDSPR.NS",logo:"diageoindia.com"},
-  {name:"United Breweries",sym:"UBL",yahoo:"UBL.NS",logo:"unitedbreweries.com"},
-  {name:"Tata Coffee",sym:"TATACOFFEE",yahoo:"TATACOFFEE.NS",logo:"tatacoffee.com"},
-  
-  // CHEMICALS
-  {name:"Aarti Industries",sym:"AARTIIND",yahoo:"AARTIIND.NS",logo:"aarti-industries.com"},
-  {name:"Navin Fluorine",sym:"NAVINFLUOR",yahoo:"NAVINFLUOR.NS",logo:"nfranca.com"},
-  {name:"Clean Science",sym:"CLEAN",yahoo:"CLEAN.NS",logo:"cleanscience.co.in"},
-  {name:"Sumitomo Chemical",sym:"SUMICHEM",yahoo:"SUMICHEM.NS",logo:"sumitomo-chem.co.in"},
-  {name:"Coromandel Intl",sym:"COROMANDEL",yahoo:"COROMANDEL.NS",logo:"coromandel.biz"},
-  {name:"Chambal Fert",sym:"CHAMBLFERT",yahoo:"CHAMBLFERT.NS",logo:"chambalfertilisers.com"},
-  
-  // IT & TECH
-  {name:"Cyient",sym:"CYIENT",yahoo:"CYIENT.NS",logo:"cyient.com"},
-  {name:"Birlasoft",sym:"BSOFT",yahoo:"BSOFT.NS",logo:"birlasoft.com"},
-  {name:"Zensar Tech",sym:"ZENSARTECH",yahoo:"ZENSARTECH.NS",logo:"zensar.com"},
-  {name:"NIIT",sym:"NIITLTD",yahoo:"NIITLTD.NS",logo:"niit.com"},
-  {name:"Mastek",sym:"MASTEK",yahoo:"MASTEK.NS",logo:"mastek.com"},
-  {name:"Sonata Software",sym:"SONATSOFTW",yahoo:"SONATSOFTW.NS",logo:"sonata-software.com"},
-  
-  // OTHERS
-  {name:"Affle India",sym:"AFFLE",yahoo:"AFFLE.NS",logo:"affle.com"},
-  {name:"Latent View",sym:"LATENTVIEW",yahoo:"LATENTVIEW.NS",logo:"latentview.com"},
-  {name:"Route Mobile",sym:"ROUTE",yahoo:"ROUTE.NS",logo:"routemobile.com"},
-  {name:"Tanla Platforms",sym:"TANLA",yahoo:"TANLA.NS",logo:"tanla.com"},
-  {name:"Easy Trip",sym:"EASEMYTRIP",yahoo:"EASEMYTRIP.NS",logo:"easemytrip.com"},
-  {name:"KPIT Technologies",sym:"KPITTECH",yahoo:"KPITTECH.NS",logo:"kpit.com"},
-  {name:"Tata Technologies",sym:"TATATECH",yahoo:"TATATECH.NS",logo:"tatatechnologies.com"},
-  {name:"Kaynes Technology",sym:"KAYNES",yahoo:"KAYNES.NS",logo:"kaynes.com"},
-  {name:"Data Patterns",sym:"DATAPATTNS",yahoo:"DATAPATTNS.NS",logo:"datapatterns.co.in"},
-  {name:"CE Info Systems",sym:"MAPMYINDIA",yahoo:"MAPMYINDIA.NS",logo:"mapmyindia.com"},
-  {name:"Syrma SGS",sym:"SYRMA",yahoo:"SYRMA.NS",logo:"syrmasgs.com"},
-  {name:"Honasa Consumer",sym:"HONASA",yahoo:"HONASA.NS",logo:"honasa.in"},
-  {name:"Mankind Pharma",sym:"MANKIND",yahoo:"MANKIND.NS",logo:"mankindpharma.com"},
-  {name:"Rainbow Children",sym:"RAINBOW",yahoo:"RAINBOW.NS",logo:"rainbowhospitals.in"},
-  {name:"Global Health",sym:"MEDANTA",yahoo:"MEDANTA.NS",logo:"medanta.org"},
-  {name:"Patanjali Foods",sym:"PATANJALI",yahoo:"PATANJALI.NS",logo:"patanjalifoods.co.in"},
-  {name:"Go Fashion",sym:"GOCOLORS",yahoo:"GOCOLORS.NS",logo:"gocolors.com"},
-  {name:"Campus Activewear",sym:"CAMPUS",yahoo:"CAMPUS.NS",logo:"campusshoes.com"},
-  {name:"Devyani Intl",sym:"DEVYANI",yahoo:"DEVYANI.NS",logo:"devyani.com"},
-  {name:"Sapphire Foods",sym:"SAPPHIRE",yahoo:"SAPPHIRE.NS",logo:"sapphirefoods.in"},
-  {name:"Westlife Dev",sym:"WESTLIFE",yahoo:"WESTLIFE.NS",logo:"westlife.co.in"},
-  {name:"Restaurant Brands",sym:"RBA",yahoo:"RBA.NS",logo:"rfrancia.com"},
-  {name:"Metro Brands",sym:"METROBRAND",yahoo:"METROBRAND.NS",logo:"metrobrands.com"},
-  {name:"VIP Industries",sym:"VIPIND",yahoo:"VIPIND.NS",logo:"vipindustries.co.in"},
-  {name:"Relaxo Footwear",sym:"RELAXO",yahoo:"RELAXO.NS",logo:"relaxofootwear.com"},
-  {name:"Whirlpool",sym:"WHIRLPOOL",yahoo:"WHIRLPOOL.NS",logo:"whirlpoolindia.com"},
-  {name:"Blue Star",sym:"BLUESTARCO",yahoo:"BLUESTARCO.NS",logo:"bluestarindia.com"},
-  {name:"Amber Enterprises",sym:"AMBER",yahoo:"AMBER.NS",logo:"ambergroupindia.com"},
-  {name:"V-Guard",sym:"VGUARD",yahoo:"VGUARD.NS",logo:"vguard.in"},
-  {name:"Finolex Cables",sym:"FINCABLES",yahoo:"FINCABLES.NS",logo:"finolexcables.com"},
-  {name:"KEI Industries",sym:"KEI",yahoo:"KEI.NS",logo:"kei-ind.com"},
-  {name:"Astral",sym:"ASTRAL",yahoo:"ASTRAL.NS",logo:"astralimited.com"},
-  {name:"Supreme Industries",sym:"SUPREMEIND",yahoo:"SUPREMEIND.NS",logo:"supreme.co.in"},
-  {name:"Prince Pipes",sym:"PRINCEPIPE",yahoo:"PRINCEPIPE.NS",logo:"princepipes.com"},
-  {name:"Cera Sanitaryware",sym:"CERA",yahoo:"CERA.NS",logo:"cera-india.com"},
-  {name:"Kajaria Ceramics",sym:"KAJARIACER",yahoo:"KAJARIACER.NS",logo:"kajariaceramics.com"},
-  {name:"Somany Ceramics",sym:"SOMANYCERA",yahoo:"SOMANYCERA.NS",logo:"somanyceramics.com"},
-  {name:"Orient Cement",sym:"ORIENTCEM",yahoo:"ORIENTCEM.NS",logo:"orientcement.com"},
-  {name:"Prism Johnson",sym:"PRSMJOHNSN",yahoo:"PRSMJOHNSN.NS",logo:"prismjohnson.in"},
-  {name:"Century Plyboards",sym:"CENTURYPLY",yahoo:"CENTURYPLY.NS",logo:"centuryply.com"},
-  {name:"Greenpanel",sym:"GREENPANEL",yahoo:"GREENPANEL.NS",logo:"greenpanel.com"},
-  {name:"Welspun Living",sym:"WELSPUNLIV",yahoo:"WELSPUNLIV.NS",logo:"welspunliving.com"},
-  {name:"Trident",sym:"TRIDENT",yahoo:"TRIDENT.NS",logo:"tridentindia.com"},
-  {name:"Arvind",sym:"ARVIND",yahoo:"ARVIND.NS",logo:"arvind.com"},
-  {name:"Raymond",sym:"RAYMOND",yahoo:"RAYMOND.NS",logo:"raymond.in"},
-  {name:"Aditya Birla Fashion",sym:"ABFRL",yahoo:"ABFRL.NS",logo:"abfrl.com"},
-  {name:"Shoppers Stop",sym:"SHOPERSTOP",yahoo:"SHOPERSTOP.NS",logo:"shoppersstop.com"},
-  {name:"Spencer's Retail",sym:"SPENCERS",yahoo:"SPENCERS.NS",logo:"spencers.in"},
-  {name:"V-Mart Retail",sym:"VMART",yahoo:"VMART.NS",logo:"vmartretail.com"},
-  {name:"Barbeque Nation",sym:"BARBEQUE",yahoo:"BARBEQUE.NS",logo:"barbequenation.com"},
-  {name:"Indian Hotels",sym:"INDHOTEL",yahoo:"INDHOTEL.NS",logo:"ihcltata.com"},
-  {name:"Lemon Tree Hotels",sym:"LEMONTREE",yahoo:"LEMONTREE.NS",logo:"lemontreehotels.com"},
-  {name:"EIH",sym:"EIH",yahoo:"EIH.NS",logo:"eihltd.com"},
-  {name:"Chalet Hotels",sym:"CHALET",yahoo:"CHALET.NS",logo:"chalethotels.com"},
-  {name:"Mahindra Holidays",sym:"MHRIL",yahoo:"MHRIL.NS",logo:"clubmahindra.com"},
-  {name:"Thomas Cook",sym:"THOMASCOOK",yahoo:"THOMASCOOK.NS",logo:"thomascook.in"},
-  {name:"Wonderla Holidays",sym:"WONDERLA",yahoo:"WONDERLA.NS",logo:"wonderla.com"},
-  {name:"Imagica",sym:"IMAGICAA",yahoo:"IMAGICAA.NS",logo:"imagicaa.com"}
+  {name:"PVR INOX",sym:"PVRINOX",yahoo:"PVRINOX.NS",logo:"pvrcinemas.com"}
 ];
 
 /* ================= GLOBAL VARIABLES ================= */
@@ -1616,10 +1541,15 @@ let pendingEditIndex = null;
 /* ================= INITIALIZATION ================= */
 document.addEventListener("DOMContentLoaded", function() {
   // Load cached prices
-  const savedPrices = localStorage.getItem("stockPrices");
+  const savedPrices = localStorage.getItem("stockPricesCache");
   if (savedPrices) {
-    pricesData = JSON.parse(savedPrices);
-    prevPricesData = JSON.parse(savedPrices);
+    try {
+      pricesData = JSON.parse(savedPrices);
+      prevPricesData = JSON.parse(savedPrices);
+    } catch(e) {
+      pricesData = {};
+      prevPricesData = {};
+    }
   }
   
   // Tab navigation
@@ -1692,16 +1622,20 @@ auth.onAuthStateChanged(async function(user) {
   document.getElementById("mainApp").style.display = "block";
   
   // Create/verify user document
-  const userDocRef = db.collection("users").doc(user.uid);
-  const userDocSnap = await userDocRef.get();
-  
-  if (!userDocSnap.exists) {
-    await userDocRef.set({
-      email: user.email,
-      name: user.displayName || "",
-      usercode: String(Math.floor(10000 + Math.random() * 90000)),
-      createdAt: firebase.firestore.FieldValue.serverTimestamp()
-    });
+  try {
+    const userDocRef = db.collection("users").doc(user.uid);
+    const userDocSnap = await userDocRef.get();
+    
+    if (!userDocSnap.exists) {
+      await userDocRef.set({
+        email: user.email,
+        name: user.displayName || "",
+        usercode: String(Math.floor(10000 + Math.random() * 90000)),
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+    }
+  } catch(e) {
+    console.error("User doc error:", e);
   }
   
   // Load holdings from Firebase
@@ -1723,7 +1657,7 @@ auth.onAuthStateChanged(async function(user) {
   // Fetch fresh prices
   setTimeout(function() {
     fetchLatestPrices();
-  }, 1500);
+  }, 1000);
 });
 
 function performLogout() {
@@ -1741,16 +1675,26 @@ async function loadUserHoldings() {
     
     userHoldings = [];
     snapshot.forEach(function(doc) {
+      const data = doc.data();
       userHoldings.push({
         id: doc.id,
-        ...doc.data()
+        name: data.name || "",
+        sym: data.sym || data.symbol || "",
+        buyPrice: parseFloat(data.buyPrice) || parseFloat(data.price) || 0,
+        qty: parseInt(data.qty) || parseInt(data.quantity) || 0
       });
     });
   } catch (e) {
     console.error("Error loading holdings:", e);
     // Fallback to localStorage
-    const local = localStorage.getItem("holdings");
-    if (local) userHoldings = JSON.parse(local);
+    const local = localStorage.getItem("userHoldings");
+    if (local) {
+      try {
+        userHoldings = JSON.parse(local);
+      } catch(err) {
+        userHoldings = [];
+      }
+    }
   }
 }
 
@@ -1758,7 +1702,10 @@ async function saveHoldingToFirebase(holdingData) {
   try {
     const holdingsRef = db.collection("users").doc(activeUser.uid).collection("holdings");
     const docRef = await holdingsRef.add({
-      ...holdingData,
+      name: holdingData.name,
+      sym: holdingData.sym,
+      buyPrice: holdingData.buyPrice,
+      qty: holdingData.qty,
       addedAt: firebase.firestore.FieldValue.serverTimestamp()
     });
     return docRef.id;
@@ -1798,13 +1745,17 @@ function switchTab(tabName) {
   if (tabName === "holdings") displayHoldings();
 }
 
-/* ================= PRICE FETCHING ================= */
-async function fetchSinglePrice(yahooSymbol) {
+/* ================= DUAL API PRICE FETCHING ================= */
+
+// Yahoo Finance API
+async function fetchYahooPrice(yahooSymbol) {
   try {
     const proxyUrl = "https://api.allorigins.win/raw?url=";
     const apiUrl = `https://query1.finance.yahoo.com/v8/finance/chart/${yahooSymbol}?interval=1d&range=1d`;
     
-    const response = await fetch(proxyUrl + encodeURIComponent(apiUrl));
+    const response = await fetch(proxyUrl + encodeURIComponent(apiUrl), {
+      signal: AbortSignal.timeout(8000)
+    });
     const data = await response.json();
     
     if (data.chart && data.chart.result && data.chart.result[0]) {
@@ -1814,16 +1765,79 @@ async function fetchSinglePrice(yahooSymbol) {
       const priceChange = currentPrice - previousClose;
       const changePercent = previousClose > 0 ? (priceChange / previousClose) * 100 : 0;
       
-      return {
-        price: currentPrice,
-        change: priceChange,
-        changePercent: changePercent,
-        prevClose: previousClose
-      };
+      if (currentPrice > 0) {
+        return {
+          price: currentPrice,
+          change: priceChange,
+          changePercent: changePercent,
+          prevClose: previousClose,
+          source: "Yahoo"
+        };
+      }
+    }
+  } catch (error) {
+    // Silent fail, will try Alpha Vantage
+  }
+  return null;
+}
+
+// Alpha Vantage API
+async function fetchAlphaVantagePrice(symbol) {
+  try {
+    const apiKey = ALPHA_VANTAGE_KEYS[currentAlphaKeyIndex];
+    const url = `https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol=${symbol}.BSE&apikey=${apiKey}`;
+    
+    const response = await fetch(url, {
+      signal: AbortSignal.timeout(8000)
+    });
+    const data = await response.json();
+    
+    if (data["Global Quote"] && data["Global Quote"]["05. price"]) {
+      const quote = data["Global Quote"];
+      const currentPrice = parseFloat(quote["05. price"]) || 0;
+      const priceChange = parseFloat(quote["09. change"]) || 0;
+      const changePercent = parseFloat(quote["10. change percent"]?.replace("%", "")) || 0;
+      const previousClose = parseFloat(quote["08. previous close"]) || currentPrice;
+      
+      if (currentPrice > 0) {
+        return {
+          price: currentPrice,
+          change: priceChange,
+          changePercent: changePercent,
+          prevClose: previousClose,
+          source: "AlphaVantage"
+        };
+      }
+    }
+    
+    // Rate limit - try next key
+    if (data["Note"] || data["Information"]) {
+      getNextAlphaKey();
     }
   } catch (error) {
     // Silent fail
   }
+  return null;
+}
+
+// Combined fetch with fallback
+async function fetchStockPrice(stock) {
+  // Try Yahoo first
+  let result = await fetchYahooPrice(stock.yahoo);
+  
+  if (result) {
+    lastUsedAPI = "Yahoo";
+    return result;
+  }
+  
+  // Fallback to Alpha Vantage
+  result = await fetchAlphaVantagePrice(stock.sym);
+  
+  if (result) {
+    lastUsedAPI = "AlphaVantage";
+    return result;
+  }
+  
   return null;
 }
 
@@ -1832,6 +1846,7 @@ async function fetchLatestPrices() {
   
   isFetchingData = true;
   setRefreshStatus("Updating...", true);
+  document.getElementById("apiIndicator").textContent = "API: Fetching...";
   
   prevPricesData = JSON.parse(JSON.stringify(pricesData));
   
@@ -1843,35 +1858,38 @@ async function fetchLatestPrices() {
   
   // Fetch in parallel batches
   const batchSize = 5;
-  const maxFetch = 40;
+  const maxFetch = 50;
+  let successCount = 0;
   
   for (let i = 0; i < Math.min(orderedList.length, maxFetch); i += batchSize) {
     const batch = orderedList.slice(i, i + batchSize);
     const promises = batch.map(stock => 
-      fetchSinglePrice(stock.yahoo).then(data => ({sym: stock.sym, data}))
+      fetchStockPrice(stock).then(data => ({sym: stock.sym, data}))
     );
     
-    const results = await Promise.all(promises);
+    const results = await Promise.allSettled(promises);
     
     results.forEach(function(result) {
-      if (result.data && result.data.price > 0) {
-        pricesData[result.sym] = result.data;
+      if (result.status === "fulfilled" && result.value.data && result.value.data.price > 0) {
+        pricesData[result.value.sym] = result.value.data;
+        successCount++;
       }
     });
     
     // Small delay between batches
     if (i + batchSize < maxFetch) {
-      await new Promise(r => setTimeout(r, 200));
+      await new Promise(r => setTimeout(r, 150));
     }
   }
   
   // Save to localStorage
-  localStorage.setItem("stockPrices", JSON.stringify(pricesData));
+  localStorage.setItem("stockPricesCache", JSON.stringify(pricesData));
   localStorage.setItem("lastPriceUpdate", Date.now().toString());
   
   isFetchingData = false;
   refreshCountdown = 30;
   setRefreshStatus("Live", false);
+  document.getElementById("apiIndicator").textContent = `API: ${lastUsedAPI} (${successCount} updated)`;
   refreshLastUpdateDisplay();
   
   displayStocksWithAnimation(STOCK_DATA);
@@ -1932,7 +1950,11 @@ function refreshLastUpdateDisplay() {
 }
 
 function getStockPrice(symbol) {
-  return pricesData[symbol]?.price || 0;
+  const data = pricesData[symbol];
+  if (data && typeof data.price === "number" && !isNaN(data.price)) {
+    return data.price;
+  }
+  return 0;
 }
 
 function getStockData(symbol) {
@@ -1949,9 +1971,9 @@ function displayStocks(stockList) {
   
   stockList.forEach(function(stock) {
     const priceInfo = getStockData(stock.sym);
-    const currentPrice = priceInfo?.price || 0;
-    const priceChange = priceInfo?.change || 0;
-    const changePercent = priceInfo?.changePercent || 0;
+    const currentPrice = priceInfo && priceInfo.price ? priceInfo.price : 0;
+    const priceChange = priceInfo && priceInfo.change ? priceInfo.change : 0;
+    const changePercent = priceInfo && priceInfo.changePercent ? priceInfo.changePercent : 0;
     const isPositive = priceChange >= 0;
     
     const card = document.createElement("div");
@@ -1977,7 +1999,7 @@ function displayStocks(stockList) {
           ${currentPrice > 0 ? `
             <div class="change-value ${isPositive ? 'positive' : 'negative'}">${isPositive ? '+' : ''}₹${priceChange.toFixed(2)}</div>
             <div class="change-badge ${isPositive ? 'positive' : 'negative'}">${isPositive ? '▲' : '▼'} ${Math.abs(changePercent).toFixed(2)}%</div>
-          ` : '<div style="color:#94a3b8;font-size:13px">--</div>'}
+          ` : '<div style="color:#94a3b8;font-size:13px">Loading...</div>'}
         </div>
       </div>
       <button class="add-stock-btn" onclick="showAddStockModal('${stock.sym}')">➕ Add to Holdings</button>
@@ -2026,14 +2048,17 @@ function hideAddModal() {
 }
 
 async function confirmStockAdd() {
-  const buyPrice = parseFloat(document.getElementById("modalBuyPrice").value);
-  const quantity = parseInt(document.getElementById("modalQuantity").value);
+  const buyPriceVal = document.getElementById("modalBuyPrice").value;
+  const quantityVal = document.getElementById("modalQuantity").value;
   
-  if (!buyPrice || buyPrice <= 0) {
+  const buyPrice = parseFloat(buyPriceVal);
+  const quantity = parseInt(quantityVal);
+  
+  if (isNaN(buyPrice) || buyPrice <= 0) {
     alert("Please enter a valid buy price");
     return;
   }
-  if (!quantity || quantity <= 0) {
+  if (isNaN(quantity) || quantity <= 0) {
     alert("Please enter a valid quantity");
     return;
   }
@@ -2055,25 +2080,34 @@ async function confirmStockAdd() {
     });
   } else {
     // Fallback to local only
-    userHoldings.push(holdingData);
-    localStorage.setItem("holdings", JSON.stringify(userHoldings));
+    userHoldings.push({
+      id: "local_" + Date.now(),
+      ...holdingData
+    });
   }
+  
+  // Also save to localStorage as backup
+  localStorage.setItem("userHoldings", JSON.stringify(userHoldings));
   
   hideAddModal();
   displayHoldings();
+  
+  alert("✅ Stock added to holdings!");
 }
 
 /* ================= EDIT STOCK MODAL ================= */
 function showEditStockModal(index) {
   const holding = userHoldings[index];
+  if (!holding) return;
+  
   pendingEditIndex = index;
   
   const currentPrice = getStockPrice(holding.sym);
   
   document.getElementById("editModalStockName").textContent = holding.name + " (" + holding.sym + ")";
   document.getElementById("editModalStockPrice").textContent = currentPrice > 0 ? "₹" + currentPrice.toFixed(2) : "₹ --";
-  document.getElementById("editModalBuyPrice").value = holding.buyPrice;
-  document.getElementById("editModalQuantity").value = holding.qty;
+  document.getElementById("editModalBuyPrice").value = holding.buyPrice || "";
+  document.getElementById("editModalQuantity").value = holding.qty || "";
   document.getElementById("editStockModal").style.display = "flex";
 }
 
@@ -2083,21 +2117,24 @@ function hideEditModal() {
 }
 
 async function confirmStockEdit() {
-  const newPrice = parseFloat(document.getElementById("editModalBuyPrice").value);
-  const newQty = parseInt(document.getElementById("editModalQuantity").value);
+  const newPriceVal = document.getElementById("editModalBuyPrice").value;
+  const newQtyVal = document.getElementById("editModalQuantity").value;
   
-  if (!newPrice || newPrice <= 0) {
+  const newPrice = parseFloat(newPriceVal);
+  const newQty = parseInt(newQtyVal);
+  
+  if (isNaN(newPrice) || newPrice <= 0) {
     alert("Please enter a valid buy price");
     return;
   }
-  if (!newQty || newQty <= 0) {
+  if (isNaN(newQty) || newQty <= 0) {
     alert("Please enter a valid quantity");
     return;
   }
   
   const holding = userHoldings[pendingEditIndex];
   
-  if (holding.id) {
+  if (holding.id && !holding.id.startsWith("local_")) {
     await updateHoldingInFirebase(holding.id, {
       buyPrice: newPrice,
       qty: newQty
@@ -2107,10 +2144,12 @@ async function confirmStockEdit() {
   userHoldings[pendingEditIndex].buyPrice = newPrice;
   userHoldings[pendingEditIndex].qty = newQty;
   
-  localStorage.setItem("holdings", JSON.stringify(userHoldings));
+  localStorage.setItem("userHoldings", JSON.stringify(userHoldings));
   
   hideEditModal();
   displayHoldings();
+  
+  alert("✅ Holding updated!");
 }
 
 async function removeHolding(index) {
@@ -2118,12 +2157,12 @@ async function removeHolding(index) {
   
   const holding = userHoldings[index];
   
-  if (holding.id) {
+  if (holding.id && !holding.id.startsWith("local_")) {
     await deleteHoldingFromFirebase(holding.id);
   }
   
   userHoldings.splice(index, 1);
-  localStorage.setItem("holdings", JSON.stringify(userHoldings));
+  localStorage.setItem("userHoldings", JSON.stringify(userHoldings));
   displayHoldings();
 }
 
@@ -2132,7 +2171,7 @@ function displayHoldings() {
   const statsContainer = document.getElementById("portfolioStats");
   const tableContainer = document.getElementById("holdingsTableContainer");
   
-  if (userHoldings.length === 0) {
+  if (!userHoldings || userHoldings.length === 0) {
     statsContainer.innerHTML = "";
     tableContainer.innerHTML = `
       <div class="empty-holdings">
@@ -2148,11 +2187,13 @@ function displayHoldings() {
   let totalDayChange = 0;
   
   userHoldings.forEach(function(h) {
-    const invested = h.buyPrice * h.qty;
+    const buyPrice = parseFloat(h.buyPrice) || 0;
+    const qty = parseInt(h.qty) || 0;
+    const invested = buyPrice * qty;
     const currentPrice = getStockPrice(h.sym);
-    const currentValue = currentPrice > 0 ? currentPrice * h.qty : invested;
+    const currentValue = currentPrice > 0 ? currentPrice * qty : invested;
     const priceData = getStockData(h.sym);
-    const dayChg = priceData ? priceData.change * h.qty : 0;
+    const dayChg = priceData && priceData.change ? priceData.change * qty : 0;
     
     totalInvested += invested;
     totalCurrentValue += currentValue;
@@ -2206,30 +2247,32 @@ function displayHoldings() {
   `;
   
   userHoldings.forEach(function(h, idx) {
-    const invested = h.buyPrice * h.qty;
+    const buyPrice = parseFloat(h.buyPrice) || 0;
+    const qty = parseInt(h.qty) || 0;
+    const invested = buyPrice * qty;
     const currentPrice = getStockPrice(h.sym);
-    const currentValue = currentPrice > 0 ? currentPrice * h.qty : invested;
+    const currentValue = currentPrice > 0 ? currentPrice * qty : invested;
     const pnl = currentValue - invested;
     const pnlPercent = invested > 0 ? (pnl / invested) * 100 : 0;
     const isPft = pnl >= 0;
     
     const priceData = getStockData(h.sym);
-    const dayPercent = priceData ? priceData.changePercent : 0;
+    const dayPercent = priceData && priceData.changePercent ? priceData.changePercent : 0;
     const isDayPositive = dayPercent >= 0;
     
     tableHTML += `
       <tr>
         <td>
           <div class="holding-stock-cell">
-            <div class="holding-stock-icon">${h.sym.charAt(0)}</div>
+            <div class="holding-stock-icon">${(h.sym || "?").charAt(0)}</div>
             <div class="holding-stock-info">
-              <div class="holding-stock-name">${h.name}</div>
-              <div class="holding-stock-sym">${h.sym}</div>
+              <div class="holding-stock-name">${h.name || "Unknown"}</div>
+              <div class="holding-stock-sym">${h.sym || "--"}</div>
             </div>
           </div>
         </td>
-        <td>₹${h.buyPrice.toFixed(2)}</td>
-        <td>${h.qty}</td>
+        <td>₹${buyPrice.toFixed(2)}</td>
+        <td>${qty}</td>
         <td>₹${invested.toLocaleString("en-IN", {maximumFractionDigits: 0})}</td>
         <td>${currentPrice > 0 ? '₹' + currentPrice.toFixed(2) : '--'}</td>
         <td><strong>₹${Math.round(currentValue).toLocaleString("en-IN")}</strong></td>
@@ -2254,79 +2297,106 @@ function displayHoldings() {
   tableContainer.innerHTML = tableHTML;
 }
 
-/* ================= CHAT - USER SEARCH ================= */
+/* ================= CHAT - USER SEARCH (FIXED) ================= */
 async function performUserSearch() {
-  const searchCode = document.getElementById("userIdSearchInput").value.trim();
+  const searchInput = document.getElementById("userIdSearchInput");
+  const searchBtn = document.getElementById("searchUserBtn");
   const resultsDiv = document.getElementById("userSearchResults");
+  const searchCode = searchInput.value.trim();
   
   resultsDiv.innerHTML = "";
   
-  if (searchCode.length !== 5) {
-    resultsDiv.innerHTML = '<div style="padding:12px;color:#64748b;font-size:14px">Please enter exactly 5 digits</div>';
+  // Validate input
+  if (searchCode.length === 0) {
+    resultsDiv.innerHTML = '<div style="padding:12px;color:#64748b;font-size:14px">Please enter a User ID</div>';
     return;
   }
   
+  if (searchCode.length !== 5) {
+    resultsDiv.innerHTML = '<div style="padding:12px;color:#64748b;font-size:14px">User ID must be exactly 5 digits</div>';
+    return;
+  }
+  
+  if (!/^\d{5}$/.test(searchCode)) {
+    resultsDiv.innerHTML = '<div style="padding:12px;color:#64748b;font-size:14px">User ID must contain only numbers</div>';
+    return;
+  }
+  
+  // Show loading
+  searchBtn.disabled = true;
+  resultsDiv.innerHTML = '<div class="search-loading">🔍 Searching...</div>';
+  
   try {
-    const querySnapshot = await db.collection("users").where("usercode", "==", searchCode).get();
+    // Query Firestore
+    const usersRef = db.collection("users");
+    const querySnapshot = await usersRef.where("usercode", "==", searchCode).get();
     
     if (querySnapshot.empty) {
-      resultsDiv.innerHTML = '<div style="padding:12px;color:#ef4444;font-size:14px">❌ No user found with this ID</div>';
+      resultsDiv.innerHTML = '<div class="search-error">❌ No user found with ID: ' + searchCode + '</div>';
+      searchBtn.disabled = false;
       return;
     }
     
-    let foundUser = false;
+    let foundValidUser = false;
     
     querySnapshot.forEach(function(docSnap) {
-      if (docSnap.id === activeUser.uid) return;
+      // Skip if it's the current user
+      if (docSnap.id === activeUser.uid) {
+        return;
+      }
       
-      foundUser = true;
+      foundValidUser = true;
       const userData = docSnap.data();
       const targetUid = docSnap.id;
+      const userName = userData.name || "User";
+      const userCode = userData.usercode || searchCode;
       
       resultsDiv.innerHTML = `
         <div class="search-result-card">
-          <div class="search-result-avatar">${(userData.name || "U").charAt(0).toUpperCase()}</div>
+          <div class="search-result-avatar">${userName.charAt(0).toUpperCase()}</div>
           <div class="search-result-info">
-            <div class="search-result-name">${userData.name || "User"}</div>
-            <div class="search-result-code">ID: ${userData.usercode}</div>
+            <div class="search-result-name">${userName}</div>
+            <div class="search-result-code">ID: ${userCode}</div>
           </div>
-          <button class="send-request-btn" onclick="sendFriendReq('${targetUid}')">Send Request</button>
+          <button class="send-request-btn" onclick="sendFriendReq('${targetUid}', '${userName}')">Send Request</button>
         </div>
       `;
     });
     
-    if (!foundUser) {
-      resultsDiv.innerHTML = '<div style="padding:12px;color:#64748b;font-size:14px">That\'s your own User ID</div>';
+    if (!foundValidUser) {
+      resultsDiv.innerHTML = '<div style="padding:12px;color:#64748b;font-size:14px">That\'s your own User ID!</div>';
     }
     
   } catch (error) {
-    console.error("Search error:", error);
-    resultsDiv.innerHTML = '<div style="padding:12px;color:#ef4444;font-size:14px">❌ Search failed. Please try again.</div>';
+    console.error("Search error details:", error);
+    resultsDiv.innerHTML = `<div class="search-error">❌ Error: ${error.message || "Unable to search. Please try again."}</div>`;
   }
+  
+  searchBtn.disabled = false;
 }
 
 /* ================= CHAT - SEND FRIEND REQUEST ================= */
-async function sendFriendReq(targetUid) {
+async function sendFriendReq(targetUid, targetName) {
   try {
-    // Check existing request
-    const existingReq = await db.collection("requests")
+    // Check if already sent request
+    const existingReqQuery = await db.collection("requests")
       .where("from", "==", activeUser.uid)
       .where("to", "==", targetUid)
       .get();
     
-    if (!existingReq.empty) {
-      alert("You already sent a request to this user!");
+    if (!existingReqQuery.empty) {
+      alert("You've already sent a request to this user!");
       return;
     }
     
-    // Check reverse request
-    const reverseReq = await db.collection("requests")
+    // Check if they sent us a request
+    const reverseReqQuery = await db.collection("requests")
       .where("from", "==", targetUid)
       .where("to", "==", activeUser.uid)
       .get();
     
-    if (!reverseReq.empty) {
-      alert("This user already sent you a request! Check your Requests tab.");
+    if (!reverseReqQuery.empty) {
+      alert("This user has already sent you a request! Check the Requests tab.");
       return;
     }
     
@@ -2338,29 +2408,31 @@ async function sendFriendReq(targetUid) {
       .get();
     
     if (friendDoc.exists) {
-      alert("You are already friends!");
+      alert("You are already friends with this user!");
       return;
     }
     
-    // Send request
+    // Send the request
     await db.collection("requests").add({
       from: activeUser.uid,
       to: targetUid,
       timestamp: firebase.firestore.FieldValue.serverTimestamp()
     });
     
-    alert("✅ Friend request sent successfully!");
+    alert("✅ Friend request sent to " + targetName + "!");
     document.getElementById("userIdSearchInput").value = "";
     document.getElementById("userSearchResults").innerHTML = "";
     
   } catch (error) {
     console.error("Send request error:", error);
-    alert("Failed to send request. Please try again.");
+    alert("Failed to send request: " + (error.message || "Unknown error"));
   }
 }
 
 /* ================= CHAT - LOAD REQUESTS ================= */
 function setupRequestsListener() {
+  if (!activeUser) return;
+  
   db.collection("requests")
     .where("to", "==", activeUser.uid)
     .onSnapshot(async function(snapshot) {
@@ -2380,25 +2452,34 @@ function setupRequestsListener() {
       
       for (const doc of snapshot.docs) {
         const reqId = doc.id;
-        const fromUid = doc.data().from;
+        const reqData = doc.data();
+        const fromUid = reqData.from;
         
-        const userSnap = await db.collection("users").doc(fromUid).get();
-        if (!userSnap.exists) continue;
-        
-        const userData = userSnap.data();
-        
-        const item = document.createElement("div");
-        item.className = "chat-list-item";
-        item.innerHTML = `
-          <div class="chat-item-avatar">${(userData.name || "U").charAt(0).toUpperCase()}</div>
-          <div class="chat-item-content">
-            <div class="chat-item-name">${userData.name || "User"}</div>
-            <div class="chat-item-preview">ID: ${userData.usercode || "--"}</div>
-          </div>
-          <button class="accept-request-btn" onclick="acceptFriendReq('${reqId}', '${fromUid}')">Accept</button>
-        `;
-        listContainer.appendChild(item);
+        try {
+          const userSnap = await db.collection("users").doc(fromUid).get();
+          if (!userSnap.exists) continue;
+          
+          const userData = userSnap.data();
+          const userName = userData.name || "User";
+          const userCode = userData.usercode || "--";
+          
+          const item = document.createElement("div");
+          item.className = "chat-list-item";
+          item.innerHTML = `
+            <div class="chat-item-avatar">${userName.charAt(0).toUpperCase()}</div>
+            <div class="chat-item-content">
+              <div class="chat-item-name">${userName}</div>
+              <div class="chat-item-preview">ID: ${userCode}</div>
+            </div>
+            <button class="accept-request-btn" onclick="acceptFriendReq('${reqId}', '${fromUid}')">Accept</button>
+          `;
+          listContainer.appendChild(item);
+        } catch(e) {
+          console.error("Error loading request user:", e);
+        }
       }
+    }, function(error) {
+      console.error("Requests listener error:", error);
     });
 }
 
@@ -2433,14 +2514,18 @@ async function acceptFriendReq(requestId, fromUid) {
     // Delete request
     await db.collection("requests").doc(requestId).delete();
     
+    alert("✅ Friend request accepted!");
+    
   } catch (error) {
     console.error("Accept request error:", error);
-    alert("Failed to accept request");
+    alert("Failed to accept request: " + (error.message || "Unknown error"));
   }
 }
 
 /* ================= CHAT - LOAD FRIENDS ================= */
 function setupFriendsListener() {
+  if (!activeUser) return;
+  
   db.collection("friends").doc(activeUser.uid).collection("list")
     .onSnapshot(function(snapshot) {
       const listContainer = document.getElementById("friendsListContainer");
@@ -2476,6 +2561,8 @@ function setupFriendsListener() {
         });
         listContainer.appendChild(item);
       });
+    }, function(error) {
+      console.error("Friends listener error:", error);
     });
 }
 
@@ -2514,7 +2601,7 @@ function openChatConversation(friendId, friendName) {
         const statusText = isMine ? (msg.seen ? " • Seen ✓✓" : " • Sent ✓") : "";
         
         if (!isMine && !msg.seen) {
-          doc.ref.update({seen: true});
+          doc.ref.update({seen: true}).catch(e => {});
         }
         
         const msgEl = document.createElement("div");
@@ -2524,6 +2611,9 @@ function openChatConversation(friendId, friendName) {
       });
       
       messagesArea.scrollTop = messagesArea.scrollHeight;
+    }, function(error) {
+      console.error("Chat listener error:", error);
+      messagesArea.innerHTML = '<div class="chat-placeholder"><p>Error loading messages</p></div>';
     });
   
   // Refresh friends list to show selected state
@@ -2544,9 +2634,12 @@ function sendChatMsg() {
     text: msgText,
     timestamp: firebase.firestore.FieldValue.serverTimestamp(),
     seen: false
+  }).then(function() {
+    inputEl.value = "";
+  }).catch(function(error) {
+    console.error("Send message error:", error);
+    alert("Failed to send message");
   });
-  
-  inputEl.value = "";
 }
 
 /* ================= SETTINGS ================= */
@@ -2554,9 +2647,13 @@ function showSettings() {
   document.getElementById("displayUserEmail").textContent = activeUser.email;
   
   db.collection("users").doc(activeUser.uid).get().then(function(doc) {
-    const data = doc.data();
-    document.getElementById("displayUserCode").textContent = data.usercode || "--";
-    document.getElementById("displayNameInput").value = data.name || "";
+    if (doc.exists) {
+      const data = doc.data();
+      document.getElementById("displayUserCode").textContent = data.usercode || "--";
+      document.getElementById("displayNameInput").value = data.name || "";
+    }
+  }).catch(function(error) {
+    console.error("Settings load error:", error);
   });
   
   document.getElementById("settingsModal").style.display = "flex";
