@@ -2137,6 +2137,7 @@ function formatLastSeen(timestamp) {
 }
 
 /* ================= HOLDINGS FIREBASE LISTENER ================= */
+/* ================= HOLDINGS FIREBASE LISTENER ================= */
 function setupHoldingsListener() {
   if (!activeUser) return;
   
@@ -2145,7 +2146,8 @@ function setupHoldingsListener() {
     holdingsListener();
   }
   
-  const holdingsRef = db.collection("users").doc(activeUser.uid).collection("holdings");
+  // FIXED: Use root-level collection with userId field
+  const holdingsRef = db.collection("holdings").where("userId", "==", activeUser.uid);
   
   holdingsListener = holdingsRef.onSnapshot(function(snapshot) {
     userHoldings = [];
@@ -2183,11 +2185,11 @@ function setupHoldingsListener() {
     }
   });
 }
-
 async function saveHoldingToFirebase(holdingData) {
   try {
-    const holdingsRef = db.collection("users").doc(activeUser.uid).collection("holdings");
-    const docRef = await holdingsRef.add({
+    // FIXED: Save to root-level holdings collection with userId field
+    const docRef = await db.collection("holdings").add({
+      userId: activeUser.uid,
       name: holdingData.name,
       sym: holdingData.sym,
       buyPrice: holdingData.buyPrice,
@@ -2203,7 +2205,8 @@ async function saveHoldingToFirebase(holdingData) {
 
 async function updateHoldingInFirebase(holdingId, updates) {
   try {
-    await db.collection("users").doc(activeUser.uid).collection("holdings").doc(holdingId).update(updates);
+    // FIXED: Update in root-level holdings collection
+    await db.collection("holdings").doc(holdingId).update(updates);
     return true;
   } catch (e) {
     console.error("Error updating holding:", e);
@@ -2213,14 +2216,14 @@ async function updateHoldingInFirebase(holdingId, updates) {
 
 async function deleteHoldingFromFirebase(holdingId) {
   try {
-    await db.collection("users").doc(activeUser.uid).collection("holdings").doc(holdingId).delete();
+    // FIXED: Delete from root-level holdings collection
+    await db.collection("holdings").doc(holdingId).delete();
     return true;
   } catch (e) {
     console.error("Error deleting holding:", e);
     throw e;
   }
 }
-
 /* ================= TAB SWITCHING ================= */
 function switchTab(tabName) {
   document.getElementById("stocksSection").style.display = tabName === "stocks" ? "block" : "none";
@@ -3367,5 +3370,6 @@ function saveUserProfile() {
 
 </body>
 </html>
+
 
 
