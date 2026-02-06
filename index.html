@@ -911,8 +911,7 @@ body{
   border:3px solid #fff;
 }
 .online-indicator.offline{
-  background:#ef4444;
-}
+  background:#94a3b8;
 }
 .chat-item-content{flex:1;min-width:0}
 .chat-item-name{
@@ -933,7 +932,7 @@ body{
   margin-top:2px;
 }
 .chat-item-status.online{color:#10b981}
-.chat-item-status.offline{color:#ef4444}
+.chat-item-status.offline{color:#94a3b8}
 .accept-request-btn{
   padding:10px 18px;
   border:none;
@@ -994,7 +993,7 @@ body{
   gap:6px;
 }
 .chat-partner-details .partner-status.online{color:#10b981}
-.chat-partner-details .partner-status.offline{color:#ef4444}
+.chat-partner-details .partner-status.offline{color:#94a3b8}
 .status-dot{
   width:8px;
   height:8px;
@@ -1415,9 +1414,11 @@ body{
         </div>
         
         <!-- Tabs -->
-        <div class="chat-nav-tab active" data-list="friends">
-  👥 Friends
-</div>
+        <div class="chat-nav-tabs">
+          <div class="chat-nav-tab active" data-list="friends">
+            👥 Friends
+            <span class="count-badge" id="friendsCountBadge" style="display:none">0</span>
+          </div>
           <div class="chat-nav-tab" data-list="requests">
             📩 Requests
             <span class="count-badge" id="requestsCountBadge" style="display:none">0</span>
@@ -2066,40 +2067,8 @@ function setupPresenceSystem() {
       });
     });
   });
-  
-  // Also set online immediately
-  currentUserPresenceRef.set({
-    state: "online",
-    lastSeen: firebase.database.ServerValue.TIMESTAMP
-  });
-  
-  // Update presence every 30 seconds to keep it fresh
-  setInterval(function() {
-    if (activeUser && document.visibilityState === "visible") {
-      currentUserPresenceRef.update({
-        state: "online",
-        lastSeen: firebase.database.ServerValue.TIMESTAMP
-      });
-    }
-  }, 30000);
-  
-  // Handle tab visibility change
-  document.addEventListener("visibilitychange", function() {
-    if (!activeUser) return;
-    
-    if (document.visibilityState === "visible") {
-      currentUserPresenceRef.set({
-        state: "online",
-        lastSeen: firebase.database.ServerValue.TIMESTAMP
-      });
-    } else {
-      currentUserPresenceRef.set({
-        state: "offline",
-        lastSeen: firebase.database.ServerValue.TIMESTAMP
-      });
-    }
-  });
 }
+
 function watchFriendStatus(friendUid, callback) {
   // Clean up existing listener
   if (friendsStatusListeners[friendUid]) {
@@ -3047,81 +3016,59 @@ async function sendFriendReq(targetUid, targetName) {
 }
 
 /* ================= CHAT - LOAD REQUESTS ================= */
-function setupFriendsListener() {
+function setupRequestsListener() {
   if (!activeUser) return;
   
-  db.collection("friends").doc(activeUser.uid).collection("list")
-    .onSnapshot(function(snapshot) {
-      const listContainer = document.getElementById("friendsListContainer");
+  db.collection("requests")
+    .where("to", "==", activeUser.uid)
+    .onSnapshot(async function(snapshot) {
+      const listContainer = document.getElementById("requestsListContainer");
+      const badge = document.getElementById("requestsCountBadge");
       
       if (snapshot.empty) {
-        listContainer.innerHTML = '<div class="empty-list-msg">No friends yet. Search by User ID to add friends!</div>';
+        listContainer.innerHTML = '<div class="empty-list-msg">No pending friend requests</div>';
+        badge.style.display = "none";
         return;
       }
       
+      badge.textContent = snapshot.size;
+      badge.style.display = "inline";
+      
       listContainer.innerHTML = "";
       
-      snapshot.forEach(function(doc) {
-        const friendId = doc.id;
-        const friendData = doc.data();
-        const friendName = friendData.name || "User";
+      for (const doc of snapshot.docs) {
+        const reqId = doc.id;
+        const reqData = doc.data();
+        const fromUid = reqData.from;
         
-        const item = document.createElement("div");
-        item.className = "chat-list-item" + (activeChatWith === friendId ? " selected" : "");
-        item.id = "friendItem_" + friendId;
-        item.innerHTML = `
-          <div class="chat-item-avatar">
-            ${friendName.charAt(0).toUpperCase()}
-            <div class="online-indicator offline" id="indicator_${friendId}"></div>
-          </div>
-          <div class="chat-item-content">
-            <div class="chat-item-name">${friendName}</div>
-            <div class="chat-item-preview">Click to chat</div>
-            <div class="chat-item-status offline" id="status_${friendId}">Checking...</div>
-          </div>
-        `;
-        item.addEventListener("click", function() {
-          openChatConversation(friendId, friendName);
-        });
-        listContainer.appendChild(item);
-        
-        // Watch this friend's online status in real-time
-        watchFriendStatus(friendId, function(isOnline, lastSeen) {
-          const indicator = document.getElementById("indicator_" + friendId);
-          const statusEl = document.getElementById("status_" + friendId);
+        try {
+          const userSnap = await db.collection("users").doc(fromUid).get();
+          if (!userSnap.exists) continue;
           
-          if (indicator) {
-            if (isOnline) {
-              indicator.className = "online-indicator";
-              indicator.style.background = "#10b981";
-            } else {
-              indicator.className = "online-indicator offline";
-              indicator.style.background = "#ef4444";
-            }
-          }
+          const userData = userSnap.data();
+          const userName = userData.name || "User";
+          const userCode = userData.usercode || "--";
           
-          if (statusEl) {
-            if (isOnline) {
-              statusEl.className = "chat-item-status online";
-              statusEl.textContent = "● Online";
-              statusEl.style.color = "#10b981";
-            } else {
-              statusEl.className = "chat-item-status offline";
-              statusEl.textContent = "● " + formatLastSeen(lastSeen);
-              statusEl.style.color = "#ef4444";
-            }
-          }
-          
-          // Update chat header if this is active chat
-          if (activeChatWith === friendId) {
-            updateChatPartnerStatus(isOnline, lastSeen);
-          }
-        });
-      });
+          const item = document.createElement("div");
+          item.className = "chat-list-item";
+          item.innerHTML = `
+            <div class="chat-item-avatar">${userName.charAt(0).toUpperCase()}</div>
+            <div class="chat-item-content">
+              <div class="chat-item-name">${userName}</div>
+              <div class="chat-item-preview">ID: ${userCode}</div>
+            </div>
+            <button class="accept-request-btn" id="acceptBtn_${reqId}" onclick="acceptFriendReq('${reqId}', '${fromUid}')">Accept</button>
+          `;
+          listContainer.appendChild(item);
+        } catch(e) {
+          console.error("Error loading request user:", e);
+        }
+      }
     }, function(error) {
-      console.error("Friends listener error:", error);
+      console.error("Requests listener error:", error);
     });
 }
+
 /* ================= CHAT - ACCEPT REQUEST ================= */
 async function acceptFriendReq(requestId, fromUid) {
   const acceptBtn = document.getElementById("acceptBtn_" + requestId);
@@ -3247,31 +3194,15 @@ function updateChatPartnerStatus(isOnline, lastSeen) {
   const indicatorEl = document.getElementById("chatPartnerOnlineIndicator");
   
   if (statusEl) {
-    if (isOnline) {
-      statusEl.className = "partner-status online";
-      statusEl.style.color = "#10b981";
-    } else {
-      statusEl.className = "partner-status offline";
-      statusEl.style.color = "#ef4444";
-    }
+    statusEl.className = "partner-status " + (isOnline ? "online" : "offline");
   }
   
   if (statusTextEl) {
-    if (isOnline) {
-      statusTextEl.textContent = "Online";
-    } else {
-      statusTextEl.textContent = formatLastSeen(lastSeen);
-    }
+    statusTextEl.textContent = isOnline ? "Online" : formatLastSeen(lastSeen);
   }
   
   if (indicatorEl) {
-    if (isOnline) {
-      indicatorEl.className = "online-indicator";
-      indicatorEl.style.background = "#10b981";
-    } else {
-      indicatorEl.className = "online-indicator offline";
-      indicatorEl.style.background = "#ef4444";
-    }
+    indicatorEl.className = "online-indicator " + (isOnline ? "" : "offline");
   }
 }
 
@@ -3404,4 +3335,3 @@ function saveUserProfile() {
 
 </body>
 </html>
-
