@@ -1376,29 +1376,25 @@ body{
   
   <!-- ========== STOCKS TAB ========== -->
   <section id="stocksSection">
-    <div class="status-bar">
+       <div class="status-bar">
       <div class="status-left">
-        <div class="stock-counter">
-          <strong id="displayedCount">0</strong> of <span id="totalStockCount">0</span> stocks | <span id="pricedStockCount" style="color:#10b981">0</span> priced |
-        </div>
         <div class="live-status" id="liveStatusBadge">
           <div class="live-dot"></div>
           <span id="liveStatusText">Ready</span>
         </div>
-        <div class="update-time" id="lastUpdateDisplay">--</div>
-        <div class="api-indicator" id="apiIndicator">API: Ready</div>
+        <div class="update-time" id="lastUpdateDisplay"></div>
+        <div class="api-indicator" id="apiIndicator" style="display:none"></div>
       </div>
       <div class="status-right">
-        <div class="countdown-display">
-          Next update: <span class="countdown-num" id="countdownDisplay">30</span>s
-        </div>
+        <div id="displayedCount" style="display:none">0</div>
+        <div id="totalStockCount" style="display:none">0</div>
+        <div id="pricedStockCount" style="display:none">0</div>
+        <div id="countdownDisplay" style="display:none">30</div>
         <button class="refresh-button" id="mainRefreshBtn" onclick="triggerManualRefresh()">
-          🔄 Refresh Now
+          🔄 Refresh Prices
         </button>
       </div>
     </div>
-    <div class="stocks-grid" id="stocksContainer"></div>
-  </section>
 
   <!-- ========== HOLDINGS TAB ========== -->
   <section id="holdingsSection" style="display:none">
@@ -3809,31 +3805,57 @@ async function fetchAlphaVantagePrice(symbol) {
 }
 
 // Combined fetch with fallback chain
-async function fetchStockPrice(stock) {
-  // 1. Try Yahoo Finance first (most reliable)
-  let result = await fetchYahooPrice(stock.yahoo);
-  
-  if (result) {
+// MASTER PRICE FUNCTION - single source of truth
+async function fetchStockPrice(stock, reason) {
+  reason = reason || "unknown";
+
+  // Cache check - avoid hitting APIs repeatedly
+  var cached = pricesData[stock.sym];
+  if (cached && cached.price > 0 && cached.fetchedAt) {
+    var age = Date.now() - cached.fetchedAt;
+    var maxAge = (reason === "search") ? 120000 : 30000; // 2min for search, 30s for holdings
+    if (age < maxAge) {
+      return cached;
+    }
+  }
+
+  console.log("[FETCH] " + stock.sym + " | reason: " + reason);
+
+  // Try Yahoo first
+  var result = await fetchYahooPrice(stock.yahoo);
+  if (result && result.price > 0) {
+    result.fetchedAt = Date.now();
+    result.source = "Yahoo";
     lastUsedAPI = "Yahoo";
+    pricesData[stock.sym] = result;
     return result;
   }
-  
-  // 2. Try Twelve Data
+
+  // Try TwelveData
   result = await fetchTwelveDataPrice(stock.sym);
-  
-  if (result) {
+  if (result && result.price > 0) {
+    result.fetchedAt = Date.now();
+    result.source = "TwelveData";
     lastUsedAPI = "TwelveData";
+    pricesData[stock.sym] = result;
     return result;
   }
-  
-  // 3. Fallback to Alpha Vantage
+
+  // Try Alpha Vantage
   result = await fetchAlphaVantagePrice(stock.sym);
-  
-  if (result) {
+  if (result && result.price > 0) {
+    result.fetchedAt = Date.now();
+    result.source = "AlphaVantage";
     lastUsedAPI = "AlphaVantage";
+    pricesData[stock.sym] = result;
     return result;
   }
-  
+
+  // All failed - return stale cache if any
+  if (cached && cached.price > 0) {
+    return cached;
+  }
+
   return null;
 }
 
@@ -3970,47 +3992,62 @@ async function fetchLatestPrices() {
   displayStocksWithAnimation(STOCK_DATA);
   displayHoldings();
 }
+// Fetch prices for search results only (max 10)
+async function fetchSearchResults(stocksToFetch, originalQuery) {
+  setRefreshStatus("Searching...", true);
 
+  var batchSize = 3;
+  for (var i = 0; i < stocksToFetch.length; i += batchSize) {
+    var batch = stocksToFetch.slice(i, i + batchSize);
+    var promises = batch.map(function(stock) {
+      return fetchStockPrice(stock, "search").then(function(data) {
+        return { sym: stock.sym, data: data };
+      });
+    });
+
+    await Promise.allSettled(promises);
+
+    // Update display if user hasn't changed search
+    var currentQuery = document.getElementById("stockSearchInput").value.toLowerCase().trim();
+    if (currentQuery === originalQuery) {
+      var matches = STOCK_DATA.filter(function(s) {
+        return s.name.toLowerCase().indexOf(currentQuery) !== -1 || s.sym.toLowerCase().indexOf(currentQuery) !== -1;
+      });
+      displayStocks(matches, true);
+    } else {
+      break;
+    }
+
+    if (i + batchSize < stocksToFetch.length) {
+      await new Promise(function(r) { setTimeout(r, 400); });
+    }
+  }
+
+  localStorage.setItem("stockPricesCache", JSON.stringify(pricesData));
+  setRefreshStatus("Ready", false);
+}
+  
 function triggerManualRefresh() {
-  ToastManager.info("Refreshing", "Fetching latest stock prices...");
-  fetchLatestPrices();
+  if (userHoldings.length > 0) {
+    ToastManager.info("Refreshing", "Updating " + userHoldings.length + " holdings...");
+    fetchLatestPrices();
+  } else {
+    ToastManager.info("No Holdings", "Add stocks to your portfolio first!");
+  }
 }
-
-function refreshHoldingsData() {
-  ToastManager.info("Refreshing", "Updating portfolio data...");
-  fetchLatestPrices();
-}
-
 function initAutoRefresh() {
   if (autoRefreshTimer) clearInterval(autoRefreshTimer);
-  
-  // Count stocks with prices
-  var pricedCount = 0;
-  for (var sym in pricesData) {
-    if (pricesData[sym] && pricesData[sym].price > 0) pricedCount++;
-  }
-  
-  // If less than half stocks have prices, use faster refresh (15s)
-  var refreshInterval = pricedCount < (STOCK_DATA.length / 2) ? 15 : 30;
-  refreshCountdown = refreshInterval;
-  
+  refreshCountdown = 30;
+
   autoRefreshTimer = setInterval(function() {
     refreshCountdown--;
-    document.getElementById("countdownDisplay").textContent = refreshCountdown;
+    var countdownEl = document.getElementById("countdownDisplay");
+    if (countdownEl) countdownEl.textContent = refreshCountdown;
     refreshLastUpdateDisplay();
-    
-    // Recalculate priced count
-    var currentPriced = 0;
-    for (var s in pricesData) {
-      if (pricesData[s] && pricesData[s].price > 0) currentPriced++;
-    }
-    
-    // Switch to slower refresh once most stocks are loaded
-    var currentInterval = currentPriced < (STOCK_DATA.length / 2) ? 15 : 30;
-    
+
     if (refreshCountdown <= 0) {
-      refreshCountdown = currentInterval;
-      if (!isFetchingData && document.visibilityState === "visible") {
+      refreshCountdown = 30;
+      if (!isFetchingData && document.visibilityState === "visible" && userHoldings.length > 0) {
         fetchLatestPrices();
       }
     }
@@ -4057,53 +4094,74 @@ function getStockData(symbol) {
 }
 
 /* ================= DISPLAY STOCKS ================= */
-function displayStocks(stockList) {
-  const container = document.getElementById("stocksContainer");
+/* ================= DISPLAY STOCKS ================= */
+// showAll = true means user searched, show all matches
+// showAll = false means default view, show only top 25
+function displayStocks(stockList, showAll) {
+  var container = document.getElementById("stocksContainer");
   container.innerHTML = "";
-  
-  document.getElementById("displayedCount").textContent = stockList.length;
-  document.getElementById("totalStockCount").textContent = STOCK_DATA.length;
-  
-  stockList.forEach(function(stock) {
-    const priceInfo = getStockData(stock.sym);
-    const currentPrice = priceInfo && priceInfo.price ? priceInfo.price : 0;
-    const priceChange = priceInfo && priceInfo.change ? priceInfo.change : 0;
-    const changePercent = priceInfo && priceInfo.changePercent ? priceInfo.changePercent : 0;
-    const isPositive = priceChange >= 0;
-    
-    const card = document.createElement("div");
+
+  // Default: show only top 25 popular stocks
+  // Search: show all matching results
+  var displayList;
+  if (showAll) {
+    displayList = stockList;
+  } else {
+    displayList = stockList.slice(0, 25);
+  }
+
+  displayList.forEach(function(stock) {
+    var priceInfo = getStockData(stock.sym);
+    var currentPrice = priceInfo && priceInfo.price ? priceInfo.price : 0;
+    var priceChange = priceInfo && priceInfo.change ? priceInfo.change : 0;
+    var changePercent = priceInfo && priceInfo.changePercent ? priceInfo.changePercent : 0;
+    var isPositive = priceChange >= 0;
+
+    var card = document.createElement("div");
     card.className = "stock-card";
     card.dataset.symbol = stock.sym;
-    
-    card.innerHTML = `
-      <div class="stock-header">
-        <div class="stock-logo">
-          <img src="https://logo.clearbit.com/${stock.logo}" 
-               onerror="this.style.display='none';this.nextElementSibling.style.display='block'"
-               alt="${stock.sym}">
-          <div class="stock-logo-fallback" style="display:none">${stock.sym.charAt(0)}</div>
-        </div>
-        <div class="stock-meta">
-          <div class="stock-title" title="${stock.name}">${stock.name}</div>
-          <div class="stock-symbol">${stock.sym}</div>
-        </div>
-      </div>
-      <div class="price-display">
-        <div class="current-price">${currentPrice > 0 ? '₹' + currentPrice.toFixed(2) : '₹ --'}</div>
-        <div class="price-change">
-          ${currentPrice > 0 ? `
-            <div class="change-value ${isPositive ? 'positive' : 'negative'}">${isPositive ? '+' : ''}₹${priceChange.toFixed(2)}</div>
-            <div class="change-badge ${isPositive ? 'positive' : 'negative'}">${isPositive ? '▲' : '▼'} ${Math.abs(changePercent).toFixed(2)}%</div>
-          ` : '<div style="color:#94a3b8;font-size:13px">Loading...</div>'}
-        </div>
-      </div>
-      <button class="add-stock-btn" onclick="showAddStockModal('${stock.sym}')">➕ Add to Holdings</button>
-    `;
-    
+
+    var priceHTML = "";
+    if (currentPrice > 0) {
+      priceHTML = '<div class="current-price">₹' + currentPrice.toFixed(2) + '</div>' +
+        '<div class="price-change">' +
+          '<div class="change-value ' + (isPositive ? 'positive' : 'negative') + '">' + (isPositive ? '+' : '') + '₹' + priceChange.toFixed(2) + '</div>' +
+          '<div class="change-badge ' + (isPositive ? 'positive' : 'negative') + '">' + (isPositive ? '▲' : '▼') + ' ' + Math.abs(changePercent).toFixed(2) + '%</div>' +
+        '</div>';
+    } else {
+      priceHTML = '<div class="current-price" style="color:#94a3b8;font-size:18px">₹ --</div>' +
+        '<div class="price-change">' +
+          '<div style="color:#94a3b8;font-size:12px">Click + to fetch price</div>' +
+        '</div>';
+    }
+
+    card.innerHTML =
+      '<div class="stock-header">' +
+        '<div class="stock-logo">' +
+          '<img src="https://logo.clearbit.com/' + stock.logo + '" ' +
+               'onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'block\'" ' +
+               'alt="' + stock.sym + '">' +
+          '<div class="stock-logo-fallback" style="display:none">' + stock.sym.charAt(0) + '</div>' +
+        '</div>' +
+        '<div class="stock-meta">' +
+          '<div class="stock-title" title="' + stock.name + '">' + stock.name + '</div>' +
+          '<div class="stock-symbol">' + stock.sym + '</div>' +
+        '</div>' +
+      '</div>' +
+      '<div class="price-display">' + priceHTML + '</div>' +
+      '<button class="add-stock-btn" onclick="showAddStockModal(\'' + stock.sym + '\')">➕ Add to Holdings</button>';
+
     container.appendChild(card);
   });
-}
 
+  // Show "search for more" message if showing default view
+  if (!showAll && stockList.length > 25) {
+    var moreMsg = document.createElement("div");
+    moreMsg.style.cssText = "grid-column:1/-1;text-align:center;padding:40px 20px;color:#64748b;font-size:15px;background:#fff;border-radius:18px;border:1px solid #e2e8f0;";
+    moreMsg.innerHTML = '🔍 <strong>' + (stockList.length - 25) + '+ more stocks available</strong><br><span style="font-size:13px;margin-top:8px;display:block">Use the search bar above to find any stock or ETF</span>';
+    container.appendChild(moreMsg);
+  }
+}
 function displayStocksWithAnimation(stockList) {
   stockList.forEach(function(stock) {
     const oldPrice = prevPricesData[stock.sym]?.price || 0;
@@ -4131,24 +4189,33 @@ function showAddStockModal(symbol) {
       break;
     }
   }
-  
+
   if (!stock) {
-    ToastManager.error("Error", "Stock not found for symbol: " + symbol);    return;
+    ToastManager.error("Error", "Stock not found: " + symbol);
+    return;
   }
-  
-  pendingAddStock = {
-    name: stock.name,
-    sym: stock.sym
-  };
-  
+
+  pendingAddStock = { name: stock.name, sym: stock.sym };
+
   var price = getStockPrice(symbol);
-  
+
   document.getElementById("modalStockName").textContent = stock.name + " (" + symbol + ")";
-  document.getElementById("modalStockPrice").textContent = price > 0 ? "₹" + price.toFixed(2) : "₹ --";
+  document.getElementById("modalStockPrice").textContent = price > 0 ? "₹" + price.toFixed(2) : "₹ Fetching...";
   document.getElementById("modalBuyPrice").value = price > 0 ? price.toFixed(2) : "";
   document.getElementById("modalQuantity").value = "";
   document.getElementById("addStockModal").style.display = "flex";
-  
+
+  // Fetch price if not cached
+  if (price <= 0) {
+    fetchStockPrice(stock, "manual").then(function(data) {
+      if (data && data.price > 0) {
+        document.getElementById("modalStockPrice").textContent = "₹" + data.price.toFixed(2);
+        document.getElementById("modalBuyPrice").value = data.price.toFixed(2);
+      } else {
+        document.getElementById("modalStockPrice").textContent = "₹ -- (unavailable)";
+      }
+    });
+  }
 }
 function hideAddModal() {
   document.getElementById("addStockModal").style.display = "none";
@@ -4991,6 +5058,7 @@ function saveUserProfile() {
 
 </body>
 </html>
+
 
 
 
