@@ -2186,20 +2186,25 @@ function setupHoldingsListener() {
   });
 }
 async function saveHoldingToFirebase(holdingData) {
+  if (!activeUser) {
+    throw new Error("User not logged in");
+  }
+  
+  const docData = {
+    userId: activeUser.uid,
+    name: String(holdingData.name || ""),
+    sym: String(holdingData.sym || ""),
+    buyPrice: Number(holdingData.buyPrice) || 0,
+    qty: Number(holdingData.qty) || 0,
+    addedAt: firebase.firestore.FieldValue.serverTimestamp()
+  };
+  
   try {
-    // FIXED: Save to root-level holdings collection with userId field
-    const docRef = await db.collection("holdings").add({
-      userId: activeUser.uid,
-      name: holdingData.name,
-      sym: holdingData.sym,
-      buyPrice: holdingData.buyPrice,
-      qty: holdingData.qty,
-      addedAt: firebase.firestore.FieldValue.serverTimestamp()
-    });
+    const docRef = await db.collection("holdings").add(docData);
     return docRef.id;
-  } catch (e) {
-    console.error("Error saving holding:", e);
-    throw e;
+  } catch (error) {
+    alert("FIREBASE ERROR CODE: " + error.code + "\n\nMESSAGE: " + error.message);
+    throw error;
   }
 }
 
@@ -3370,6 +3375,7 @@ function saveUserProfile() {
 
 </body>
 </html>
+
 
 
 
