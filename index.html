@@ -1346,13 +1346,43 @@ body{
 <div id="loginPage">
   <h2>FinzoTalk</h2>
   <p class="tagline">Your smart portfolio & chat companion</p>
-  <input type="email" id="emailInput" placeholder="Email address">
-  <input type="password" id="passwordInput" placeholder="Password">
-  <button class="login-primary-btn" id="emailLoginBtn" onclick="handleEmailLogin()">Login / Sign Up</button>
-  <button class="login-google-btn" id="googleLoginBtn" onclick="handleGoogleLogin()">🔵 Continue with Google</button>
+
+  <!-- Login/Register Toggle -->
+  <div class="auth-tabs">
+    <span class="auth-tab active" id="loginTab" onclick="switchAuthTab('login')">Login</span>
+    <span class="auth-tab" id="registerTab" onclick="switchAuthTab('register')">Register</span>
+  </div>
+
+  <!-- LOGIN FORM -->
+  <div id="loginForm">
+    <input type="email" id="loginEmail" placeholder="Email address">
+    <input type="password" id="loginPassword" placeholder="Password">
+    <button class="login-primary-btn" id="emailLoginBtn" onclick="handleEmailLogin()">Login</button>
+  </div>
+
+  <!-- REGISTER FORM -->
+  <div id="registerForm" style="display:none">
+    <input type="text" id="regFirstName" placeholder="First Name">
+    <input type="text" id="regLastName" placeholder="Last Name">
+    <input type="email" id="regEmail" placeholder="Email address">
+    <input type="password" id="regPassword" placeholder="Password (min 6 characters)">
+    <input type="password" id="regConfirmPassword" placeholder="Confirm Password">
+    <button class="login-primary-btn" id="registerBtn" onclick="handleRegister()">Create Account</button>
+  </div>
+
+  <!-- Divider -->
+  <div class="auth-divider">
+    <span>or</span>
+  </div>
+
+  <!-- Google Login -->
+  <button class="login-google-btn" id="googleLoginBtn" onclick="handleGoogleLogin()">
+    <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="20" height="20" alt="Google">
+    Continue with Google
+  </button>
+
   <div id="loginError"></div>
 </div>
-
 <!-- ================= MAIN APPLICATION ================= -->
 <div id="mainApp" style="display:none">
 
@@ -5046,6 +5076,7 @@ function saveUserProfile() {
 
 </body>
 </html>
+
 
 
 
