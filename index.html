@@ -1350,7 +1350,7 @@ body{
     <div class="status-bar">
       <div class="status-left">
         <div class="stock-counter">
-          <strong id="displayedCount">0</strong> of <span id="totalStockCount">0</span> stocks
+          <strong id="displayedCount">0</strong> of <span id="totalStockCount">0</span> stocks | <span id="pricedStockCount" style="color:#10b981">0</span> priced |
         </div>
         <div class="live-status" id="liveStatusBadge">
           <div class="live-dot"></div>
@@ -2982,30 +2982,79 @@ async function fetchLatestPrices() {
   setRefreshStatus("Updating...", true);
   document.getElementById("apiIndicator").textContent = "API: Fetching...";
   
-  // Reset API call counts
   apiCallCounts = { yahoo: 0, twelveData: 0, alphaVantage: 0 };
   
   prevPricesData = JSON.parse(JSON.stringify(pricesData));
   
-  // Prioritize holdings
-  const holdingSyms = userHoldings.map(h => h.sym);
-  const holdingsFirst = STOCK_DATA.filter(s => holdingSyms.includes(s.sym));
-  const remaining = STOCK_DATA.filter(s => !holdingSyms.includes(s.sym));
-  const orderedList = [...holdingsFirst, ...remaining];
+  // Step 1: Prioritize holdings stocks
+  var holdingSyms = userHoldings.map(function(h) { return h.sym; });
+  var holdingsStocks = STOCK_DATA.filter(function(s) { return holdingSyms.indexOf(s.sym) !== -1; });
+  var nonHoldingsStocks = STOCK_DATA.filter(function(s) { return holdingSyms.indexOf(s.sym) === -1; });
   
-  // Fetch in parallel batches
-  const batchSize = 5;
-  const maxFetch = 100;
-  let successCount = 0;
-  let failCount = 0;
+  // Step 2: Find stocks that have NO cached price (never fetched)
+  var noPriceStocks = nonHoldingsStocks.filter(function(s) {
+    return !pricesData[s.sym] || !pricesData[s.sym].price || pricesData[s.sym].price <= 0;
+  });
   
-  for (let i = 0; i < Math.min(orderedList.length, maxFetch); i += batchSize) {
-    const batch = orderedList.slice(i, i + batchSize);
-    const promises = batch.map(stock => 
-      fetchStockPrice(stock).then(data => ({sym: stock.sym, data}))
-    );
+  // Step 3: Find stocks with OLD cached prices (fetched before but stale)
+  var stalePriceStocks = nonHoldingsStocks.filter(function(s) {
+    return pricesData[s.sym] && pricesData[s.sym].price > 0;
+  });
+  
+  // Step 4: Use rotation - pick different stale stocks each cycle
+  if (!window._stockRotationIndex) window._stockRotationIndex = 0;
+  var rotationBatchSize = 30;
+  var rotationStart = window._stockRotationIndex % Math.max(stalePriceStocks.length, 1);
+  var staleToRefresh = stalePriceStocks.slice(rotationStart, rotationStart + rotationBatchSize);
+  if (staleToRefresh.length < rotationBatchSize) {
+    staleToRefresh = staleToRefresh.concat(stalePriceStocks.slice(0, rotationBatchSize - staleToRefresh.length));
+  }
+  window._stockRotationIndex += rotationBatchSize;
+  
+  // Step 5: Build fetch list - Holdings first, then no-price, then stale rotation
+  var maxNewStocks = 80;
+  var maxStaleRefresh = 40;
+  
+  var fetchList = [];
+  
+  // Always fetch holdings (top priority)
+  holdingsStocks.forEach(function(s) { fetchList.push(s); });
+  
+  // Then stocks with no price at all
+  var newStocksToFetch = noPriceStocks.slice(0, maxNewStocks);
+  newStocksToFetch.forEach(function(s) { fetchList.push(s); });
+  
+  // Then rotate stale stocks
+  staleToRefresh.slice(0, maxStaleRefresh).forEach(function(s) {
+    var alreadyInList = false;
+    for (var i = 0; i < fetchList.length; i++) {
+      if (fetchList[i].sym === s.sym) { alreadyInList = true; break; }
+    }
+    if (!alreadyInList) fetchList.push(s);
+  });
+  
+  // Cap total fetches per cycle
+  var totalMaxFetch = 150;
+  if (fetchList.length > totalMaxFetch) {
+    fetchList = fetchList.slice(0, totalMaxFetch);
+  }
+  
+  console.log("Fetch plan: " + holdingsStocks.length + " holdings, " + newStocksToFetch.length + " new, " + staleToRefresh.length + " stale refresh. Total: " + fetchList.length);
+  
+  // Step 6: Fetch in parallel batches
+  var batchSize = 8;
+  var successCount = 0;
+  var failCount = 0;
+  
+  for (var i = 0; i < fetchList.length; i += batchSize) {
+    var batch = fetchList.slice(i, i + batchSize);
+    var promises = batch.map(function(stock) {
+      return fetchStockPrice(stock).then(function(data) {
+        return { sym: stock.sym, data: data };
+      });
+    });
     
-    const results = await Promise.allSettled(promises);
+    var results = await Promise.allSettled(promises);
     
     results.forEach(function(result) {
       if (result.status === "fulfilled" && result.value.data && result.value.data.price > 0) {
@@ -3016,9 +3065,20 @@ async function fetchLatestPrices() {
       }
     });
     
-    // Small delay between batches to avoid rate limits
-    if (i + batchSize < maxFetch) {
-      await new Promise(r => setTimeout(r, 200));
+    // Update display progressively every 3 batches
+    if ((i / batchSize) % 3 === 0 && i > 0) {
+      displayStocks(document.getElementById("stockSearchInput").value ? 
+        STOCK_DATA.filter(function(s) {
+          var q = document.getElementById("stockSearchInput").value.toLowerCase();
+          return s.name.toLowerCase().indexOf(q) !== -1 || s.sym.toLowerCase().indexOf(q) !== -1;
+        }) : STOCK_DATA
+      );
+      displayHoldings();
+    }
+    
+    // Small delay between batches
+    if (i + batchSize < fetchList.length) {
+      await new Promise(function(r) { setTimeout(r, 150); });
     }
   }
   
@@ -3029,14 +3089,19 @@ async function fetchLatestPrices() {
   isFetchingData = false;
   refreshCountdown = 30;
   
+  // Count how many stocks have prices
+  var totalWithPrices = 0;
+  for (var sym in pricesData) {
+    if (pricesData[sym] && pricesData[sym].price > 0) totalWithPrices++;
+  }
+  
   if (successCount > 0) {
     setRefreshStatus("Live", false);
-    const apiSummary = `Y:${apiCallCounts.yahoo} T:${apiCallCounts.twelveData} A:${apiCallCounts.alphaVantage}`;
-    document.getElementById("apiIndicator").textContent = `API: ${apiSummary} (${successCount} ✓)`;
+    var apiSummary = "Y:" + apiCallCounts.yahoo + " T:" + apiCallCounts.twelveData + " A:" + apiCallCounts.alphaVantage;
+    document.getElementById("apiIndicator").textContent = "API: " + apiSummary + " (" + totalWithPrices + "/" + STOCK_DATA.length + " priced)";
   } else {
     setRefreshStatus("Cached", false);
-    document.getElementById("apiIndicator").textContent = "API: Using cached data";
-    ToastManager.warning("Limited Data", "Using cached prices. Live data may be temporarily unavailable.");
+    document.getElementById("apiIndicator").textContent = "API: Cached (" + totalWithPrices + "/" + STOCK_DATA.length + " priced)";
   }
   
   refreshLastUpdateDisplay();
@@ -3057,20 +3122,38 @@ function refreshHoldingsData() {
 function initAutoRefresh() {
   if (autoRefreshTimer) clearInterval(autoRefreshTimer);
   
+  // Count stocks with prices
+  var pricedCount = 0;
+  for (var sym in pricesData) {
+    if (pricesData[sym] && pricesData[sym].price > 0) pricedCount++;
+  }
+  
+  // If less than half stocks have prices, use faster refresh (15s)
+  var refreshInterval = pricedCount < (STOCK_DATA.length / 2) ? 15 : 30;
+  refreshCountdown = refreshInterval;
+  
   autoRefreshTimer = setInterval(function() {
     refreshCountdown--;
     document.getElementById("countdownDisplay").textContent = refreshCountdown;
     refreshLastUpdateDisplay();
     
+    // Recalculate priced count
+    var currentPriced = 0;
+    for (var s in pricesData) {
+      if (pricesData[s] && pricesData[s].price > 0) currentPriced++;
+    }
+    
+    // Switch to slower refresh once most stocks are loaded
+    var currentInterval = currentPriced < (STOCK_DATA.length / 2) ? 15 : 30;
+    
     if (refreshCountdown <= 0) {
-      refreshCountdown = 30;
+      refreshCountdown = currentInterval;
       if (!isFetchingData && document.visibilityState === "visible") {
         fetchLatestPrices();
       }
     }
   }, 1000);
 }
-
 function setRefreshStatus(text, isLoading) {
   const badge = document.getElementById("liveStatusBadge");
   const statusText = document.getElementById("liveStatusText");
@@ -3980,6 +4063,7 @@ function saveUserProfile() {
 
 </body>
 </html>
+
 
 
 
