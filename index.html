@@ -1340,7 +1340,6 @@ body{
     <input type="text" id="stockSearchInput" placeholder="Search 300+ stocks...">
   </div>
  <div class="settings-icon" onclick="showSettings()">⚙️</div>
-<div style="cursor:pointer;background:#ef4444;color:#fff;padding:8px 16px;border-radius:10px;font-size:13px;font-weight:600" onclick="testHoldingSave()">🧪 Test Save</div>
 </nav>
 
 <!-- Main Content -->
@@ -2655,7 +2654,6 @@ function showAddStockModal(symbol) {
   document.getElementById("modalQuantity").value = "";
   document.getElementById("addStockModal").style.display = "flex";
   
-  alert("DEBUG: pendingAddStock set to: " + JSON.stringify(pendingAddStock));
 }
 function hideAddModal() {
   document.getElementById("addStockModal").style.display = "none";
@@ -3432,6 +3430,7 @@ function saveUserProfile() {
 
 </body>
 </html>
+
 
 
 
