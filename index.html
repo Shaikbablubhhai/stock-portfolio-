@@ -2629,31 +2629,48 @@ function displayStocksWithAnimation(stockList) {
 
 /* ================= ADD STOCK MODAL ================= */
 function showAddStockModal(symbol) {
-  const stock = STOCK_DATA.find(s => s.sym === symbol);
-  if (!stock) return;
+  var stock = null;
+  for (var i = 0; i < STOCK_DATA.length; i++) {
+    if (STOCK_DATA[i].sym === symbol) {
+      stock = STOCK_DATA[i];
+      break;
+    }
+  }
   
-  pendingAddStock = stock;
-  const price = getStockPrice(symbol);
+  if (!stock) {
+    alert("DEBUG: Stock not found for symbol: " + symbol);
+    return;
+  }
+  
+  pendingAddStock = {
+    name: stock.name,
+    sym: stock.sym
+  };
+  
+  var price = getStockPrice(symbol);
   
   document.getElementById("modalStockName").textContent = stock.name + " (" + symbol + ")";
   document.getElementById("modalStockPrice").textContent = price > 0 ? "₹" + price.toFixed(2) : "₹ --";
   document.getElementById("modalBuyPrice").value = price > 0 ? price.toFixed(2) : "";
   document.getElementById("modalQuantity").value = "";
   document.getElementById("addStockModal").style.display = "flex";
+  
+  alert("DEBUG: pendingAddStock set to: " + JSON.stringify(pendingAddStock));
 }
-
 function hideAddModal() {
   document.getElementById("addStockModal").style.display = "none";
   pendingAddStock = null;
 }
 
 async function confirmStockAdd() {
-  const buyPriceVal = document.getElementById("modalBuyPrice").value;
-  const quantityVal = document.getElementById("modalQuantity").value;
-  const addBtn = document.getElementById("confirmAddBtn");
+  var buyPriceVal = document.getElementById("modalBuyPrice").value;
+  var quantityVal = document.getElementById("modalQuantity").value;
+  var addBtn = document.getElementById("confirmAddBtn");
   
-  const buyPrice = parseFloat(buyPriceVal);
-  const quantity = parseInt(quantityVal);
+  var buyPrice = parseFloat(buyPriceVal);
+  var quantity = parseInt(quantityVal);
+  
+  alert("DEBUG confirmStockAdd:\n\npendingAddStock: " + JSON.stringify(pendingAddStock) + "\nbuyPrice: " + buyPrice + "\nquantity: " + quantity + "\nactiveUser: " + (activeUser ? activeUser.uid : "NULL"));
   
   if (isNaN(buyPrice) || buyPrice <= 0) {
     ToastManager.warning("Invalid Input", "Please enter a valid buy price");
@@ -2664,32 +2681,47 @@ async function confirmStockAdd() {
     return;
   }
   
+  if (!activeUser) {
+    ToastManager.error("Not Logged In", "Please login first to add holdings");
+    return;
+  }
+  
+  if (!pendingAddStock) {
+    ToastManager.error("Error", "No stock selected. Please try again.");
+    alert("DEBUG: pendingAddStock is NULL! This is the bug.");
+    return;
+  }
+  
   addBtn.disabled = true;
   addBtn.textContent = "Adding...";
   
-  const holdingData = {
-    name: pendingAddStock.name,
-    sym: pendingAddStock.sym,
-    buyPrice: buyPrice,
-    qty: quantity
-  };
-  
   try {
-    // Save to Firebase
-    await saveHoldingToFirebase(holdingData);
+    var docData = {
+      userId: activeUser.uid,
+      name: String(pendingAddStock.name),
+      sym: String(pendingAddStock.sym),
+      buyPrice: Number(buyPrice),
+      qty: Number(quantity),
+      addedAt: firebase.firestore.FieldValue.serverTimestamp()
+    };
+    
+    alert("DEBUG: About to save:\n" + JSON.stringify(docData));
+    
+    var docRef = await db.collection("holdings").add(docData);
+    
+    alert("DEBUG: SAVED! Doc ID: " + docRef.id);
     
     hideAddModal();
-    ToastManager.success("Stock Added!", `${pendingAddStock.name} added to your holdings`);
+    ToastManager.success("Stock Added!", pendingAddStock.name + " added to your holdings");
     
   } catch (error) {
-    console.error("Add holding error:", error);
-    ToastManager.error("Failed to Add", "Could not save to database. Please try again.");
+    alert("DEBUG: SAVE FAILED!\n\nCode: " + (error.code || "none") + "\nMessage: " + (error.message || "unknown"));
+    ToastManager.error("Failed to Add", "Could not save to database. " + (error.message || "Please try again."));
   } finally {
     addBtn.disabled = false;
     addBtn.textContent = "Add";
   }
 }
-
 /* ================= EDIT STOCK MODAL ================= */
 function showEditStockModal(index) {
   const holding = userHoldings[index];
@@ -3404,6 +3436,7 @@ function saveUserProfile() {
 
 </body>
 </html>
+
 
 
 
