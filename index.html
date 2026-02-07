@@ -2185,34 +2185,7 @@ function setupHoldingsListener() {
     }
   });
 }
-  async function testHoldingSave() {
-  if (!activeUser) {
-    alert("ERROR: Not logged in!");
-    return;
-  }
-  
-  alert("Starting test...\n\nUser UID: " + activeUser.uid + "\nEmail: " + activeUser.email);
-  
-  var testData = {
-    userId: activeUser.uid,
-    name: "Test Stock",
-    sym: "TEST",
-    buyPrice: 100,
-    qty: 1,
-    addedAt: firebase.firestore.FieldValue.serverTimestamp()
-  };
-  
-  try {
-    alert("Step 1: About to write to Firestore...\n\nCollection: holdings\nuserId: " + activeUser.uid);
-    
-    var docRef = await db.collection("holdings").add(testData);
-    
-    alert("SUCCESS!\n\nDocument saved with ID: " + docRef.id + "\n\nYour holdings should now work. Delete the test stock from your holdings page.");
-    
-  } catch (err) {
-    alert("FAILED!\n\nError Code: " + (err.code || "none") + "\n\nError Message: " + (err.message || "unknown") + "\n\nFull Error: " + JSON.stringify(err));
-  }
-}
+
 async function saveHoldingToFirebase(holdingData) {
   if (!activeUser) {
     throw new Error("User not logged in");
@@ -2637,8 +2610,7 @@ function showAddStockModal(symbol) {
   }
   
   if (!stock) {
-    alert("DEBUG: Stock not found for symbol: " + symbol);
-    return;
+    ToastManager.error("Error", "Stock not found for symbol: " + symbol);    return;
   }
   
   pendingAddStock = {
@@ -3430,6 +3402,7 @@ function saveUserProfile() {
 
 </body>
 </html>
+
 
 
 
