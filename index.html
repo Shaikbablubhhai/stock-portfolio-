@@ -3974,7 +3974,20 @@ function openChatConversation(friendId, friendName) {
   
   document.getElementById("chatMainHeader").style.display = "flex";
   document.getElementById("chatPartnerName").textContent = friendName;
-  document.getElementById("chatPartnerAvatar").innerHTML = friendName.charAt(0).toUpperCase() + '<div class="online-indicator" id="chatPartnerOnlineIndicator"></div>';
+      document.getElementById("chatPartnerAvatar").innerHTML = friendName.charAt(0).toUpperCase() + '<div class="online-indicator offline" id="chatPartnerOnlineIndicator"></div>';
+  
+  // Immediately check friend's current online status
+  rtdb.ref("/status/" + friendId).once("value").then(function(snapshot) {
+    const status = snapshot.val();
+    if (status) {
+      updateChatPartnerStatus(status.state === "online", status.lastSeen);
+    } else {
+      updateChatPartnerStatus(false, null);
+    }
+  }).catch(function(err) {
+    console.error("Failed to fetch friend status:", err);
+    updateChatPartnerStatus(false, null);
+  });
   
   const messagesArea = document.getElementById("chatMessagesContainer");
   messagesArea.innerHTML = '<div class="chat-placeholder"><p>Loading messages...</p></div>';
@@ -4145,6 +4158,7 @@ function saveUserProfile() {
 
 </body>
 </html>
+
 
 
 
