@@ -3370,6 +3370,22 @@ const STOCK_DATA = [
   {name:"ICICI Pru Digital ETF",sym:"ICICIDIGIT",yahoo:"ICICIDIGIT.NS",logo:"icicipruamc.com"}
 ];
 
+  /* ================= DEDUPLICATE STOCK_DATA ================= */
+// Remove duplicate stocks - keeps first occurrence of each symbol
+const _seenSymbols = {};
+const STOCK_DATA_CLEAN = [];
+for (let i = 0; i < STOCK_DATA.length; i++) {
+  const sym = STOCK_DATA[i].sym;
+  if (!_seenSymbols[sym]) {
+    _seenSymbols[sym] = true;
+    STOCK_DATA_CLEAN.push(STOCK_DATA[i]);
+  }
+}
+// Replace original array with deduplicated version
+STOCK_DATA.length = 0;
+STOCK_DATA.push(...STOCK_DATA_CLEAN);
+console.log("Total unique stocks after dedup: " + STOCK_DATA.length);
+
 /* ================= GLOBAL VARIABLES ================= */
 let activeUser = null;
 let userHoldings = [];
@@ -5332,3 +5348,4 @@ function saveUserProfile() {
 </script>
 </body>
 </html>
+
