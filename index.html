@@ -1587,8 +1587,15 @@ body{
       <p>Email: <span id="displayUserEmail">--</span></p>
       <p>Your ID: <span id="displayUserCode" style="color:#4f46e5;font-size:20px">--</span></p>
     </div>
-    <label>Display Name</label>
-    <input type="text" id="displayNameInput" placeholder="Enter your name">
+        <label>First Name</label>
+    <input type="text" id="settingsFirstName" placeholder="First name">
+    <label>Last Name</label>
+    <input type="text" id="settingsLastName" placeholder="Last name">
+    <label>Display Name (auto-generated)</label>
+    <input type="text" id="displayNameInput" placeholder="Display name" readonly style="background:#f1f5f9;color:#64748b;cursor:not-allowed">
+    <div style="font-size:12px;color:#94a3b8;margin-top:-8px;margin-bottom:14px">
+      Display name is automatically set from First + Last name
+    </div>
     <div class="modal-actions">
       <button class="modal-primary" id="saveProfileBtn" onclick="saveUserProfile()">Save</button>
       <button class="modal-secondary" onclick="hideSettings()">Close</button>
@@ -5246,32 +5253,69 @@ function sendChatMsg() {
 /* ================= SETTINGS ================= */
 function showSettings() {
   document.getElementById("displayUserEmail").textContent = activeUser.email;
-  
+
   db.collection("users").doc(activeUser.uid).get().then(function(doc) {
     if (doc.exists) {
-      const data = doc.data();
+      var data = doc.data();
       document.getElementById("displayUserCode").textContent = data.usercode || "--";
-      document.getElementById("displayNameInput").value = data.name || "";
+
+      // Show first name and last name separately if available
+      var settingsFirstName = document.getElementById("settingsFirstName");
+      var settingsLastName = document.getElementById("settingsLastName");
+      var displayNameInput = document.getElementById("displayNameInput");
+
+      if (settingsFirstName && settingsLastName) {
+        settingsFirstName.value = data.firstName || "";
+        settingsLastName.value = data.lastName || "";
+      }
+
+      if (displayNameInput) {
+        displayNameInput.value = data.name || "";
+      }
     }
   }).catch(function(error) {
     console.error("Settings load error:", error);
   });
-  
+
   document.getElementById("settingsModal").style.display = "flex";
 }
-
 function hideSettings() {
   document.getElementById("settingsModal").style.display = "none";
 }
 
 function saveUserProfile() {
-  const newName = document.getElementById("displayNameInput").value.trim();
-  const saveBtn = document.getElementById("saveProfileBtn");
-  
+  var firstNameEl = document.getElementById("settingsFirstName");
+  var lastNameEl = document.getElementById("settingsLastName");
+  var displayNameInput = document.getElementById("displayNameInput");
+  var saveBtn = document.getElementById("saveProfileBtn");
+
+  var firstName = firstNameEl ? firstNameEl.value.trim() : "";
+  var lastName = lastNameEl ? lastNameEl.value.trim() : "";
+  var displayName = "";
+
+  // Build display name
+  if (firstName || lastName) {
+    displayName = (firstName + " " + lastName).trim();
+  } else if (displayNameInput) {
+    displayName = displayNameInput.value.trim();
+  }
+
+  if (!displayName) {
+    ToastManager.warning("Missing Name", "Please enter at least your first name");
+    return;
+  }
+
   saveBtn.disabled = true;
   saveBtn.textContent = "Saving...";
-  
-  db.collection("users").doc(activeUser.uid).update({name: newName})
+
+  var updateData = {
+    name: displayName
+  };
+
+  if (firstName) updateData.firstName = firstName;
+  if (lastName) updateData.lastName = lastName;
+
+  db.collection("users").doc(activeUser.uid).update(updateData)
     .then(function() {
       ToastManager.success("Saved!", "Your profile has been updated");
       hideSettings();
@@ -5284,11 +5328,6 @@ function saveUserProfile() {
       saveBtn.textContent = "Save";
     });
 }
-</script>
-
-</body>
-</html>
-
 
 
 
