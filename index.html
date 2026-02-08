@@ -1196,13 +1196,67 @@ body{
   gap:12px;
 }
 .login-google-btn:hover:not(:disabled){background:#f8fafc}
-#loginError{
-  color:#dc2626;
-  margin-top:16px;
+
+/* Auth Tabs */
+.auth-tabs{
+  display:flex;
+  gap:0;
+  margin-bottom:28px;
+  background:#f1f5f9;
+  border-radius:12px;
+  padding:4px;
+}
+.auth-tab{
+  flex:1;
   text-align:center;
-  font-size:14px;
+  padding:12px 20px;
+  border-radius:10px;
+  font-weight:600;
+  font-size:15px;
+  color:#64748b;
+  cursor:pointer;
+  transition:all 0.3s ease;
+}
+.auth-tab:hover{
+  color:#4f46e5;
+}
+.auth-tab.active{
+  background:#fff;
+  color:#4f46e5;
+  box-shadow:0 2px 8px rgba(0,0,0,0.08);
 }
 
+/* Auth Divider */
+.auth-divider{
+  display:flex;
+  align-items:center;
+  margin:20px 0;
+}
+.auth-divider::before,
+.auth-divider::after{
+  content:"";
+  flex:1;
+  height:1px;
+  background:#e2e8f0;
+}
+.auth-divider span{
+  padding:0 16px;
+  color:#94a3b8;
+  font-size:14px;
+  font-weight:500;
+}
+
+/* Register form spacing */
+#registerForm input{
+  margin-bottom:12px;
+}
+#registerForm .name-row{
+  display:flex;
+  gap:12px;
+}
+#registerForm .name-row input{
+  flex:1;
+}
 /* ================= MODALS ================= */
 .modal-backdrop{
   position:fixed;
@@ -3411,6 +3465,28 @@ document.addEventListener("DOMContentLoaded", function() {
 });
 
 /* ================= AUTHENTICATION ================= */
+  function switchAuthTab(tab) {
+  var loginTab = document.getElementById("loginTab");
+  var registerTab = document.getElementById("registerTab");
+  var loginForm = document.getElementById("loginForm");
+  var registerForm = document.getElementById("registerForm");
+  var errorDiv = document.getElementById("loginError");
+
+  // Clear error
+  errorDiv.textContent = "";
+
+  if (tab === "login") {
+    loginTab.classList.add("active");
+    registerTab.classList.remove("active");
+    loginForm.style.display = "block";
+    registerForm.style.display = "none";
+  } else {
+    loginTab.classList.remove("active");
+    registerTab.classList.add("active");
+    loginForm.style.display = "none";
+    registerForm.style.display = "block";
+  }
+}
 function handleGoogleLogin() {
   const btn = document.getElementById("googleLoginBtn");
   btn.disabled = true;
@@ -3429,95 +3505,231 @@ function handleGoogleLogin() {
       btn.innerHTML = "🔵 Continue with Google";
     });
 }
+async function handleRegister() {
+  var firstName = document.getElementById("regFirstName").value.trim();
+  var lastName = document.getElementById("regLastName").value.trim();
+  var email = document.getElementById("regEmail").value.trim();
+  var password = document.getElementById("regPassword").value.trim();
+  var confirmPassword = document.getElementById("regConfirmPassword").value.trim();
+  var errorDiv = document.getElementById("loginError");
+  var registerBtn = document.getElementById("registerBtn");
 
-function handleEmailLogin() {
-  const emailVal = document.getElementById("emailInput").value.trim();
-  const passVal = document.getElementById("passwordInput").value.trim();
-  const btn = document.getElementById("emailLoginBtn");
-  
-  if (!emailVal || !passVal) {
-    document.getElementById("loginError").textContent = "Please enter email and password";
-    ToastManager.warning("Missing Info", "Please enter email and password");
+  // Clear previous error
+  errorDiv.textContent = "";
+
+  // Validation
+  if (!firstName) {
+    errorDiv.textContent = "Please enter your first name";
+    ToastManager.warning("Missing Info", "Please enter your first name");
     return;
   }
-  
+
+  if (!lastName) {
+    errorDiv.textContent = "Please enter your last name";
+    ToastManager.warning("Missing Info", "Please enter your last name");
+    return;
+  }
+
+  if (!email) {
+    errorDiv.textContent = "Please enter your email address";
+    ToastManager.warning("Missing Info", "Please enter your email address");
+    return;
+  }
+
+  if (!password) {
+    errorDiv.textContent = "Please enter a password";
+    ToastManager.warning("Missing Info", "Please enter a password");
+    return;
+  }
+
+  if (password.length < 6) {
+    errorDiv.textContent = "Password must be at least 6 characters";
+    ToastManager.warning("Weak Password", "Password must be at least 6 characters");
+    return;
+  }
+
+  if (password !== confirmPassword) {
+    errorDiv.textContent = "Passwords do not match";
+    ToastManager.warning("Mismatch", "Passwords do not match");
+    return;
+  }
+
+  // Disable button
+  registerBtn.disabled = true;
+  registerBtn.textContent = "Creating Account...";
+
+  try {
+    // Create Firebase Auth account
+    var userCredential = await auth.createUserWithEmailAndPassword(email, password);
+    var user = userCredential.user;
+
+    // Generate 5-digit user code
+    var userCode = String(Math.floor(10000 + Math.random() * 90000));
+
+    // Save user profile to Firestore
+    await db.collection("users").doc(user.uid).set({
+      firstName: firstName,
+      lastName: lastName,
+      name: firstName + " " + lastName,
+      email: email,
+      usercode: userCode,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+
+    ToastManager.success("Account Created!", "Welcome to FinzoTalk, " + firstName + "!");
+
+  } catch (error) {
+    console.error("Registration error:", error);
+
+    var errorMessage = "Registration failed. Please try again.";
+
+    if (error.code === "auth/email-already-in-use") {
+      errorMessage = "This email is already registered. Please login instead.";
+    } else if (error.code === "auth/invalid-email") {
+      errorMessage = "Please enter a valid email address.";
+    } else if (error.code === "auth/weak-password") {
+      errorMessage = "Password is too weak. Use at least 6 characters.";
+    } else if (error.message) {
+      errorMessage = error.message;
+    }
+
+    errorDiv.textContent = errorMessage;
+    ToastManager.error("Registration Failed", errorMessage);
+  } finally {
+    registerBtn.disabled = false;
+    registerBtn.textContent = "Create Account";
+  }
+}
+function handleEmailLogin() {
+  var emailVal = document.getElementById("loginEmail").value.trim();
+  var passVal = document.getElementById("loginPassword").value.trim();
+  var btn = document.getElementById("emailLoginBtn");
+  var errorDiv = document.getElementById("loginError");
+
+  // Clear previous error
+  errorDiv.textContent = "";
+
+  if (!emailVal) {
+    errorDiv.textContent = "Please enter your email address";
+    ToastManager.warning("Missing Info", "Please enter your email address");
+    return;
+  }
+
+  if (!passVal) {
+    errorDiv.textContent = "Please enter your password";
+    ToastManager.warning("Missing Info", "Please enter your password");
+    return;
+  }
+
   btn.disabled = true;
   btn.textContent = "Signing in...";
-  
+
   auth.signInWithEmailAndPassword(emailVal, passVal)
     .then(function() {
       ToastManager.success("Welcome back!", "Successfully signed in");
     })
-    .catch(function(signInError) {
-      // If sign in fails, try to create account
-      if (signInError.code === "auth/user-not-found" || signInError.code === "auth/invalid-credential") {
-        return auth.createUserWithEmailAndPassword(emailVal, passVal)
-          .then(function() {
-            ToastManager.success("Account Created!", "Welcome to FinzoTalk");
-          });
+    .catch(function(error) {
+      console.error("Login error:", error);
+
+      var errorMessage = "Login failed. Please try again.";
+
+      if (error.code === "auth/user-not-found") {
+        errorMessage = "No account found with this email. Please register first.";
+      } else if (error.code === "auth/wrong-password" || error.code === "auth/invalid-credential") {
+        errorMessage = "Incorrect password. Please try again.";
+      } else if (error.code === "auth/invalid-email") {
+        errorMessage = "Please enter a valid email address.";
+      } else if (error.code === "auth/too-many-requests") {
+        errorMessage = "Too many failed attempts. Please try again later.";
+      } else if (error.message) {
+        errorMessage = error.message;
       }
-      throw signInError;
-    })
-    .catch(function(err) {
-      document.getElementById("loginError").textContent = err.message;
-      ToastManager.error("Login Failed", err.message);
+
+      errorDiv.textContent = errorMessage;
+      ToastManager.error("Login Failed", errorMessage);
     })
     .finally(function() {
       btn.disabled = false;
-      btn.textContent = "Login / Sign Up";
+      btn.textContent = "Login";
     });
 }
 
 auth.onAuthStateChanged(async function(user) {
   if (!user) return;
-  
+
   activeUser = user;
   document.getElementById("loginPage").style.display = "none";
   document.getElementById("mainApp").style.display = "block";
-  
+
   // Create/verify user document
   try {
-    const userDocRef = db.collection("users").doc(user.uid);
-    const userDocSnap = await userDocRef.get();
-    
+    var userDocRef = db.collection("users").doc(user.uid);
+    var userDocSnap = await userDocRef.get();
+
     if (!userDocSnap.exists) {
+      // First time Google login or missing profile
+      // Extract name parts from Google displayName
+      var fullName = user.displayName || "";
+      var nameParts = fullName.split(" ");
+      var firstName = nameParts[0] || "";
+      var lastName = nameParts.length > 1 ? nameParts.slice(1).join(" ") : "";
+
       await userDocRef.set({
+        firstName: firstName,
+        lastName: lastName,
+        name: fullName || user.email.split("@")[0],
         email: user.email,
-        name: user.displayName || "",
         usercode: String(Math.floor(10000 + Math.random() * 90000)),
         createdAt: firebase.firestore.FieldValue.serverTimestamp()
       });
+
+      ToastManager.success("Welcome!", "Your profile has been created");
+    } else {
+      // Existing user - check if firstName/lastName fields exist
+      var existingData = userDocSnap.data();
+
+      if (!existingData.firstName || !existingData.lastName) {
+        // Old user without firstName/lastName - migrate
+        var existingName = existingData.name || user.displayName || "";
+        var parts = existingName.split(" ");
+        var fName = parts[0] || "";
+        var lName = parts.length > 1 ? parts.slice(1).join(" ") : "";
+
+        await userDocRef.update({
+          firstName: fName,
+          lastName: lName
+        });
+      }
     }
   } catch(e) {
     console.error("User doc error:", e);
     ToastManager.error("Setup Error", "Failed to setup user profile");
   }
-  
+
   // Setup online presence
   setupPresenceSystem();
-  
+
   // Setup real-time holdings listener
   setupHoldingsListener();
-  
+
   // Render stocks
   displayStocks(STOCK_DATA, false);
-  
+
   // Render holdings
   displayHoldings();
-  
+
   // Setup chat
   setupFriendsListener();
   setupRequestsListener();
-  
+
   // Start auto refresh
   initAutoRefresh();
-  
+
   // Fetch fresh prices
   setTimeout(function() {
     fetchLatestPrices();
   }, 1000);
 });
-
 function performLogout() {
   if (confirm("Are you sure you want to logout?")) {
     // Set offline before logout
@@ -5076,6 +5288,7 @@ function saveUserProfile() {
 
 </body>
 </html>
+
 
 
 
