@@ -1250,6 +1250,27 @@ body{
 #registerForm input{
   margin-bottom:12px;
 }
+  #loginError{
+  color:#dc2626;
+  margin-top:16px;
+  text-align:center;
+  font-size:14px;
+  min-height:20px;
+}
+
+/* Login responsive */
+@media(max-width:500px){
+  #loginPage{
+    padding:32px 24px;
+    border-radius:20px;
+  }
+  #loginPage h2{
+    font-size:28px;
+  }
+  .floating-icon{
+    font-size:20px !important;
+  }
+}
 #registerForm .name-row{
   display:flex;
   gap:12px;
@@ -1397,7 +1418,30 @@ body{
 <div class="toast-container" id="toastContainer"></div>
 
 <!-- ================= LOGIN PAGE ================= -->
-<div id="loginPage">
+<div class="login-wrapper" id="loginWrapper">
+  <!-- Floating Icons -->
+  <div class="floating-icons">
+    <div class="floating-icon">📈</div>
+    <div class="floating-icon">💰</div>
+    <div class="floating-icon">📊</div>
+    <div class="floating-icon">🏦</div>
+    <div class="floating-icon">💹</div>
+    <div class="floating-icon">📉</div>
+    <div class="floating-icon">💎</div>
+    <div class="floating-icon">🪙</div>
+    <div class="floating-icon">📱</div>
+    <div class="floating-icon">🔒</div>
+    <div class="floating-icon">💳</div>
+    <div class="floating-icon">🏧</div>
+    <div class="floating-icon">📈</div>
+    <div class="floating-icon">💰</div>
+    <div class="floating-icon">📊</div>
+  </div>
+  <!-- Glowing Orbs -->
+  <div class="login-glow login-glow-1"></div>
+  <div class="login-glow login-glow-2"></div>
+  <div class="login-glow login-glow-3"></div>
+  <div id="loginPage">
   <h2>FinzoTalk</h2>
   <p class="tagline">Your smart portfolio & chat companion</p>
 
@@ -1436,6 +1480,7 @@ body{
   </button>
 
   <div id="loginError"></div>
+</div>
 </div>
 <!-- ================= MAIN APPLICATION ================= -->
 <div id="mainApp" style="display:none">
@@ -3758,7 +3803,7 @@ auth.onAuthStateChanged(async function(user) {
   if (!user) return;
 
   activeUser = user;
-  document.getElementById("loginPage").style.display = "none";
+    document.getElementById("loginWrapper").style.display = "none";
   document.getElementById("mainApp").style.display = "block";
 
   // Create/verify user document
@@ -5425,5 +5470,6 @@ function saveUserProfile() {
 </script>
 </body>
 </html>
+
 
 
