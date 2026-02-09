@@ -87,6 +87,30 @@ body{
 ::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:10px}
 ::-webkit-scrollbar-thumb:hover{background:#94a3b8}
 
+  /* ================= MESSAGE STATUS TICKS ================= */
+.msg-status{
+  font-weight:600;
+  letter-spacing:0.5px;
+  font-size:11px;
+}
+.msg-status.msg-sending{
+  color:rgba(255,255,255,0.5);
+}
+.msg-status.msg-sent{
+  color:rgba(255,255,255,0.6);
+}
+.msg-status.msg-delivered{
+  color:rgba(255,255,255,0.8);
+}
+.msg-status.msg-seen{
+  color:#60a5fa;
+  font-weight:700;
+}
+/* Incoming message status (not needed but just in case) */
+.chat-message.incoming .msg-status.msg-seen{
+  color:#3b82f6;
+}
+
 /* ================= TOAST NOTIFICATION SYSTEM ================= */
 .toast-container{
   position:fixed;
@@ -3388,6 +3412,8 @@ let refreshCountdown = 30;
 let autoRefreshTimer = null;
 let isFetchingData = false;
 let activeChatWith = null;
+let activeChatPartnerOnline = false;
+let activeChatPartnerLastSeen = 0;
 let chatListener = null;
 let pendingAddStock = null;
 let pendingEditIndex = null;
@@ -3799,6 +3825,26 @@ function setupPresenceSystem() {
       });
     });
   });
+
+  // Mark messages as seen when user returns to tab
+document.addEventListener("visibilitychange", function() {
+  if (document.visibilityState === "visible" && activeChatWith) {
+    var chatDocId = [activeUser.uid, activeChatWith].sort().join("_");
+    db.collection("chats").doc(chatDocId)
+      .collection("messages")
+      .where("from", "==", activeChatWith)
+      .where("seen", "==", false)
+      .get()
+      .then(function(snapshot) {
+        snapshot.forEach(function(doc) {
+          doc.ref.update({seen: true}).catch(function(e) {});
+        });
+      })
+      .catch(function(e) {
+        console.error("Mark seen error:", e);
+      });
+  }
+});
   
   // Keep updating online status every 30 seconds
   setInterval(function() {
@@ -3852,16 +3898,38 @@ function watchFriendStatus(friendUid, callback) {
 
 function formatLastSeen(timestamp) {
   if (!timestamp) return "Offline";
-  
-  const now = Date.now();
-  const diff = now - timestamp;
-  
-  if (diff < 60000) return "Just now";
-  if (diff < 3600000) return Math.floor(diff / 60000) + "m ago";
-  if (diff < 86400000) return Math.floor(diff / 3600000) + "h ago";
-  return new Date(timestamp).toLocaleDateString();
-}
 
+  var now = Date.now();
+  var diff = Math.max(0, now - timestamp);
+
+  if (diff < 30000) return "Just now";
+  if (diff < 60000) return "Less than a min ago";
+
+  if (diff < 3600000) {
+    var mins = Math.floor(diff / 60000);
+    return mins + (mins === 1 ? " min ago" : " mins ago");
+  }
+
+  if (diff < 86400000) {
+    var hours = Math.floor(diff / 3600000);
+    var remainMins = Math.floor((diff % 3600000) / 60000);
+    if (remainMins > 0) {
+      return hours + "h " + remainMins + "m ago";
+    }
+    return hours + (hours === 1 ? " hour ago" : " hours ago");
+  }
+
+  if (diff < 604800000) {
+    var days = Math.floor(diff / 86400000);
+    return days + (days === 1 ? " day ago" : " days ago");
+  }
+
+  return new Date(timestamp).toLocaleDateString("en-IN", {
+    day: "numeric",
+    month: "short",
+    year: "numeric"
+  });
+}
 /* ================= HOLDINGS FIREBASE LISTENER ================= */
 /* ================= HOLDINGS FIREBASE LISTENER ================= */
 function setupHoldingsListener() {
@@ -5092,23 +5160,26 @@ function setupFriendsListener() {
 }
 
 function updateChatPartnerStatus(isOnline, lastSeen) {
-  const statusEl = document.getElementById("chatPartnerStatus");
-  const statusTextEl = document.getElementById("chatPartnerStatusText");
-  const indicatorEl = document.getElementById("chatPartnerOnlineIndicator");
-  
+  // Update tracking variables for message status
+  activeChatPartnerOnline = isOnline;
+  activeChatPartnerLastSeen = lastSeen || 0;
+
+  var statusEl = document.getElementById("chatPartnerStatus");
+  var statusTextEl = document.getElementById("chatPartnerStatusText");
+  var indicatorEl = document.getElementById("chatPartnerOnlineIndicator");
+
   if (statusEl) {
     statusEl.className = "partner-status " + (isOnline ? "online" : "offline");
   }
-  
+
   if (statusTextEl) {
     statusTextEl.textContent = isOnline ? "Online" : formatLastSeen(lastSeen);
   }
-  
+
   if (indicatorEl) {
     indicatorEl.className = "online-indicator " + (isOnline ? "" : "offline");
   }
 }
-
 /* ================= CHAT - OPEN CONVERSATION ================= */
 function openChatConversation(friendId, friendName) {
   activeChatWith = friendId;
@@ -5181,15 +5252,43 @@ function openChatConversation(friendId, friendName) {
           messagesArea.appendChild(dateSeparator);
         }
         
-        if (!isMine && !msg.seen) {
+               // Only mark seen when user is ACTIVELY viewing this specific chat
+        if (!isMine && !msg.seen && document.visibilityState === "visible" && activeChatWith === friendId) {
           doc.ref.update({seen: true}).catch(function(e) {});
         }
-        
-        const statusText = isMine ? (msg.seen ? " • Seen ✓✓" : " • Sent ✓") : "";
-        
-        const msgEl = document.createElement("div");
+
+        // Mark delivery for incoming messages
+        if (!isMine && !msg.delivered && msg.timestamp) {
+          doc.ref.update({delivered: true}).catch(function(e) {});
+        }
+
+        // Determine message status for outgoing messages
+        var statusHTML = "";
+        if (isMine) {
+          if (!msg.timestamp) {
+            // Message not yet saved to server
+            statusHTML = ' • <span class="msg-status msg-sending">🕐 Sending</span>';
+          } else if (msg.seen) {
+            // Recipient has seen the message
+            statusHTML = ' • <span class="msg-status msg-seen">✓✓ Seen</span>';
+          } else if (msg.delivered) {
+            // Message delivered to recipient
+            statusHTML = ' • <span class="msg-status msg-delivered">✓✓ Delivered</span>';
+          } else {
+            // Check if friend was online after message was sent
+            var msgTime = msg.timestamp.toDate().getTime();
+            if (activeChatPartnerOnline || (activeChatPartnerLastSeen > 0 && activeChatPartnerLastSeen > msgTime)) {
+              statusHTML = ' • <span class="msg-status msg-delivered">✓✓ Delivered</span>';
+            } else {
+              // Message sent but not yet delivered
+              statusHTML = ' • <span class="msg-status msg-sent">✓ Sent</span>';
+            }
+          }
+        }
+
+        var msgEl = document.createElement("div");
         msgEl.className = "chat-message " + (isMine ? "outgoing" : "incoming");
-        msgEl.innerHTML = msg.text + '<span class="msg-time">' + timeStr + statusText + '</span>';
+        msgEl.innerHTML = msg.text + '<span class="msg-time">' + timeStr + statusHTML + '</span>';
         messagesArea.appendChild(msgEl);
       });
       
@@ -5234,20 +5333,21 @@ function getDateLabel(date) {
 }
 /* ================= CHAT - SEND MESSAGE ================= */
 function sendChatMsg() {
-  const inputEl = document.getElementById("chatMessageInput");
-  const sendBtn = document.getElementById("sendMsgBtn");
-  const msgText = inputEl.value.trim();
-  
+  var inputEl = document.getElementById("chatMessageInput");
+  var sendBtn = document.getElementById("sendMsgBtn");
+  var msgText = inputEl.value.trim();
+
   if (!msgText || !activeChatWith) return;
-  
+
   sendBtn.disabled = true;
-  
-  const chatDocId = [activeUser.uid, activeChatWith].sort().join("_");
-  
+
+  var chatDocId = [activeUser.uid, activeChatWith].sort().join("_");
+
   db.collection("chats").doc(chatDocId).collection("messages").add({
     from: activeUser.uid,
     text: msgText,
     timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+    delivered: false,
     seen: false
   }).then(function() {
     inputEl.value = "";
@@ -5258,7 +5358,6 @@ function sendChatMsg() {
     sendBtn.disabled = false;
   });
 }
-
 /* ================= SETTINGS ================= */
 function showSettings() {
   document.getElementById("displayUserEmail").textContent = activeUser.email;
@@ -5310,6 +5409,7 @@ function saveUserProfile() {
 </script>
 </body>
 </html>
+
 
 
 
