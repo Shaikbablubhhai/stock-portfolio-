@@ -1386,15 +1386,8 @@ body{
       <p>Email: <span id="displayUserEmail">--</span></p>
       <p>Your ID: <span id="displayUserCode" style="color:#4f46e5;font-size:20px">--</span></p>
     </div>
-        <label>First Name</label>
-    <input type="text" id="settingsFirstName" placeholder="First name">
-    <label>Last Name</label>
-    <input type="text" id="settingsLastName" placeholder="Last name">
-    <label>Display Name (auto-generated)</label>
-    <input type="text" id="displayNameInput" placeholder="Display name" readonly style="background:#f1f5f9;color:#64748b;cursor:not-allowed">
-    <div style="font-size:12px;color:#94a3b8;margin-top:-8px;margin-bottom:14px">
-      Display name is automatically set from First + Last name
-    </div>
+           <label>Display Name</label>
+    <input type="text" id="displayNameInput" placeholder="Enter your name">
     <div class="modal-actions">
       <button class="modal-primary" id="saveProfileBtn" onclick="saveUserProfile()">Save</button>
       <button class="modal-secondary" onclick="hideSettings()">Close</button>
@@ -1687,11 +1680,11 @@ const STOCK_DATA = [
   {name:"Shriram Finance",sym:"SHRIRAMFIN",yahoo:"SHRIRAMFIN.NS",logo:"shriramfinance.in"},
   {name:"L&T Finance",sym:"LTF",yahoo:"LTF.NS",logo:"ltfs.com"},
 
-  {name:"Meesho",sym:"MEESHO",yahoo:null,logo:"meesho.com",status:"UNLISTED"},
-{name:"Lenskart",sym:"LENSKART",yahoo:null,logo:"lenskart.com",status:"UNLISTED"},
-{name:"Groww",sym:"GROWW",yahoo:null,logo:"groww.in",status:"UNLISTED"},
-{name:"PhysicsWallah",sym:"PW",yahoo:null,logo:"physicswallah.live",status:"UNLISTED"},
-{name:"Bharat Coking Coal",sym:"BCCL",yahoo:null,logo:"bccl.gov.in",status:"SUBSIDIARY"},
+  {name:"Meesho",sym:"MEESHO",yahoo:null,logo:"meesho.com"},
+{name:"Lenskart",sym:"LENSKART",yahoo:null,logo:"lenskart.com"},
+{name:"Groww",sym:"GROWW",yahoo:null,logo:"groww.in"},
+{name:"PhysicsWallah",sym:"PW",yahoo:null,logo:"physicswallah.live"},
+{name:"Bharat Coking Coal",sym:"BCCL",yahoo:null,logo:"bccl.gov.in"},
 
 {name:"Tata Technologies",sym:"TATATECH",yahoo:"TATATECH.NS",logo:"tatatechnologies.com"},
 {name:"IREDA",sym:"IREDA",yahoo:"IREDA.NS",logo:"ireda.in"},
@@ -5277,20 +5270,7 @@ function showSettings() {
     if (doc.exists) {
       var data = doc.data();
       document.getElementById("displayUserCode").textContent = data.usercode || "--";
-
-      // Show first name and last name separately if available
-      var settingsFirstName = document.getElementById("settingsFirstName");
-      var settingsLastName = document.getElementById("settingsLastName");
-      var displayNameInput = document.getElementById("displayNameInput");
-
-      if (settingsFirstName && settingsLastName) {
-        settingsFirstName.value = data.firstName || "";
-        settingsLastName.value = data.lastName || "";
-      }
-
-      if (displayNameInput) {
-        displayNameInput.value = data.name || "";
-      }
+      document.getElementById("displayNameInput").value = data.name || "";
     }
   }).catch(function(error) {
     console.error("Settings load error:", error);
@@ -5303,38 +5283,20 @@ function hideSettings() {
 }
 
 function saveUserProfile() {
-  var firstNameEl = document.getElementById("settingsFirstName");
-  var lastNameEl = document.getElementById("settingsLastName");
-  var displayNameInput = document.getElementById("displayNameInput");
+  var newName = document.getElementById("displayNameInput").value.trim();
   var saveBtn = document.getElementById("saveProfileBtn");
 
-  var firstName = firstNameEl ? firstNameEl.value.trim() : "";
-  var lastName = lastNameEl ? lastNameEl.value.trim() : "";
-  var displayName = "";
-
-  // Build display name
-  if (firstName || lastName) {
-    displayName = (firstName + " " + lastName).trim();
-  } else if (displayNameInput) {
-    displayName = displayNameInput.value.trim();
-  }
-
-  if (!displayName) {
-    ToastManager.warning("Missing Name", "Please enter at least your first name");
+  if (!newName) {
+    ToastManager.warning("Missing Name", "Please enter a display name");
     return;
   }
 
   saveBtn.disabled = true;
   saveBtn.textContent = "Saving...";
 
-  var updateData = {
-    name: displayName
-  };
-
-  if (firstName) updateData.firstName = firstName;
-  if (lastName) updateData.lastName = lastName;
-
-  db.collection("users").doc(activeUser.uid).update(updateData)
+  db.collection("users").doc(activeUser.uid).update({
+    name: newName
+  })
     .then(function() {
       ToastManager.success("Saved!", "Your profile has been updated");
       hideSettings();
@@ -5351,6 +5313,7 @@ function saveUserProfile() {
 </script>
 </body>
 </html>
+
 
 
 
