@@ -224,7 +224,7 @@ body{
 .brand-icon{
   width:40px;
   height:40px;
-  background:linear-gradient(135deg,#818cf8,#a78bfa);
+  background:rgba(255,255,255,0.12);
   border-radius:12px;
   display:flex;
   align-items:center;
@@ -305,6 +305,33 @@ body{
 .settings-icon:hover{
   background:rgba(255,255,255,0.18);
   transform:rotate(90deg);
+}
+
+  /* Brand logo */
+.brand-logo-wrap{
+  background:rgba(255,255,255,0.12);
+  border:1px solid rgba(255,255,255,0.18);
+}
+.brand-logo{
+  width:28px;
+  height:28px;
+  object-fit:contain;
+  display:block;
+  border-radius:6px;
+}
+
+/* Login logo */
+.login-logo{
+  display:flex;
+  justify-content:center;
+  margin-bottom:12px;
+}
+.login-logo img{
+  width:88px;
+  height:88px;
+  object-fit:contain;
+  border-radius:18px;
+  box-shadow:0 18px 40px rgba(0,0,0,0.18);
 }
 
 /* ================= MAIN CONTENT ================= */
@@ -1219,7 +1246,7 @@ body{
   <div class="login-glow login-glow-2"></div>
   <div class="login-glow login-glow-3"></div>
   <div id="loginPage">
-  <h2>FinzoTalk</h2>
+  <div class="login-logo">   <img src="https://raw.githubusercontent.com/Shaikbablubhhai/stock-portfolio-/298bcdeecca6728ad4913c309204a571176164cb/Finzo%20Talk%20Logo.jpeg" alt="FinzoTalk Logo"> </div> <h2>FinzoTalk</h2>
   <p class="tagline">Your smart portfolio & chat companion</p>
 
   <!-- Login/Register Toggle -->
@@ -1265,7 +1292,7 @@ body{
 <!-- Navbar -->
 <nav class="navbar">
   <div class="brand">
-    <div class="brand-icon">📊</div>
+    <div class="brand-icon brand-logo-wrap">   <img src="https://raw.githubusercontent.com/Shaikbablubhhai/stock-portfolio-/298bcdeecca6728ad4913c309204a571176164cb/Finzo%20Talk%20Logo.jpeg" class="brand-logo" alt="FinzoTalk Logo"> </div>
     FinzoTalk
   </div>
   <div class="nav-tabs">
@@ -5741,6 +5768,7 @@ function saveUserProfile() {
 </script>
 </body>
 </html>
+
 
 
 
