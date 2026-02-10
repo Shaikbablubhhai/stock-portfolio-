@@ -4574,7 +4574,16 @@ function triggerManualRefresh() {
 }
   function refreshHoldingsData() {
   if (userHoldings.length > 0) {
-    ToastManager.info("Refreshing", "Updating " + userHoldings.length + " holdings...");
+    ToastManager.info("Refreshing", "Fetching live prices for " + userHoldings.length + " holdings...");
+
+    // Force clear cache for holdings to get fresh prices
+    for (var i = 0; i < userHoldings.length; i++) {
+      var sym = userHoldings[i].sym;
+      if (pricesData[sym]) {
+        pricesData[sym].fetchedAt = 0;
+      }
+    }
+
     fetchLatestPrices();
   } else {
     ToastManager.info("No Holdings", "Add stocks first to see live prices");
@@ -4932,135 +4941,204 @@ async function confirmHoldingDelete() {
 
 /* ================= DISPLAY HOLDINGS ================= */
 function displayHoldings() {
-  const statsContainer = document.getElementById("portfolioStats");
-  const tableContainer = document.getElementById("holdingsTableContainer");
-  
+  var statsContainer = document.getElementById("portfolioStats");
+  var tableContainer = document.getElementById("holdingsTableContainer");
+
   if (!userHoldings || userHoldings.length === 0) {
     statsContainer.innerHTML = "";
-    tableContainer.innerHTML = `
-      <div class="empty-holdings">
-        <h3>No Holdings Yet</h3>
-        <p>Add stocks from the Stocks tab to build your portfolio!</p>
-      </div>
-    `;
+    tableContainer.innerHTML = '<div class="empty-holdings"><h3>No Holdings Yet</h3><p>Add stocks from the Stocks tab to build your portfolio!</p></div>';
     return;
   }
-  
-  let totalInvested = 0;
-  let totalCurrentValue = 0;
-  let totalDayChange = 0;
-  
-  userHoldings.forEach(function(h) {
-    const buyPrice = parseFloat(h.buyPrice) || 0;
-    const qty = parseInt(h.qty) || 0;
-    const invested = buyPrice * qty;
-    const currentPrice = getStockPrice(h.sym);
-    const currentValue = currentPrice > 0 ? currentPrice * qty : invested;
-    const priceData = getStockData(h.sym);
-    const dayChg = priceData && priceData.change ? priceData.change * qty : 0;
-    
+
+  var totalInvested = 0;
+  var totalCurrentValue = 0;
+  var totalDayChange = 0;
+  var totalDayChangePercent = 0;
+  var holdingsWithPrice = 0;
+
+  // First pass: calculate totals
+  var holdingsCalc = [];
+
+  for (var i = 0; i < userHoldings.length; i++) {
+    var h = userHoldings[i];
+    var buyPrice = parseFloat(h.buyPrice) || 0;
+    var qty = parseInt(h.qty) || 0;
+    var invested = buyPrice * qty;
+
+    // Get live price data
+    var priceData = getStockData(h.sym);
+    var currentPrice = 0;
+    var dayChange = 0;
+    var dayChangePercent = 0;
+    var prevClose = 0;
+    var hasLivePrice = false;
+
+    if (priceData && priceData.price > 0) {
+      currentPrice = priceData.price;
+      dayChange = priceData.change || 0;
+      dayChangePercent = priceData.changePercent || 0;
+      prevClose = priceData.prevClose || (currentPrice - dayChange);
+      hasLivePrice = true;
+      holdingsWithPrice++;
+    }
+
+    var currentValue = hasLivePrice ? currentPrice * qty : invested;
+    var totalPnL = hasLivePrice ? (currentPrice - buyPrice) * qty : 0;
+    var totalPnLPercent = buyPrice > 0 && hasLivePrice ? ((currentPrice - buyPrice) / buyPrice) * 100 : 0;
+    var dayChangeAmount = hasLivePrice ? dayChange * qty : 0;
+
     totalInvested += invested;
     totalCurrentValue += currentValue;
-    totalDayChange += dayChg;
-  });
-  
-  const totalPnL = totalCurrentValue - totalInvested;
-  const totalPnLPercent = totalInvested > 0 ? (totalPnL / totalInvested) * 100 : 0;
-  const isProfit = totalPnL >= 0;
-  const isDayUp = totalDayChange >= 0;
-  
-  statsContainer.innerHTML = `
-    <div class="stat-card gradient-purple">
-      <div class="stat-label">Total Invested</div>
-      <div class="stat-value">₹${totalInvested.toLocaleString("en-IN", {maximumFractionDigits: 0})}</div>
-      <div class="stat-subtitle">${userHoldings.length} stock${userHoldings.length > 1 ? 's' : ''}</div>
-    </div>
-    <div class="stat-card gradient-blue">
-      <div class="stat-label">Current Value</div>
-      <div class="stat-value">₹${Math.round(totalCurrentValue).toLocaleString("en-IN")}</div>
-      <div class="stat-subtitle">Live market value</div>
-    </div>
-    <div class="stat-card ${isProfit ? 'gradient-green' : 'gradient-red'}">
-      <div class="stat-label">Total P&L</div>
-      <div class="stat-value">${isProfit ? '+' : ''}₹${Math.round(totalPnL).toLocaleString("en-IN")}</div>
-      <div class="stat-subtitle">${isProfit ? '+' : ''}${totalPnLPercent.toFixed(2)}%</div>
-    </div>
-    <div class="stat-card ${isDayUp ? 'gradient-green' : 'gradient-red'}">
-      <div class="stat-label">Today's Change</div>
-      <div class="stat-value">${isDayUp ? '+' : ''}₹${Math.round(totalDayChange).toLocaleString("en-IN")}</div>
-      <div class="stat-subtitle">Day performance</div>
-    </div>
-  `;
-  
-  let tableHTML = `
-    <table class="holdings-table">
-      <thead>
-        <tr>
-          <th>Stock</th>
-          <th>Buy Price</th>
-          <th>Qty</th>
-          <th>Invested</th>
-          <th>LTP</th>
-          <th>Current Value</th>
-          <th>Day %</th>
-          <th>P&L</th>
-          <th>Actions</th>
-        </tr>
-      </thead>
-      <tbody>
-  `;
-  
-  userHoldings.forEach(function(h, idx) {
-    const buyPrice = parseFloat(h.buyPrice) || 0;
-    const qty = parseInt(h.qty) || 0;
-    const invested = buyPrice * qty;
-    const currentPrice = getStockPrice(h.sym);
-    const currentValue = currentPrice > 0 ? currentPrice * qty : invested;
-    const pnl = currentValue - invested;
-    const pnlPercent = invested > 0 ? (pnl / invested) * 100 : 0;
-    const isPft = pnl >= 0;
-    
-    const priceData = getStockData(h.sym);
-    const dayPercent = priceData && priceData.changePercent ? priceData.changePercent : 0;
-    const isDayPositive = dayPercent >= 0;
-    
-    tableHTML += `
-      <tr>
-        <td>
-          <div class="holding-stock-cell">
-            <div class="holding-stock-icon">${(h.sym || "?").charAt(0)}</div>
-            <div class="holding-stock-info">
-              <div class="holding-stock-name">${h.name || "Unknown"}</div>
-              <div class="holding-stock-sym">${h.sym || "--"}</div>
-            </div>
-          </div>
-        </td>
-        <td>₹${buyPrice.toFixed(2)}</td>
-        <td>${qty}</td>
-        <td>₹${invested.toLocaleString("en-IN", {maximumFractionDigits: 0})}</td>
-        <td>${currentPrice > 0 ? '₹' + currentPrice.toFixed(2) : '--'}</td>
-        <td><strong>₹${Math.round(currentValue).toLocaleString("en-IN")}</strong></td>
-        <td class="${isDayPositive ? 'text-profit' : 'text-loss'}">
-          ${currentPrice > 0 ? (isDayPositive ? '+' : '') + dayPercent.toFixed(2) + '%' : '--'}
-        </td>
-        <td class="${isPft ? 'text-profit' : 'text-loss'}">
-          ${isPft ? '+' : ''}₹${Math.round(pnl).toLocaleString("en-IN")}<br>
-          <small>(${isPft ? '+' : ''}${pnlPercent.toFixed(2)}%)</small>
-        </td>
-        <td>
-          <div class="action-buttons">
-            <button class="btn-edit" onclick="showEditStockModal(${idx})">✏️ Edit</button>
-            <button class="btn-delete" onclick="showDeleteModal(${idx})">🗑️</button>
-          </div>
-        </td>
-      </tr>
-    `;
-  });
-  
+    totalDayChange += dayChangeAmount;
+
+    holdingsCalc.push({
+      holding: h,
+      buyPrice: buyPrice,
+      qty: qty,
+      invested: invested,
+      currentPrice: currentPrice,
+      currentValue: currentValue,
+      totalPnL: totalPnL,
+      totalPnLPercent: totalPnLPercent,
+      dayChange: dayChange,
+      dayChangePercent: dayChangePercent,
+      dayChangeAmount: dayChangeAmount,
+      prevClose: prevClose,
+      hasLivePrice: hasLivePrice
+    });
+  }
+
+  var overallPnL = totalCurrentValue - totalInvested;
+  var overallPnLPercent = totalInvested > 0 ? (overallPnL / totalInvested) * 100 : 0;
+  var isOverallProfit = overallPnL >= 0;
+  var isDayUp = totalDayChange >= 0;
+
+  // Stat cards
+  statsContainer.innerHTML =
+    '<div class="stat-card gradient-purple">' +
+      '<div class="stat-label">💰 Total Invested</div>' +
+      '<div class="stat-value">₹' + totalInvested.toLocaleString("en-IN", {maximumFractionDigits: 0}) + '</div>' +
+      '<div class="stat-subtitle">' + userHoldings.length + ' stock' + (userHoldings.length > 1 ? 's' : '') + ' • ' + holdingsWithPrice + ' priced</div>' +
+    '</div>' +
+    '<div class="stat-card gradient-blue">' +
+      '<div class="stat-label">📊 Current Value</div>' +
+      '<div class="stat-value">₹' + Math.round(totalCurrentValue).toLocaleString("en-IN") + '</div>' +
+      '<div class="stat-subtitle">Live market value</div>' +
+    '</div>' +
+    '<div class="stat-card ' + (isOverallProfit ? 'gradient-green' : 'gradient-red') + '">' +
+      '<div class="stat-label">' + (isOverallProfit ? '📈' : '📉') + ' Overall P&L</div>' +
+      '<div class="stat-value">' + (isOverallProfit ? '+' : '') + '₹' + Math.round(overallPnL).toLocaleString("en-IN") + '</div>' +
+      '<div class="stat-subtitle">' + (isOverallProfit ? '+' : '') + overallPnLPercent.toFixed(2) + '% ' + (isOverallProfit ? 'profit' : 'loss') + '</div>' +
+    '</div>' +
+    '<div class="stat-card ' + (isDayUp ? 'gradient-green' : 'gradient-red') + '">' +
+      '<div class="stat-label">' + (isDayUp ? '🟢' : '🔴') + ' Today\'s Change</div>' +
+      '<div class="stat-value">' + (isDayUp ? '+' : '') + '₹' + Math.round(totalDayChange).toLocaleString("en-IN") + '</div>' +
+      '<div class="stat-subtitle">Day P&L across all holdings</div>' +
+    '</div>';
+
+  // Table
+  var tableHTML =
+    '<table class="holdings-table">' +
+      '<thead>' +
+        '<tr>' +
+          '<th>Stock</th>' +
+          '<th>Buy Price</th>' +
+          '<th>Qty</th>' +
+          '<th>Invested</th>' +
+          '<th>LTP</th>' +
+          '<th>Current Value</th>' +
+          '<th>Day Change</th>' +
+          '<th>Overall P&L</th>' +
+          '<th>Actions</th>' +
+        '</tr>' +
+      '</thead>' +
+      '<tbody>';
+
+  for (var j = 0; j < holdingsCalc.length; j++) {
+    var calc = holdingsCalc[j];
+    var isPft = calc.totalPnL >= 0;
+    var isDayPositive = calc.dayChange >= 0;
+    var h = calc.holding;
+
+    // Day change display
+    var dayChangeDisplay = "";
+    if (calc.hasLivePrice) {
+      dayChangeDisplay =
+        '<div style="display:flex;flex-direction:column;gap:2px">' +
+          '<span class="' + (isDayPositive ? 'text-profit' : 'text-loss') + '" style="font-size:14px">' +
+            (isDayPositive ? '+' : '') + '₹' + calc.dayChange.toFixed(2) +
+          '</span>' +
+          '<span class="' + (isDayPositive ? 'text-profit' : 'text-loss') + '" style="font-size:12px">' +
+            (isDayPositive ? '▲' : '▼') + ' ' + Math.abs(calc.dayChangePercent).toFixed(2) + '%' +
+          '</span>' +
+          '<span style="font-size:11px;color:#94a3b8">' +
+            (isDayPositive ? '+' : '') + '₹' + Math.round(calc.dayChangeAmount).toLocaleString("en-IN") + ' total' +
+          '</span>' +
+        '</div>';
+    } else {
+      dayChangeDisplay = '<span style="color:#94a3b8">--</span>';
+    }
+
+    // Overall P&L display
+    var pnlDisplay = "";
+    if (calc.hasLivePrice) {
+      pnlDisplay =
+        '<div style="display:flex;flex-direction:column;gap:2px">' +
+          '<span class="' + (isPft ? 'text-profit' : 'text-loss') + '" style="font-size:14px;font-weight:700">' +
+            (isPft ? '+' : '') + '₹' + Math.round(calc.totalPnL).toLocaleString("en-IN") +
+          '</span>' +
+          '<span class="' + (isPft ? 'text-profit' : 'text-loss') + '" style="font-size:12px">' +
+            (isPft ? '▲' : '▼') + ' ' + Math.abs(calc.totalPnLPercent).toFixed(2) + '%' +
+          '</span>' +
+        '</div>';
+    } else {
+      pnlDisplay = '<span style="color:#94a3b8">Waiting for price...</span>';
+    }
+
+    // LTP display with color
+    var ltpDisplay = "";
+    if (calc.hasLivePrice) {
+      ltpDisplay =
+        '<div style="display:flex;flex-direction:column;gap:2px">' +
+          '<span style="font-weight:700;font-size:14px" class="' + (isDayPositive ? 'text-profit' : 'text-loss') + '">' +
+            '₹' + calc.currentPrice.toFixed(2) +
+          '</span>' +
+          '<span style="font-size:11px;color:#94a3b8">Prev: ₹' + calc.prevClose.toFixed(2) + '</span>' +
+        '</div>';
+    } else {
+      ltpDisplay = '<span style="color:#94a3b8">Fetching...</span>';
+    }
+
+    tableHTML +=
+      '<tr>' +
+        '<td>' +
+          '<div class="holding-stock-cell">' +
+            '<div class="holding-stock-icon">' + (h.sym || "?").charAt(0) + '</div>' +
+            '<div class="holding-stock-info">' +
+              '<div class="holding-stock-name">' + (h.name || "Unknown") + '</div>' +
+              '<div class="holding-stock-sym">' + (h.sym || "--") + '</div>' +
+            '</div>' +
+          '</div>' +
+        '</td>' +
+        '<td style="font-weight:600">₹' + calc.buyPrice.toFixed(2) + '</td>' +
+        '<td style="font-weight:600">' + calc.qty + '</td>' +
+        '<td>₹' + calc.invested.toLocaleString("en-IN", {maximumFractionDigits: 0}) + '</td>' +
+        '<td>' + ltpDisplay + '</td>' +
+        '<td style="font-weight:700">₹' + Math.round(calc.currentValue).toLocaleString("en-IN") + '</td>' +
+        '<td>' + dayChangeDisplay + '</td>' +
+        '<td>' + pnlDisplay + '</td>' +
+        '<td>' +
+          '<div class="action-buttons">' +
+            '<button class="btn-edit" onclick="showEditStockModal(' + j + ')">✏️ Edit</button>' +
+            '<button class="btn-delete" onclick="showDeleteModal(' + j + ')">🗑️</button>' +
+          '</div>' +
+        '</td>' +
+      '</tr>';
+  }
+
   tableHTML += '</tbody></table>';
   tableContainer.innerHTML = tableHTML;
 }
-
 /* ================= CHAT - USER SEARCH ================= */
 async function performUserSearch() {
   const searchInput = document.getElementById("userIdSearchInput");
@@ -5640,6 +5718,7 @@ function saveUserProfile() {
 </script>
 </body>
 </html>
+
 
 
 
