@@ -4189,7 +4189,7 @@ async function saveHoldingToFirebase(holdingData) {
   }
 
   // Normalize fields
-  const buyPrice = Math.round(parseNumber(holdingData.buyPrice) * 100) / 100; // rupees rounded to 2 decimals
+  const buyPrice = Math.round(parseNumber(holdingData.buyPrice) * 100) / 100; // rupees, 2 decimals
   const qty = parseInt(parseNumber(holdingData.qty), 10) || 0;
 
   const docData = {
@@ -4205,26 +4205,10 @@ async function saveHoldingToFirebase(holdingData) {
     const docRef = await db.collection("holdings").add(docData);
     return docRef.id;
   } catch (error) {
-    // Show full message so there's no silent failure
-    alert("FIREBASE ERROR CODE: " + (error.code || "unknown") + "\n\nMESSAGE: " + (error.message || "Unknown error"));
-    throw error;
-  }
-}
-  
-  const docData = {
-    userId: activeUser.uid,
-    name: String(holdingData.name || ""),
-    sym: String(holdingData.sym || ""),
-    buyPrice: Number(holdingData.buyPrice) || 0,
-    qty: Number(holdingData.qty) || 0,
-    addedAt: firebase.firestore.FieldValue.serverTimestamp()
-  };
-  
-  try {
-    const docRef = await db.collection("holdings").add(docData);
-    return docRef.id;
-  } catch (error) {
-    alert("FIREBASE ERROR CODE: " + error.code + "\n\nMESSAGE: " + error.message);
+    alert(
+      "FIREBASE ERROR CODE: " + (error.code || "unknown") +
+      "\n\nMESSAGE: " + (error.message || "Unknown error")
+    );
     throw error;
   }
 }
@@ -4961,6 +4945,7 @@ async function confirmStockEdit() {
   const holding = userHoldings[pendingEditIndex];
 
   try {
+    // normalize and round price
     const newPriceRounded = Math.round(newPrice * 100) / 100;
 
     if (holding.id && !holding.id.startsWith("local_")) {
@@ -4981,28 +4966,6 @@ async function confirmStockEdit() {
     editBtn.textContent = "Save";
   }
 }
-  const holding = userHoldings[pendingEditIndex];
-  
-  try {
-    if (holding.id && !holding.id.startsWith("local_")) {
-      await updateHoldingInFirebase(holding.id, {
-        buyPrice: newPrice,
-        qty: newQty
-      });
-    }
-    
-    hideEditModal();
-    ToastManager.success("Updated!", `${holding.name} has been updated`);
-    
-  } catch (error) {
-    console.error("Edit holding error:", error);
-    ToastManager.error("Update Failed", "Could not update holding. Please try again.");
-  } finally {
-    editBtn.disabled = false;
-    editBtn.textContent = "Save";
-  }
-}
-
 /* ================= DELETE HOLDING MODAL ================= */
 function showDeleteModal(index) {
   const holding = userHoldings[index];
@@ -5778,6 +5741,7 @@ function saveUserProfile() {
 </script>
 </body>
 </html>
+
 
 
 
