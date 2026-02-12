@@ -21,6 +21,10 @@ const firebaseConfig = {
   projectId: "stock-portfolio-web-final",
   databaseURL: "https://stock-portfolio-web-final-default-rtdb.firebaseio.com"
 };
+  firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.firestore();
+const rtdb = firebase.database();
 
 // Security Rules - IMPORTANT: You MUST set these in Firebase Console
 /*
@@ -75,6 +79,8 @@ REALTIME DATABASE RULES (Go to Realtime Database → Rules):
   }
 }
 */
+</script>
+<style>
 /* ================= RESET & BASE ================= */
 *{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -116,7 +122,6 @@ REALTIME DATABASE RULES (Go to Realtime Database → Rules):
 }
 
 body{
-  body{
   font-family:'Inter',system-ui,-apple-system,sans-serif;
   background:var(--bg-primary);
   background-image:
@@ -138,17 +143,7 @@ body{
   50%{background-position:100% 50%}
   100%{background-position:0% 50%}
 }
-  background:var(--bg-primary);
-  background-image:
-    radial-gradient(ellipse at 20% 50%,rgba(79,70,229,0.05) 0%,transparent 50%),
-    radial-gradient(ellipse at 80% 20%,rgba(124,58,237,0.05) 0%,transparent 50%),
-    radial-gradient(ellipse at 50% 80%,rgba(16,185,129,0.03) 0%,transparent 50%);
-  color:var(--text-primary);
-  min-height:100vh;
-  -webkit-font-smoothing:antialiased;
-  -moz-osx-font-smoothing:grayscale;
-}
-
+ 
 /* ================= SCROLLBAR ================= */
 ::-webkit-scrollbar{width:8px;height:8px}
 ::-webkit-scrollbar-track{background:transparent}
@@ -1733,15 +1728,7 @@ var alphaKeyStatus = {};
 var twelveKeyStatus = {};
 var lastUsedAPI = "none";
 var apiCallCounts = { yahoo: 0, twelveData: 0, alphaVantage: 0 };
-var keyRotationIndex = { alpha: 0, twelve: 0 }; // NEW: Round-robin tracking
-];
-
-// Key tracking - which keys are blocked and when they recover
-var alphaKeyStatus = {};
-var twelveKeyStatus = {};
-var lastUsedAPI = "none";
-var apiCallCounts = { yahoo: 0, twelveData: 0, alphaVantage: 0 };
-
+var keyRotationIndex = { alpha: 0, twelve: 0 };
 // Initialize key status for all keys
 function initKeyStatus() {
   for (var i = 0; i < ALPHA_VANTAGE_KEYS.length; i++) {
@@ -5945,3 +5932,4 @@ function saveUserProfile() {
 </script>
 </body>
 </html>
+
