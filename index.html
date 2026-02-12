@@ -1249,6 +1249,7 @@ body{
   display:flex;
   align-items:center;
   justify-content:center;
+  position:relative;
   background:linear-gradient(-45deg,#0f0c29,#302b63,#24243e,#1a1a2e);
   background-size:400% 400%;
   animation:gradientShift 15s ease infinite;
@@ -1318,6 +1319,8 @@ body{
 #loginPage{
   max-width:460px;width:100%;
   background:rgba(255,255,255,0.95);
+  position:relative;
+  z-index:10;
   backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
   padding:48px;border-radius:var(--radius-xl);
   border:1px solid rgba(255,255,255,0.3);
@@ -1544,7 +1547,7 @@ body{
   <div id="loginForm">
     <input type="email" id="loginEmail" placeholder="Email address">
     <input type="password" id="loginPassword" placeholder="Password">
-    <button class="login-primary-btn" id="emailLoginBtn" onclick="handleEmailLogin()">Login</button>
+   <button class="login-primary-btn" id="emailLoginBtn" onclick="handleEmailLogin()">Login</button>
   </div>
 
   <!-- REGISTER FORM -->
@@ -1563,7 +1566,7 @@ body{
   </div>
 
   <!-- Google Login -->
-  <button class="login-google-btn" id="googleLoginBtn" onclick="handleGoogleLogin()">
+ <button class="login-google-btn" id="googleLoginBtn" onclick="handleGoogleLogin()">
     <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="20" height="20" alt="Google">
     Continue with Google
   </button>
@@ -6501,6 +6504,7 @@ function saveUserProfile() {
 </script>
 </body>
 </html>
+
 
 
 
