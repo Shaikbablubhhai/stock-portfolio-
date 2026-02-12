@@ -1254,6 +1254,7 @@ body{
   animation:gradientShift 15s ease infinite;
   position:relative;
   overflow:hidden;
+  z-index:200;
   padding:20px;
 }
 @keyframes gradientShift{
@@ -4562,7 +4563,7 @@ auth.onAuthStateChanged(async function(user) {
   activeUser = user;
     document.getElementById("loginWrapper").style.display = "none";
   document.getElementById("mainApp").style.display = "block";
-
+  document.getElementById("indicesBar").style.display = "block";
   // Create/verify user document
   try {
     var userDocRef = db.collection("users").doc(user.uid);
@@ -6467,5 +6468,6 @@ function saveUserProfile() {
 </script>
 </body>
 </html>
+
 
 
