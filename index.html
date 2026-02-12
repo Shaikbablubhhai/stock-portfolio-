@@ -21,13 +21,60 @@ const firebaseConfig = {
   projectId: "stock-portfolio-web-final",
   databaseURL: "https://stock-portfolio-web-final-default-rtdb.firebaseio.com"
 };
-firebase.initializeApp(firebaseConfig);
-const auth = firebase.auth();
-const db = firebase.firestore();
-const rtdb = firebase.database();
-</script>
 
-<style>
+// Security Rules - IMPORTANT: You MUST set these in Firebase Console
+/*
+FIRESTORE RULES (Go to Firestore Database → Rules):
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /users/{userId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && request.auth.uid == userId;
+    }
+    match /holdings/{holdingId} {
+      allow read, write: if request.auth != null && 
+        request.auth.uid == resource.data.userId;
+      allow create: if request.auth != null && 
+        request.auth.uid == request.resource.data.userId;
+    }
+    match /friends/{userId}/list/{friendId} {
+      allow read: if request.auth != null && request.auth.uid == userId;
+      allow write: if request.auth != null && request.auth.uid == userId;
+    }
+    match /requests/{requestId} {
+      allow read: if request.auth != null && 
+        (request.auth.uid == resource.data.from || 
+         request.auth.uid == resource.data.to);
+      allow create: if request.auth != null && 
+        request.auth.uid == request.resource.data.from;
+      allow delete: if request.auth != null && 
+        request.auth.uid == resource.data.to;
+    }
+    match /chats/{chatId}/messages/{messageId} {
+      allow read: if request.auth != null && 
+        request.auth.uid in chatId.split('_');
+      allow create: if request.auth != null && 
+        request.auth.uid in chatId.split('_') &&
+        request.auth.uid == request.resource.data.from;
+      allow update: if request.auth != null && 
+        request.auth.uid in chatId.split('_');
+    }
+  }
+}
+
+REALTIME DATABASE RULES (Go to Realtime Database → Rules):
+{
+  "rules": {
+    "status": {
+      "$uid": {
+        ".read": true,
+        ".write": "$uid === auth.uid"
+      }
+    }
+  }
+}
+*/
 /* ================= RESET & BASE ================= */
 *{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -1560,7 +1607,7 @@ body{
 /* ================= TOAST NOTIFICATION SYSTEM ================= */
 // 3D Tilt Effect for Cards
 document.addEventListener("mousemove", function(e) {
-  const cards = document.querySelectorAll(".stock-card, .holdings-table-wrap, .chat-main-box");
+  const cards = document.querySelectorAll(".stock-card, .holding-stock-cell");
   cards.forEach(card => {
     const rect = card.getBoundingClientRect();
     const x = e.clientX - rect.left;
@@ -1661,6 +1708,7 @@ document.addEventListener("mousemove", function(e) {
 /* ================= SMART API KEY MANAGEMENT ================= */
 
 // Alpha Vantage Keys (8 keys)
+// SECURITY: In production, move these to environment variables or Firebase Functions
 var ALPHA_VANTAGE_KEYS = [
   "30X7621M8XHIDT2W",
   "BH74ZWQO07ZCTGMN",
@@ -1672,13 +1720,20 @@ var ALPHA_VANTAGE_KEYS = [
   "I899CURGSPQK85MS"
 ];
 
-// Twelve Data Keys (5 keys)
 var TWELVE_DATA_KEYS = [
   "849b655fa36e4a7aa07e5636fb46455b",
   "73e16183c50347ee9129aede29928730",
   "bc1729013a6c4658ab5022ec64a62737",
   "ca1c62b293ca4b10a64db4edf66bf1ad",
   "29a5b2dccd5947dea4fdb058286b60d7"
+];
+
+// Enhanced key management with better recovery logic
+var alphaKeyStatus = {};
+var twelveKeyStatus = {};
+var lastUsedAPI = "none";
+var apiCallCounts = { yahoo: 0, twelveData: 0, alphaVantage: 0 };
+var keyRotationIndex = { alpha: 0, twelve: 0 }; // NEW: Round-robin tracking
 ];
 
 // Key tracking - which keys are blocked and when they recover
@@ -3940,44 +3995,67 @@ function handleEmailLogin() {
 
   // Clear previous error
   errorDiv.textContent = "";
+  errorDiv.style.display = "none";
 
+  // Client-side validation
   if (!emailVal) {
-    errorDiv.textContent = "Please enter your email address";
-    ToastManager.warning("Missing Info", "Please enter your email address");
+    showLoginError("Please enter your email address");
+    return;
+  }
+
+  if (!isValidEmail(emailVal)) {
+    showLoginError("Please enter a valid email address");
     return;
   }
 
   if (!passVal) {
-    errorDiv.textContent = "Please enter your password";
-    ToastManager.warning("Missing Info", "Please enter your password");
+    showLoginError("Please enter your password");
+    return;
+  }
+
+  if (passVal.length < 6) {
+    showLoginError("Password must be at least 6 characters");
     return;
   }
 
   btn.disabled = true;
-  btn.textContent = "Signing in...";
+  btn.innerHTML = '<div class="loading-spinner" style="width:16px;height:16px;border:2px solid #fff;border-top-color:transparent;border-radius:50%;animation:spin 0.8s linear infinite;display:inline-block;margin-right:8px;vertical-align:middle;"></div>Signing in...';
 
   auth.signInWithEmailAndPassword(emailVal, passVal)
     .then(function() {
       ToastManager.success("Welcome back!", "Successfully signed in");
+      errorDiv.style.display = "none";
     })
     .catch(function(error) {
       console.error("Login error:", error);
-
+      
       var errorMessage = "Login failed. Please try again.";
-
-      if (error.code === "auth/user-not-found") {
-        errorMessage = "No account found with this email. Please register first.";
-      } else if (error.code === "auth/wrong-password" || error.code === "auth/invalid-credential") {
-        errorMessage = "Incorrect password. Please try again.";
-      } else if (error.code === "auth/invalid-email") {
-        errorMessage = "Please enter a valid email address.";
-      } else if (error.code === "auth/too-many-requests") {
-        errorMessage = "Too many failed attempts. Please try again later.";
-      } else if (error.message) {
-        errorMessage = error.message;
+      
+      switch(error.code) {
+        case "auth/user-not-found":
+          errorMessage = "No account found with this email. Please register first.";
+          break;
+        case "auth/wrong-password":
+        case "auth/invalid-credential":
+          errorMessage = "Incorrect password. Please try again.";
+          break;
+        case "auth/invalid-email":
+          errorMessage = "Please enter a valid email address.";
+          break;
+        case "auth/too-many-requests":
+          errorMessage = "Too many failed attempts. Please try again in a few minutes.";
+          break;
+        case "auth/network-request-failed":
+          errorMessage = "Network error. Please check your connection.";
+          break;
+        case "auth/user-disabled":
+          errorMessage = "This account has been disabled. Contact support.";
+          break;
+        default:
+          errorMessage = error.message || "An error occurred. Please try again.";
       }
-
-      errorDiv.textContent = errorMessage;
+      
+      showLoginError(errorMessage);
       ToastManager.error("Login Failed", errorMessage);
     })
     .finally(function() {
@@ -3986,6 +4064,22 @@ function handleEmailLogin() {
     });
 }
 
+// Helper function for email validation
+function isValidEmail(email) {
+  var re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return re.test(email);
+}
+
+// Helper function to show login errors with animation
+function showLoginError(message) {
+  var errorDiv = document.getElementById("loginError");
+  errorDiv.textContent = message;
+  errorDiv.style.display = "block";
+  errorDiv.style.animation = "shake 0.5s";
+  setTimeout(function() {
+    errorDiv.style.animation = "";
+  }, 500);
+}
 auth.onAuthStateChanged(async function(user) {
   if (!user) return;
 
@@ -5851,22 +5945,3 @@ function saveUserProfile() {
 </script>
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
