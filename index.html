@@ -440,8 +440,8 @@ body{
 }
 .stock-card{
   background:var(--glass-bg);
-  backdrop-filter:var(--glass-blur);
-  -webkit-backdrop-filter:var(--glass-blur);
+  backdrop-filter:blur(20px);
+  -webkit-backdrop-filter:blur(20px);
   border-radius:var(--radius-lg);
   padding:24px;
   border:1px solid var(--glass-border);
@@ -449,6 +449,22 @@ body{
   transition:var(--transition-smooth);
   position:relative;
   overflow:hidden;
+  transform-style:preserve-3d; /* 3D Enabler */
+}
+
+/* The shiny overlay effect */
+.stock-card::before{
+  content:"";
+  position:absolute;
+  top:0;left:0;right:0;bottom:0;
+  background:radial-gradient(circle at var(--mouse-x, 50%) var(--mouse-y, 50%), rgba(255,255,255,0.15), transparent 40%);
+  opacity:0;
+  transition:opacity 0.3s;
+  pointer-events:none;
+}
+
+.stock-card:hover::before{
+  opacity:1;
 }
 .stock-card::before{
   content:"";
@@ -1504,7 +1520,34 @@ body{
 
 <script>
 /* ================= TOAST NOTIFICATION SYSTEM ================= */
-const ToastManager = {
+// 3D Tilt Effect for Cards
+document.addEventListener("mousemove", function(e) {
+  const cards = document.querySelectorAll(".stock-card, .holdings-table-wrap, .chat-main-box");
+  cards.forEach(card => {
+    const rect = card.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    
+    const centerX = rect.width / 2;
+    const centerY = rect.height / 2;
+    
+    const rotateX = (y - centerY) / 15; // Tilt intensity
+    const rotateY = (centerX - x) / 15;
+    
+    card.style.setProperty('--mouse-x', x + 'px');
+    card.style.setProperty('--mouse-y', y + 'px');
+    
+    // Only apply tilt if mouse is over the card
+    if (e.clientX > rect.left && e.clientX < rect.right && e.clientY > rect.top && e.clientY < rect.bottom) {
+       card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) translateY(-6px) scale(1.02)`;
+       card.style.boxShadow = "0 25px 50px rgba(0,0,0,0.25), 0 0 30px rgba(79,70,229,0.2)";
+    } else {
+       card.style.transform = "perspective(1000px) rotateX(0) rotateY(0) translateY(0) scale(1)";
+       card.style.boxShadow = "var(--shadow-sm)";
+    }
+  });
+});
+  const ToastManager = {
   container: null,
   
   init: function() {
@@ -5770,6 +5813,7 @@ function saveUserProfile() {
 </script>
 </body>
 </html>
+
 
 
 
