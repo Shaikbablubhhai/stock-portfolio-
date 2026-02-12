@@ -20,6 +20,7 @@ const firebaseConfig = {
   authDomain: "stock-portfolio-web-final.firebaseapp.com",
   projectId: "stock-portfolio-web-final",
   databaseURL: "https://stock-portfolio-web-final-default-rtdb.firebaseio.com"
+  storageBucket: "stock-portfolio-web-final.appspot.com",
 };
   firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
@@ -1405,6 +1406,11 @@ body{
 #registerForm input{margin-bottom:12px}
 
 #loginError{
+  @keyframes shake{
+  0%,100%{transform:translateX(0)}
+  20%,60%{transform:translateX(-8px)}
+  40%,80%{transform:translateX(8px)}
+}
   color:#dc2626;margin-top:16px;text-align:center;
   font-size:14px;min-height:20px;
 }
@@ -1706,7 +1712,7 @@ body{
     </div>
   </section>
 
-  <!-- ========== MUTUAL FUNDS TAB ========== -->
+<!-- ========== MUTUAL FUNDS TAB ========== -->
   <section id="mfSection" style="display:none">
     <div class="mf-coming-soon">
       <h3>Mutual Funds</h3>
@@ -1714,6 +1720,20 @@ body{
     </div>
   </section>
 
+  <!-- ========== WATCHLIST TAB ========== -->
+  <section id="watchlistSection" style="display:none">
+    <div class="holdings-header">
+      <h2>⭐ Your Watchlist</h2>
+      <div class="holdings-controls">
+        <div class="holdings-live-badge">
+          <div class="live-dot" style="background:#f59e0b"></div>
+          <span id="watchlistUpdateDisplay">Live</span>
+        </div>
+        <button class="refresh-button" onclick="refreshWatchlistPrices()">🔄 Refresh Prices</button>
+      </div>
+    </div>
+    <div class="stocks-grid" id="watchlistContainer"></div>
+  </section>
   <!-- ========== CHAT TAB ========== -->
   <section id="chatSection" style="display:none">
     <div class="chat-wrapper">
@@ -4402,7 +4422,7 @@ function handleGoogleLogin() {
     })
     .finally(function() {
       btn.disabled = false;
-      btn.innerHTML = "🔵 Continue with Google";
+    btn.innerHTML = '<img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="20" height="20" alt="Google" style="vertical-align:middle;margin-right:10px">Continue with Google';
     });
 }
 async function handleRegister() {
@@ -5545,7 +5565,7 @@ function showSkeletonCards(count) {
     container.appendChild(moreMsg);
   }
 }
-function displayStocksWithAnimation(stockList) {
+function displayStocksWithAnimation(stockList, showAll) { {
   stockList.forEach(function(stock) {
     var oldPrice = prevPricesData[stock.sym] ? prevPricesData[stock.sym].price : 0;
     var newPrice = pricesData[stock.sym] ? pricesData[stock.sym].price : 0;
@@ -5560,7 +5580,7 @@ function displayStocksWithAnimation(stockList) {
     }
   });
 
-  displayStocks(stockList);
+  displayStocks(stockList, showAll || false);
 }
 
 /* ================= ADD STOCK MODAL ================= */
@@ -6504,6 +6524,7 @@ function saveUserProfile() {
 </script>
 </body>
 </html>
+
 
 
 
