@@ -268,7 +268,7 @@ body{
   overflow:hidden;
   border-bottom:1px solid rgba(255,255,255,0.08);
   position:sticky;
-  top:65px;
+  top:0;
   z-index:99;
 }
 .indices-scroll{
@@ -1592,8 +1592,7 @@ body{
   </div>
   <div class="settings-icon" onclick="showSettings()">⚙️</div>
 </nav>
-  <!-- ================= MARKET INDICES BAR ================= -->
-<div class="indices-bar" id="indicesBar">
+  <div class="indices-bar" id="indicesBar">
   <div class="indices-scroll">
     <div class="index-chip" id="indexNifty">
       <span class="index-name">NIFTY 50</span>
@@ -1627,7 +1626,41 @@ body{
     </div>
   </div>
 </div>
-<div class="main-content">
+  <!-- ================= MARKET INDICES BAR ================= -->
+<div class="indices-bar" id="indicesBar" style="display:none">
+  <div class="indices-scroll">
+    <div class="index-chip" id="indexNifty">
+      <span class="index-name">NIFTY 50</span>
+      <span class="index-price" id="niftyPrice">--</span>
+      <span class="index-change positive" id="niftyChange">--%</span>
+    </div>
+    <div class="index-chip" id="indexSensex">
+      <span class="index-name">SENSEX</span>
+      <span class="index-price" id="sensexPrice">--</span>
+      <span class="index-change positive" id="sensexChange">--%</span>
+    </div>
+    <div class="index-chip" id="indexBankNifty">
+      <span class="index-name">BANK NIFTY</span>
+      <span class="index-price" id="bankNiftyPrice">--</span>
+      <span class="index-change positive" id="bankNiftyChange">--%</span>
+    </div>
+    <div class="index-chip" id="indexNiftyIT">
+      <span class="index-name">NIFTY IT</span>
+      <span class="index-price" id="niftyITPrice">--</span>
+      <span class="index-change positive" id="niftyITChange">--%</span>
+    </div>
+    <div class="index-chip" id="indexNiftyPharma">
+      <span class="index-name">NIFTY PHARMA</span>
+      <span class="index-price" id="niftyPharmaPrice">--</span>
+      <span class="index-change positive" id="niftyPharmaChange">--%</span>
+    </div>
+    <div class="index-chip" id="indexNiftyAuto">
+      <span class="index-name">NIFTY AUTO</span>
+      <span class="index-price" id="niftyAutoPrice">--</span>
+      <span class="index-change positive" id="niftyAutoChange">--%</span>
+    </div>
+  </div>
+</div>
   
   <!-- ========== STOCKS TAB ========== -->
   <section id="stocksSection">
@@ -4563,7 +4596,6 @@ auth.onAuthStateChanged(async function(user) {
   activeUser = user;
     document.getElementById("loginWrapper").style.display = "none";
   document.getElementById("mainApp").style.display = "block";
-  document.getElementById("indicesBar").style.display = "block";
   // Create/verify user document
   try {
     var userDocRef = db.collection("users").doc(user.uid);
@@ -6468,6 +6500,7 @@ function saveUserProfile() {
 </script>
 </body>
 </html>
+
 
 
 
