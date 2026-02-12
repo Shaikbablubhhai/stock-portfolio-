@@ -69,7 +69,28 @@ const rtdb = firebase.database();
 }
 
 body{
+  body{
   font-family:'Inter',system-ui,-apple-system,sans-serif;
+  background:var(--bg-primary);
+  background-image:
+    radial-gradient(ellipse 80% 80% at 20% 10%,rgba(79,70,229,0.15) 0%,transparent 50%),
+    radial-gradient(ellipse 60% 60% at 80% 30%,rgba(124,58,237,0.12) 0%,transparent 50%),
+    radial-gradient(ellipse 70% 70% at 50% 80%,rgba(16,185,129,0.08) 0%,transparent 50%);
+  background-size: 200% 200%;
+  background-attachment: fixed;
+  animation: auroraFlow 20s ease-in-out infinite;
+  color:var(--text-primary);
+  min-height:100vh;
+  -webkit-font-smoothing:antialiased;
+  -moz-osx-font-smoothing:grayscale;
+  overflow-x:hidden;
+}
+
+@keyframes auroraFlow{
+  0%{background-position:0% 50%}
+  50%{background-position:100% 50%}
+  100%{background-position:0% 50%}
+}
   background:var(--bg-primary);
   background-image:
     radial-gradient(ellipse at 20% 50%,rgba(79,70,229,0.05) 0%,transparent 50%),
@@ -199,19 +220,20 @@ body{
 
 /* ================= NAV ================= */
 .navbar{
-  background:linear-gradient(135deg,#1e1b4b 0%,#312e81 40%,#4c1d95 100%);
+  background:rgba(30,27,75,0.75);
+  backdrop-filter:blur(20px);
+  -webkit-backdrop-filter:blur(20px);
   color:#fff;
   display:flex;
   align-items:center;
   gap:20px;
   padding:14px 28px;
-  box-shadow:0 4px 30px rgba(30,27,75,0.4);
+  box-shadow:0 8px 32px rgba(0,0,0,0.2);
   position:sticky;
   top:0;
   z-index:100;
   flex-wrap:wrap;
-  border-bottom:1px solid rgba(255,255,255,0.08);
-  backdrop-filter:blur(10px);
+  border-bottom:1px solid rgba(255,255,255,0.1);
 }
 .brand{
   font-size:24px;
@@ -449,7 +471,23 @@ body{
   transition:var(--transition-smooth);
   position:relative;
   overflow:hidden;
-  transform-style:preserve-3d; /* 3D Enabler */
+  transform-style:preserve-3d;
+  cursor:pointer;
+}
+
+/* The shiny overlay effect */
+.stock-card::before{
+  content:"";
+  position:absolute;
+  top:0;left:0;right:0;bottom:0;
+  background:radial-gradient(circle at var(--mouse-x, 50%) var(--mouse-y, 50%), rgba(255,255,255,0.15), transparent 40%);
+  opacity:0;
+  transition:opacity 0.3s;
+  pointer-events:none;
+}
+
+.stock-card:hover::before{
+  opacity:1;
 }
 
 /* The shiny overlay effect */
@@ -5813,6 +5851,7 @@ function saveUserProfile() {
 </script>
 </body>
 </html>
+
 
 
 
