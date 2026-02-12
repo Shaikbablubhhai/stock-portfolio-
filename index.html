@@ -1592,7 +1592,7 @@ body{
   </div>
   <div class="settings-icon" onclick="showSettings()">⚙️</div>
 </nav>
-  <div class="indices-bar" id="indicesBar">
+  <div class="indices-bar" id="indicesBar" style="display:none">
   <div class="indices-scroll">
     <div class="index-chip" id="indexNifty">
       <span class="index-name">NIFTY 50</span>
@@ -4595,6 +4595,7 @@ auth.onAuthStateChanged(async function(user) {
 
   activeUser = user;
     document.getElementById("loginWrapper").style.display = "none";
+document.getElementById("indicesBar").style.display = "flex";
   document.getElementById("mainApp").style.display = "block";
   // Create/verify user document
   try {
@@ -6500,6 +6501,7 @@ function saveUserProfile() {
 </script>
 </body>
 </html>
+
 
 
 
