@@ -1663,7 +1663,6 @@ body{
       <span class="index-price" id="niftyPharmaPrice">--</span>
       <span class="index-change positive" id="niftyPharmaChange">--%</span>
     </div>
-    <div class="index-chip" id="indexNiftyAuto">
       <span class="index-name">NIFTY AUTO</span>
       <span class="index-price" id="niftyAutoPrice">--</span>
       <span class="index-change positive" id="niftyAutoChange">--%</span>
@@ -2162,7 +2161,6 @@ var INDICES_LIST = [
   {id:"bankNifty", name:"BANK NIFTY", yahoo:"^NSEBANK", elPrice:"bankNiftyPrice", elChange:"bankNiftyChange", elChip:"indexBankNifty"},
   {id:"niftyIT", name:"NIFTY IT", yahoo:"^CNXIT", elPrice:"niftyITPrice", elChange:"niftyITChange", elChip:"indexNiftyIT"},
   {id:"niftyPharma", name:"NIFTY PHARMA", yahoo:"^CNXPHARMA", elPrice:"niftyPharmaPrice", elChange:"niftyPharmaChange", elChip:"indexNiftyPharma"},
-  {id:"niftyAuto", name:"NIFTY AUTO", yahoo:"^CNXAUTO", elPrice:"niftyAutoPrice", elChange:"niftyAutoChange", elChip:"indexNiftyAuto"}
 ];
 
 async function fetchIndicesData() {
@@ -5557,14 +5555,7 @@ function showSkeletonCards(count) {
     container.appendChild(skeleton);
   }
 }
-  // Show "search for more" message if showing default view
-  if (!showAll && stockList.length > 25) {
-    var moreMsg = document.createElement("div");
-    moreMsg.style.cssText = "grid-column:1/-1;text-align:center;padding:40px 20px;color:#64748b;font-size:15px;background:#fff;border-radius:18px;border:1px solid #e2e8f0;";
-    moreMsg.innerHTML = '🔍 <strong>' + (stockList.length - 25) + '+ more stocks available</strong><br><span style="font-size:13px;margin-top:8px;display:block">Use the search bar above to find any stock or ETF</span>';
-    container.appendChild(moreMsg);
-  }
-}
+
 function displayStocksWithAnimation(stockList, showAll) { {
   stockList.forEach(function(stock) {
     var oldPrice = prevPricesData[stock.sym] ? prevPricesData[stock.sym].price : 0;
@@ -6524,6 +6515,7 @@ function saveUserProfile() {
 </script>
 </body>
 </html>
+
 
 
 
