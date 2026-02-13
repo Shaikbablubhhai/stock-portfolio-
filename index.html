@@ -2012,7 +2012,7 @@ let indicesData = {};
 let indicesFetching = false;
 let indicesLastFetchTime = 0;
 const INDICES_CACHE_KEY = "finzotalk_indices_cache";
-const INDICES_CACHE_DURATION = 60000; // 1 minute cache
+var INDICES_CACHE_DURATION = 60000; // default 1 minute, changes based on market hours
 let indicesAutoTimer = null;
 /* ================= 300+ INDIAN STOCKS LIST ================= */
 const STOCK_DATA = [
@@ -3840,6 +3840,67 @@ STOCK_DATA.length = 0;
 STOCK_DATA.push(...STOCK_DATA_CLEAN);
 console.log("Total unique stocks after dedup: " + STOCK_DATA.length);
 
+  /* ================= MARKET HOURS DETECTION ================= */
+function isMarketOpen() {
+  var now = new Date();
+
+  // Convert to IST (UTC+5:30)
+  var utc = now.getTime() + (now.getTimezoneOffset() * 60000);
+  var ist = new Date(utc + (5.5 * 3600000));
+
+  var day = ist.getDay(); // 0=Sun, 6=Sat
+  var hours = ist.getHours();
+  var minutes = ist.getMinutes();
+  var totalMinutes = hours * 60 + minutes;
+
+  // Market closed on weekends
+  if (day === 0 || day === 6) return false;
+
+  // NSE/BSE: 9:15 AM to 3:30 PM IST
+  var marketOpen = 9 * 60 + 15;   // 555
+  var marketClose = 15 * 60 + 30; // 930
+
+  return totalMinutes >= marketOpen && totalMinutes <= marketClose;
+}
+
+function isPreMarket() {
+  var now = new Date();
+  var utc = now.getTime() + (now.getTimezoneOffset() * 60000);
+  var ist = new Date(utc + (5.5 * 3600000));
+
+  var day = ist.getDay();
+  if (day === 0 || day === 6) return false;
+
+  var hours = ist.getHours();
+  var minutes = ist.getMinutes();
+  var totalMinutes = hours * 60 + minutes;
+
+  // Pre-market: 9:00 AM to 9:15 AM IST
+  var preOpen = 9 * 60;      // 540
+  var marketOpen = 9 * 60 + 15; // 555
+
+  return totalMinutes >= preOpen && totalMinutes < marketOpen;
+}
+
+function getMarketStatusText() {
+  if (isMarketOpen()) return "Market Open";
+  if (isPreMarket()) return "Pre-Market";
+
+  var now = new Date();
+  var utc = now.getTime() + (now.getTimezoneOffset() * 60000);
+  var ist = new Date(utc + (5.5 * 3600000));
+  var day = ist.getDay();
+  var hours = ist.getHours();
+  var minutes = ist.getMinutes();
+  var totalMinutes = hours * 60 + minutes;
+
+  if (day === 0 || day === 6) return "Weekend — Market Closed";
+  if (totalMinutes < 9 * 60) return "Market Opens at 9:15 AM";
+  if (totalMinutes > 15 * 60 + 30) return "Market Closed";
+
+  return "Market Closed";
+}
+
   /* ================= INDICES FETCH ENGINE ================= */
 
 // Load indices from localStorage cache
@@ -4058,6 +4119,27 @@ async function fetchSingleIndexTwelveData(index) {
 async function fetchAllIndices() {
   if (indicesFetching) return;
 
+  // Smart cache duration based on market hours
+  var cacheDuration;
+  if (isMarketOpen()) {
+    cacheDuration = 10000; // 10 seconds during market hours
+  } else if (isPreMarket()) {
+    cacheDuration = 25000; // 25 seconds during pre-market
+  } else {
+    cacheDuration = 120000; // 2 minutes when market closed
+  }
+  INDICES_CACHE_DURATION = cacheDuration;
+
+  // Check cache age
+  var now = Date.now();
+  if (now - indicesLastFetchTime < cacheDuration && Object.keys(indicesData).length > 0) {
+    console.log("[INDICES] Using cached data (age: " + Math.floor((now - indicesLastFetchTime) / 1000) + "s)");
+    renderIndicesBar();
+    return;
+  }
+async function fetchAllIndices() {
+  if (indicesFetching) return;
+
   // Check cache age
   var now = Date.now();
   if (now - indicesLastFetchTime < INDICES_CACHE_DURATION && Object.keys(indicesData).length > 0) {
@@ -4161,28 +4243,85 @@ function updateIndicesTimestamp() {
   el.textContent = "Updated " + text;
 }
 
-// Start indices auto-refresh (every 60 seconds)
+// Smart indices auto-refresh based on market hours
 function startIndicesAutoRefresh() {
   if (indicesAutoTimer) clearInterval(indicesAutoTimer);
 
-  indicesAutoTimer = setInterval(function() {
-    // Only refresh if tab is visible and stocks tab is active
-    if (document.visibilityState === "visible") {
-      var stocksSection = document.getElementById("stocksSection");
-      if (stocksSection && stocksSection.style.display !== "none") {
-        fetchAllIndices();
-      }
-    }
-    // Update timestamp display every interval
-    updateIndicesTimestamp();
-  }, 60000);
+  // Check every 5 seconds to decide whether to fetch
+  var lastIndicesFetchAttempt = 0;
 
-  // Also update timestamp every 10 seconds for accurate display
-  setInterval(function() {
+  indicesAutoTimer = setInterval(function() {
+    var now = Date.now();
+
+    // Update timestamp display always
     updateIndicesTimestamp();
-  }, 10000);
+
+    // Update market status badge
+    updateMarketStatusBadge();
+
+    // Only fetch if tab is visible
+    if (document.visibilityState !== "visible") return;
+
+    // Only fetch if stocks tab is active
+    var stocksSection = document.getElementById("stocksSection");
+    if (!stocksSection || stocksSection.style.display === "none") return;
+
+    // Determine refresh interval based on market status
+    var refreshInterval;
+    if (isMarketOpen()) {
+      refreshInterval = 12000; // 12 seconds during market hours
+    } else if (isPreMarket()) {
+      refreshInterval = 30000; // 30 seconds during pre-market
+    } else {
+      refreshInterval = 120000; // 2 minutes when market closed
+    }
+
+    // Check if enough time has passed since last fetch
+    if (now - lastIndicesFetchAttempt >= refreshInterval) {
+      lastIndicesFetchAttempt = now;
+
+      // During market hours, force fresh fetch (bypass cache)
+      if (isMarketOpen()) {
+        indicesLastFetchTime = 0; // force bypass cache
+      }
+
+      fetchAllIndices();
+    }
+  }, 5000);
 }
 
+// Update market status badge near indices header
+function updateMarketStatusBadge() {
+  var titleEl = document.querySelector(".indices-section-title");
+  if (!titleEl) return;
+
+  var statusText = getMarketStatusText();
+  var isOpen = isMarketOpen();
+  var isPre = isPreMarket();
+
+  // Check if badge already exists
+  var badge = document.getElementById("marketStatusBadge");
+  if (!badge) {
+    badge = document.createElement("span");
+    badge.id = "marketStatusBadge";
+    badge.style.cssText = "font-size:11px;font-weight:600;padding:3px 10px;border-radius:6px;margin-left:8px;letter-spacing:0.3px;";
+    titleEl.appendChild(badge);
+  }
+
+  if (isOpen) {
+    badge.style.background = "#d1fae5";
+    badge.style.color = "#065f46";
+    badge.textContent = "🟢 " + statusText;
+  } else if (isPre) {
+    badge.style.background = "#fef3c7";
+    badge.style.color = "#92400e";
+    badge.textContent = "🟡 " + statusText;
+  } else {
+    badge.style.background = "#fee2e2";
+    badge.style.color = "#991b1b";
+    badge.textContent = "🔴 " + statusText;
+  }
+}
 /* ================= INDICES UI RENDERER ================= */
 function renderIndicesBar() {
   var container = document.getElementById("indicesBar");
@@ -4282,6 +4421,7 @@ let pendingDeleteIndex = null;
 let holdingsListener = null;
 let friendsStatusListeners = {};
 let currentUserPresenceRef = null;
+let searchLiveRefreshTimer = null;
 
 /* ================= INITIALIZATION ================= */
 document.addEventListener("DOMContentLoaded", function() {
@@ -4319,11 +4459,18 @@ document.addEventListener("DOMContentLoaded", function() {
     });
   });
   
-    // Stock search with price fetching
+     // Stock search with smart market-aware price fetching
   var searchDebounceTimer = null;
+  var searchLiveRefreshTimer = null;
 
   document.getElementById("stockSearchInput").addEventListener("input", function() {
     var query = this.value.toLowerCase().trim();
+
+    // Stop any live refresh from previous search
+    if (searchLiveRefreshTimer) {
+      clearInterval(searchLiveRefreshTimer);
+      searchLiveRefreshTimer = null;
+    }
 
     if (query.length === 0) {
       displayStocks(STOCK_DATA, false);
@@ -4345,20 +4492,39 @@ document.addEventListener("DOMContentLoaded", function() {
 
     clearTimeout(searchDebounceTimer);
     searchDebounceTimer = setTimeout(function() {
+      // During market hours: always fetch fresh prices (force bypass cache)
+      // After market hours: use cache if available, only fetch if no cached price
       var toFetch = [];
+      var marketOpen = isMarketOpen();
+
       for (var i = 0; i < matches.length && toFetch.length < 10; i++) {
         var existing = pricesData[matches[i].sym];
-        if (!existing || !existing.price || existing.price <= 0) {
-          toFetch.push(matches[i]);
+
+        if (marketOpen) {
+          // Market open: fetch if no price OR price is older than 15 seconds
+          if (!existing || !existing.price || existing.price <= 0) {
+            toFetch.push(matches[i]);
+          } else if (existing.fetchedAt && (Date.now() - existing.fetchedAt > 15000)) {
+            toFetch.push(matches[i]);
+          }
+        } else {
+          // Market closed: only fetch if we have NO cached price at all
+          if (!existing || !existing.price || existing.price <= 0) {
+            toFetch.push(matches[i]);
+          }
         }
       }
 
       if (toFetch.length > 0) {
         fetchSearchResults(toFetch, query);
       }
-    }, 600);
+
+      // If market is open and user is searching, start live refresh for search results
+      if (marketOpen && matches.length > 0 && matches.length <= 20) {
+        startSearchLiveRefresh(matches, query);
+      }
+    }, 500);
   });
-  
   // Close modals on backdrop click
   document.querySelectorAll(".modal-backdrop").forEach(function(modal) {
     modal.addEventListener("click", function(e) {
@@ -5259,6 +5425,59 @@ async function fetchLatestPrices() {
     displayStocks(STOCK_DATA, false);
   }
 }
+
+  // Live refresh for searched stocks during market hours
+function startSearchLiveRefresh(matchedStocks, originalQuery) {
+  // Clear any existing live refresh
+  if (searchLiveRefreshTimer) {
+    clearInterval(searchLiveRefreshTimer);
+    searchLiveRefreshTimer = null;
+  }
+
+  // Only run during market hours
+  if (!isMarketOpen()) return;
+
+  // Limit to top 10 stocks for live refresh
+  var liveStocks = matchedStocks.slice(0, 10);
+
+  searchLiveRefreshTimer = setInterval(function() {
+    // Stop if market closed
+    if (!isMarketOpen()) {
+      clearInterval(searchLiveRefreshTimer);
+      searchLiveRefreshTimer = null;
+      return;
+    }
+
+    // Stop if user changed search query
+    var currentQuery = document.getElementById("stockSearchInput").value.toLowerCase().trim();
+    if (currentQuery !== originalQuery) {
+      clearInterval(searchLiveRefreshTimer);
+      searchLiveRefreshTimer = null;
+      return;
+    }
+
+    // Stop if tab not visible
+    if (document.visibilityState !== "visible") return;
+
+    // Stop if not on stocks tab
+    var stocksSection = document.getElementById("stocksSection");
+    if (!stocksSection || stocksSection.style.display === "none") return;
+
+    // Force fresh fetch for these stocks
+    var toRefresh = [];
+    for (var i = 0; i < liveStocks.length; i++) {
+      var sym = liveStocks[i].sym;
+      if (pricesData[sym]) {
+        pricesData[sym].fetchedAt = 0; // Force cache bypass
+      }
+      toRefresh.push(liveStocks[i]);
+    }
+
+    console.log("[SEARCH LIVE] Refreshing " + toRefresh.length + " stocks");
+    fetchSearchResults(toRefresh, originalQuery);
+
+  }, 15000); // Refresh every 15 seconds during market hours
+}
 // Fetch prices for search results only (max 10)
 async function fetchSearchResults(stocksToFetch, originalQuery) {
   setRefreshStatus("Searching...", true);
@@ -5321,7 +5540,15 @@ function triggerManualRefresh() {
 }
 function initAutoRefresh() {
   if (autoRefreshTimer) clearInterval(autoRefreshTimer);
-  refreshCountdown = 30;
+
+  // Smart countdown based on market hours
+  function getRefreshInterval() {
+    if (isMarketOpen()) return 15;       // 15 seconds during market
+    if (isPreMarket()) return 30;        // 30 seconds pre-market
+    return 120;                          // 2 minutes when closed
+  }
+
+  refreshCountdown = getRefreshInterval();
 
   autoRefreshTimer = setInterval(function() {
     refreshCountdown--;
@@ -5330,8 +5557,18 @@ function initAutoRefresh() {
     refreshLastUpdateDisplay();
 
     if (refreshCountdown <= 0) {
-      refreshCountdown = 30;
+      refreshCountdown = getRefreshInterval();
+
       if (!isFetchingData && document.visibilityState === "visible" && userHoldings.length > 0) {
+        // During market hours, force fresh prices
+        if (isMarketOpen()) {
+          for (var i = 0; i < userHoldings.length; i++) {
+            var sym = userHoldings[i].sym;
+            if (pricesData[sym]) {
+              pricesData[sym].fetchedAt = 0; // bypass cache
+            }
+          }
+        }
         fetchLatestPrices();
       }
     }
@@ -5448,13 +5685,13 @@ function displayStocks(stockList, showAll) {
           '<div class="change-value ' + (isPositive ? 'positive' : 'negative') + '">' + (isPositive ? '+' : '') + '₹' + priceChange.toFixed(2) + '</div>' +
           '<div class="change-badge ' + (isPositive ? 'positive' : 'negative') + '">' + (isPositive ? '▲' : '▼') + ' ' + Math.abs(changePercent).toFixed(2) + '%</div>' +
         '</div>';
-    } else {
+        } else {
+      var noPriceHint = isMarketOpen() ? "Fetching live price..." : "Click + to see closing price";
       priceHTML = '<div class="current-price" style="color:#94a3b8;font-size:18px">₹ --</div>' +
         '<div class="price-change">' +
-          '<div style="color:#94a3b8;font-size:12px">Click + to fetch price</div>' +
+          '<div style="color:#94a3b8;font-size:12px">' + noPriceHint + '</div>' +
         '</div>';
     }
-
     card.innerHTML =
       '<div class="stock-header">' +
         '<div class="stock-logo">' +
@@ -6441,6 +6678,7 @@ function saveUserProfile() {
 </script>
 </body>
 </html>
+
 
 
 
