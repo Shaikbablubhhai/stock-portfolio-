@@ -460,6 +460,8 @@ body{
   position:sticky;
   top:0;
   z-index:100;
+    /* Energy Line */
+  overflow:hidden; /* Keep the line inside */
   flex-wrap:wrap;
   border-bottom:1px solid rgba(255,255,255,0.1);
 }
@@ -633,7 +635,14 @@ body{
 .live-dot{
   width:10px;height:10px;border-radius:50%;
   background:currentColor;
-  animation:livePulse 2s infinite;
+  animation:livePulse 1.5s infinite;
+  box-shadow:0 0 0 0 rgba(16,185,129,0.7);
+}
+
+@keyframes livePulse{
+  0% { box-shadow: 0 0 0 0 rgba(16,185,129,0.7); }
+  70% { box-shadow: 0 0 0 10px rgba(16,185,129,0); }
+  100% { box-shadow: 0 0 0 0 rgba(16,185,129,0); }
 }
 @keyframes livePulse{
   0%,100%{opacity:1;transform:scale(1)}
@@ -814,26 +823,93 @@ body{
   margin-bottom:16px;
   border:1px solid var(--border-lighter);
 }
-.current-price{font-size:26px;font-weight:700;color:var(--text-primary)}
-.price-change{text-align:right}
-.change-value{font-size:15px;font-weight:600;margin-bottom:4px}
-.change-value.positive{color:var(--success)}
-.change-value.negative{color:var(--danger)}
-.change-badge{
-  font-size:12px;font-weight:600;
-  padding:5px 12px;border-radius:8px;display:inline-block;
+.current-price{
+  font-size:26px;
+  font-weight:700;
+  color:var(--text-primary);
+  /* NEON GLOW EFFECT */
+  text-shadow: 
+    0 0 5px rgba(255,255,255,0.3),
+    0 0 10px rgba(79,70,229,0.4),
+    0 0 20px rgba(79,70,229,0.3);
+  animation: textFlicker 3s infinite alternate;
+}
+
+/* Green Glow for Price Up */
+.price-up .current-price,
+.change-value.positive {
+  color:#10b981;
+  text-shadow: 
+    0 0 5px rgba(16,185,129,0.5),
+    0 0 15px rgba(16,185,129,0.4),
+    0 0 30px rgba(16,185,129,0.2);
+}
+
+/* Red Glow for Price Down */
+.price-down .current-price,
+.change-value.negative {
+  color:#ef4444;
+  text-shadow: 
+    0 0 5px rgba(239,68,68,0.5),
+    0 0 15px rgba(239,68,68,0.4),
+    0 0 30px rgba(239,68,68,0.2);
+}
+
+@keyframes textFlicker{
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.95; }
 }
 .change-badge.positive{background:var(--success-light);color:#065f46}
 .change-badge.negative{background:var(--danger-light);color:#991b1b}
 
-.add-stock-btn{
-  width:100%;padding:14px;border:none;
-  border-radius:var(--radius-md);
-  background:linear-gradient(135deg,var(--primary),var(--accent));
-  color:#fff;font-weight:600;font-size:15px;
-  cursor:pointer;transition:var(--transition-smooth);
-  display:flex;align-items:center;justify-content:center;gap:8px;
-  position:relative;overflow:hidden;
+.add-stock-btn, .login-primary-btn, #sendMsgBtn{
+  position:relative;
+  overflow:hidden;
+  z-index:1;
+  transition: 0.4s;
+}
+
+/* The Glowing Border */
+.add-stock-btn::before, .login-primary-btn::before, #sendMsgBtn::before{
+  content:"";
+  position:absolute;
+  top:50%;
+  left:50%;
+  width:300%;
+  height:300%;
+  background:conic-gradient(
+    from 0deg,
+    transparent 50%,
+    var(--primary),
+    var(--accent),
+    var(--primary),
+    transparent 70%
+  );
+  transform:translate(-50%, -50%);
+  opacity:0;
+  transition:opacity 0.3s;
+  animation: spinBorder 4s linear infinite;
+  z-index:-1;
+  filter:blur(5px);
+}
+
+/* Show glow on hover */
+.add-stock-btn:hover::before, 
+.login-primary-btn:hover::before, 
+#sendMsgBtn:hover::before{
+  opacity:1;
+}
+
+/* Make text brighter on hover */
+.add-stock-btn:hover, 
+.login-primary-btn:hover, 
+#sendMsgBtn:hover{
+  color:#fff;
+  box-shadow:0 0 20px rgba(79,70,229,0.6);
+}
+
+@keyframes spinBorder{
+  100% { transform: translate(-50%, -50%) rotate(360deg); }
 }
 .add-stock-btn::after{
   content:"";position:absolute;top:0;left:-100%;
@@ -1249,13 +1325,16 @@ body{
   display:flex;
   align-items:center;
   justify-content:center;
-  position:relative;
+  position:fixed;
+  top:0;
+  left:0;
+  right:0;
+  bottom:0;
   background:linear-gradient(-45deg,#0f0c29,#302b63,#24243e,#1a1a2e);
   background-size:400% 400%;
   animation:gradientShift 15s ease infinite;
-  position:relative;
   overflow:hidden;
-  z-index:200;
+  z-index:9999;
   padding:20px;
 }
 @keyframes gradientShift{
@@ -1505,6 +1584,30 @@ body{
   .action-buttons{flex-direction:column;gap:6px}
   .toast-container{left:12px;right:12px;max-width:none}
   .main-content{padding:16px}
+}
+  /* Animated Energy Line for Navbar */
+.navbar::after{
+  content:"";
+  position:absolute;
+  bottom:0;
+  left:0;
+  width:100%;
+  height:2px;
+  background:linear-gradient(90deg, 
+    transparent, 
+    var(--primary), 
+    var(--accent), 
+    var(--primary), 
+    transparent
+  );
+  background-size: 200% 100%;
+  animation: energyFlow 3s linear infinite;
+  box-shadow: 0 0 10px var(--primary);
+}
+
+@keyframes energyFlow{
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
 }
 </style>
 </head>
