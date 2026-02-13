@@ -1289,7 +1289,282 @@ body{
   #loginPage h2{font-size:28px}
   .floating-icon{font-size:20px !important}
 }
+/* ================= ENHANCED SETTINGS PANEL ================= */
+.settings-container{
+  max-height:80vh;
+  overflow-y:auto;
+  padding-right:4px;
+}
+.settings-container::-webkit-scrollbar{width:5px}
+.settings-container::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:4px}
 
+.settings-profile-header{
+  display:flex;
+  align-items:center;
+  gap:18px;
+  padding:20px;
+  background:linear-gradient(135deg,#4338ca,#6d28d9);
+  border-radius:var(--radius-md);
+  margin-bottom:20px;
+  color:#fff;
+}
+.settings-avatar{
+  width:68px;height:68px;
+  border-radius:50%;
+  background:rgba(255,255,255,0.2);
+  border:3px solid rgba(255,255,255,0.4);
+  display:flex;align-items:center;justify-content:center;
+  font-size:28px;font-weight:800;
+  flex-shrink:0;
+  letter-spacing:1px;
+}
+.settings-profile-info{flex:1;min-width:0}
+.settings-profile-name{
+  font-size:20px;font-weight:700;
+  margin-bottom:4px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.settings-profile-email{
+  font-size:13px;opacity:0.85;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.settings-profile-joined{
+  font-size:11px;opacity:0.7;margin-top:4px;
+}
+
+.settings-section{
+  margin-bottom:20px;
+}
+.settings-section-title{
+  font-size:12px;
+  font-weight:700;
+  text-transform:uppercase;
+  letter-spacing:1px;
+  color:var(--text-muted);
+  margin-bottom:12px;
+  padding-bottom:8px;
+  border-bottom:1px solid var(--border-lighter);
+}
+
+.settings-row{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:12px 0;
+  border-bottom:1px solid var(--border-lighter);
+  gap:12px;
+}
+.settings-row:last-child{border-bottom:none}
+
+.settings-row-left{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  flex:1;
+  min-width:0;
+}
+.settings-row-icon{
+  width:36px;height:36px;
+  border-radius:var(--radius-sm);
+  display:flex;align-items:center;justify-content:center;
+  font-size:18px;flex-shrink:0;
+  background:var(--border-lighter);
+}
+.settings-row-label{
+  font-size:14px;font-weight:500;color:var(--text-primary);
+}
+.settings-row-sublabel{
+  font-size:12px;color:var(--text-muted);margin-top:2px;
+}
+
+.settings-row-right{
+  flex-shrink:0;
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+
+.settings-value{
+  font-size:14px;color:var(--text-secondary);
+  font-weight:500;
+  text-align:right;
+}
+.settings-value.copyable{
+  cursor:pointer;
+  color:var(--primary);
+  font-weight:700;
+  font-size:18px;
+  padding:4px 12px;
+  background:rgba(79,70,229,0.08);
+  border-radius:8px;
+  transition:var(--transition-fast);
+}
+.settings-value.copyable:hover{
+  background:rgba(79,70,229,0.15);
+}
+.settings-value.copyable:active{
+  transform:scale(0.95);
+}
+
+.settings-input{
+  width:100%;
+  padding:10px 14px;
+  border:2px solid var(--border-light);
+  border-radius:var(--radius-sm);
+  font-size:14px;
+  transition:var(--transition-fast);
+  background:var(--bg-card-solid);
+}
+.settings-input:focus{
+  outline:none;
+  border-color:var(--primary);
+  box-shadow:0 0 0 3px rgba(79,70,229,0.1);
+}
+
+.settings-select{
+  padding:8px 14px;
+  border:2px solid var(--border-light);
+  border-radius:var(--radius-sm);
+  font-size:13px;
+  font-weight:500;
+  background:var(--bg-card-solid);
+  color:var(--text-primary);
+  cursor:pointer;
+  transition:var(--transition-fast);
+  min-width:120px;
+}
+.settings-select:focus{
+  outline:none;
+  border-color:var(--primary);
+}
+
+/* Toggle Switch */
+.settings-toggle{
+  position:relative;
+  width:48px;height:26px;
+  flex-shrink:0;
+}
+.settings-toggle input{
+  opacity:0;width:0;height:0;position:absolute;
+}
+.settings-toggle-slider{
+  position:absolute;inset:0;
+  background:#cbd5e1;
+  border-radius:26px;
+  cursor:pointer;
+  transition:var(--transition-smooth);
+}
+.settings-toggle-slider::before{
+  content:"";
+  position:absolute;
+  width:20px;height:20px;
+  border-radius:50%;
+  background:#fff;
+  top:3px;left:3px;
+  transition:var(--transition-smooth);
+  box-shadow:0 2px 4px rgba(0,0,0,0.15);
+}
+.settings-toggle input:checked + .settings-toggle-slider{
+  background:var(--primary);
+}
+.settings-toggle input:checked + .settings-toggle-slider::before{
+  transform:translateX(22px);
+}
+
+.settings-stat-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px;
+  margin-top:8px;
+}
+.settings-stat-box{
+  padding:12px;
+  background:var(--border-lighter);
+  border-radius:var(--radius-sm);
+  text-align:center;
+}
+.settings-stat-num{
+  font-size:20px;font-weight:800;
+  color:var(--primary);
+}
+.settings-stat-label{
+  font-size:11px;color:var(--text-muted);
+  margin-top:4px;text-transform:uppercase;
+  letter-spacing:0.5px;
+}
+
+.settings-btn-group{
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+  margin-top:20px;
+}
+.settings-btn{
+  width:100%;
+  padding:14px;
+  border:none;
+  border-radius:var(--radius-md);
+  font-weight:600;
+  font-size:15px;
+  cursor:pointer;
+  transition:var(--transition-smooth);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
+}
+.settings-btn:hover{transform:translateY(-1px)}
+.settings-btn:disabled{opacity:0.6;cursor:not-allowed;transform:none}
+.settings-btn-primary{
+  background:linear-gradient(135deg,var(--primary),var(--accent));
+  color:#fff;
+}
+.settings-btn-primary:hover{box-shadow:0 6px 20px rgba(79,70,229,0.4)}
+.settings-btn-secondary{
+  background:var(--border-lighter);
+  color:var(--text-secondary);
+}
+.settings-btn-secondary:hover{background:var(--border-light)}
+.settings-btn-danger{
+  background:var(--danger-light);
+  color:#dc2626;
+}
+.settings-btn-danger:hover{background:#fecaca}
+.settings-btn-warning{
+  background:var(--warning-light);
+  color:#92400e;
+}
+.settings-btn-warning:hover{background:#fde68a}
+
+.settings-version{
+  text-align:center;
+  padding:16px 0 4px 0;
+  font-size:12px;
+  color:var(--text-muted);
+}
+.settings-version strong{
+  color:var(--primary);
+}
+
+.copied-tooltip{
+  position:fixed;
+  top:50%;left:50%;
+  transform:translate(-50%,-50%);
+  background:rgba(15,23,42,0.9);
+  color:#fff;
+  padding:12px 24px;
+  border-radius:var(--radius-md);
+  font-size:14px;font-weight:600;
+  z-index:9999;
+  animation:copiedFade 1.5s ease forwards;
+  pointer-events:none;
+}
+@keyframes copiedFade{
+  0%{opacity:0;transform:translate(-50%,-50%) scale(0.8)}
+  15%{opacity:1;transform:translate(-50%,-50%) scale(1)}
+  70%{opacity:1}
+  100%{opacity:0;transform:translate(-50%,-50%) scale(0.9)}
+}
 /* ================= MODALS ================= */
 .modal-backdrop{
   position:fixed;inset:0;
@@ -1607,19 +1882,216 @@ body{
 
 <!-- ================= SETTINGS MODAL ================= -->
 <div class="modal-backdrop" id="settingsModal">
-  <div class="modal-container">
-    <h3>⚙️ Settings</h3>
-    <div class="modal-info-box">
-      <p>Email: <span id="displayUserEmail">--</span></p>
-      <p>Your ID: <span id="displayUserCode" style="color:#4f46e5;font-size:20px">--</span></p>
+  <div class="modal-container" style="width:520px;max-width:95%;padding:28px">
+    <div class="settings-container">
+
+      <!-- Profile Header -->
+      <div class="settings-profile-header">
+        <div class="settings-avatar" id="settingsAvatar">FT</div>
+        <div class="settings-profile-info">
+          <div class="settings-profile-name" id="settingsProfileName">FinzoTalk User</div>
+          <div class="settings-profile-email" id="settingsProfileEmail">--</div>
+          <div class="settings-profile-joined" id="settingsJoinedDate">Member since --</div>
+        </div>
+      </div>
+
+      <!-- Personal Info Section -->
+      <div class="settings-section">
+        <div class="settings-section-title">👤 Personal Information</div>
+
+        <div class="settings-row">
+          <div class="settings-row-left">
+            <div class="settings-row-icon">🆔</div>
+            <div>
+              <div class="settings-row-label">Your User ID</div>
+              <div class="settings-row-sublabel">Share this to add friends</div>
+            </div>
+          </div>
+          <div class="settings-row-right">
+            <span class="settings-value copyable" id="settingsUserCode" onclick="copyUserCode()" title="Click to copy">--</span>
+          </div>
+        </div>
+
+        <div class="settings-row" style="flex-direction:column;align-items:stretch;gap:8px">
+          <div class="settings-row-left">
+            <div class="settings-row-icon">✏️</div>
+            <div>
+              <div class="settings-row-label">First Name</div>
+            </div>
+          </div>
+          <input type="text" class="settings-input" id="settingsFirstName" placeholder="Enter first name">
+        </div>
+
+        <div class="settings-row" style="flex-direction:column;align-items:stretch;gap:8px">
+          <div class="settings-row-left">
+            <div class="settings-row-icon">✏️</div>
+            <div>
+              <div class="settings-row-label">Last Name</div>
+            </div>
+          </div>
+          <input type="text" class="settings-input" id="settingsLastName" placeholder="Enter last name">
+        </div>
+
+        <div class="settings-row">
+          <div class="settings-row-left">
+            <div class="settings-row-icon">📧</div>
+            <div>
+              <div class="settings-row-label">Email Address</div>
+              <div class="settings-row-sublabel" id="settingsEmailDisplay">--</div>
+            </div>
+          </div>
+          <div class="settings-row-right">
+            <span style="font-size:11px;padding:4px 8px;background:#d1fae5;color:#065f46;border-radius:6px;font-weight:600">Verified</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- App Preferences Section -->
+      <div class="settings-section">
+        <div class="settings-section-title">⚙️ App Preferences</div>
+
+        <div class="settings-row">
+          <div class="settings-row-left">
+            <div class="settings-row-icon">🏠</div>
+            <div>
+              <div class="settings-row-label">Default Tab</div>
+              <div class="settings-row-sublabel">Opens when you login</div>
+            </div>
+          </div>
+          <div class="settings-row-right">
+            <select class="settings-select" id="settingsDefaultTab" onchange="saveSettingsPref()">
+              <option value="stocks">📊 Stocks</option>
+              <option value="holdings">💼 Holdings</option>
+              <option value="chat">💬 Chat</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="settings-row">
+          <div class="settings-row-left">
+            <div class="settings-row-icon">🔄</div>
+            <div>
+              <div class="settings-row-label">Auto-Refresh Prices</div>
+              <div class="settings-row-sublabel">Automatically fetch latest prices</div>
+            </div>
+          </div>
+          <div class="settings-row-right">
+            <label class="settings-toggle">
+              <input type="checkbox" id="settingsAutoRefresh" checked onchange="toggleAutoRefresh()">
+              <span class="settings-toggle-slider"></span>
+            </label>
+          </div>
+        </div>
+
+        <div class="settings-row">
+          <div class="settings-row-left">
+            <div class="settings-row-icon">⏱️</div>
+            <div>
+              <div class="settings-row-label">Refresh Interval</div>
+              <div class="settings-row-sublabel">During market hours</div>
+            </div>
+          </div>
+          <div class="settings-row-right">
+            <select class="settings-select" id="settingsRefreshInterval" onchange="saveSettingsPref()">
+              <option value="10">Every 10s</option>
+              <option value="15" selected>Every 15s</option>
+              <option value="30">Every 30s</option>
+              <option value="60">Every 60s</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="settings-row">
+          <div class="settings-row-left">
+            <div class="settings-row-icon">🔔</div>
+            <div>
+              <div class="settings-row-label">Toast Notifications</div>
+              <div class="settings-row-sublabel">Show success/error popups</div>
+            </div>
+          </div>
+          <div class="settings-row-right">
+            <label class="settings-toggle">
+              <input type="checkbox" id="settingsToastEnabled" checked onchange="saveSettingsPref()">
+              <span class="settings-toggle-slider"></span>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <!-- Portfolio Stats Section -->
+      <div class="settings-section">
+        <div class="settings-section-title">📊 Portfolio & App Stats</div>
+        <div class="settings-stat-grid">
+          <div class="settings-stat-box">
+            <div class="settings-stat-num" id="settingsHoldingsCount">0</div>
+            <div class="settings-stat-label">Holdings</div>
+          </div>
+          <div class="settings-stat-box">
+            <div class="settings-stat-num" id="settingsStocksAvailable">0</div>
+            <div class="settings-stat-label">Stocks Available</div>
+          </div>
+          <div class="settings-stat-box">
+            <div class="settings-stat-num" id="settingsApiCalls">0</div>
+            <div class="settings-stat-label">API Calls Today</div>
+          </div>
+          <div class="settings-stat-box">
+            <div class="settings-stat-num" id="settingsCachedPrices">0</div>
+            <div class="settings-stat-label">Cached Prices</div>
+          </div>
+        </div>
+
+        <div class="settings-row" style="margin-top:12px">
+          <div class="settings-row-left">
+            <div class="settings-row-icon">🔑</div>
+            <div>
+              <div class="settings-row-label">API Keys Status</div>
+              <div class="settings-row-sublabel" id="settingsKeyStatus">Checking...</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="settings-row">
+          <div class="settings-row-left">
+            <div class="settings-row-icon">📈</div>
+            <div>
+              <div class="settings-row-label">Market Status</div>
+              <div class="settings-row-sublabel" id="settingsMarketStatus">--</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Data Management Section -->
+      <div class="settings-section">
+        <div class="settings-section-title">🗄️ Data Management</div>
+
+        <div class="settings-row">
+          <div class="settings-row-left">
+            <div class="settings-row-icon">💾</div>
+            <div>
+              <div class="settings-row-label">Price Cache</div>
+              <div class="settings-row-sublabel" id="settingsCacheSize">--</div>
+            </div>
+          </div>
+          <div class="settings-row-right">
+            <button class="settings-btn-warning settings-btn" style="width:auto;padding:8px 16px;font-size:12px" onclick="clearPriceCache()">Clear Cache</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="settings-btn-group">
+        <button class="settings-btn settings-btn-primary" id="settingsSaveBtn" onclick="saveUserProfile()">💾 Save Profile</button>
+        <button class="settings-btn settings-btn-secondary" onclick="hideSettings()">✕ Close</button>
+        <button class="settings-btn settings-btn-danger" onclick="performLogout()">🚪 Logout</button>
+      </div>
+
+      <!-- Version -->
+      <div class="settings-version">
+        <strong>FinzoTalk</strong> v2.0 • Built with ❤️
+      </div>
+
     </div>
-           <label>Display Name</label>
-    <input type="text" id="displayNameInput" placeholder="Enter your name">
-    <div class="modal-actions">
-      <button class="modal-primary" id="saveProfileBtn" onclick="saveUserProfile()">Save</button>
-      <button class="modal-secondary" onclick="hideSettings()">Close</button>
-    </div>
-    <button class="modal-danger" onclick="performLogout()" style="width:100%;margin-top:14px;padding:14px;border:none;border-radius:12px;cursor:pointer">Logout</button>
   </div>
 </div>
 
@@ -4615,9 +5087,21 @@ auth.onAuthStateChanged(async function(user) {
   // Setup real-time holdings listener
   setupHoldingsListener();
 
+  // Load user preferences
+  loadUserPreferences();
+
+  // Apply default tab preference
+  if (userPreferences.defaultTab && userPreferences.defaultTab !== "stocks") {
+    var defaultTabEl = document.querySelector('.nav-tabs span[data-tab="' + userPreferences.defaultTab + '"]');
+    if (defaultTabEl) {
+      document.querySelectorAll(".nav-tabs span").forEach(function(t) { t.classList.remove("active"); });
+      defaultTabEl.classList.add("active");
+      switchTab(userPreferences.defaultTab);
+    }
+  }
+
   // Render stocks
   displayStocks(STOCK_DATA, false);
-
   // Render holdings
   displayHoldings();
 
@@ -6390,57 +6874,280 @@ function sendChatMsg() {
     sendBtn.disabled = false;
   });
 }
-/* ================= SETTINGS ================= */
-function showSettings() {
-  document.getElementById("displayUserEmail").textContent = activeUser.email;
+/* ================= ENHANCED SETTINGS ================= */
+var userPreferences = {
+  defaultTab: "stocks",
+  autoRefresh: true,
+  refreshInterval: 15,
+  toastEnabled: true
+};
 
+// Load preferences from localStorage
+function loadUserPreferences() {
+  try {
+    var saved = localStorage.getItem("finzotalk_prefs");
+    if (saved) {
+      var parsed = JSON.parse(saved);
+      userPreferences = Object.assign(userPreferences, parsed);
+    }
+  } catch (e) {
+    // ignore
+  }
+}
+
+// Save preferences to localStorage
+function saveSettingsPref() {
+  userPreferences.defaultTab = document.getElementById("settingsDefaultTab").value;
+  userPreferences.refreshInterval = parseInt(document.getElementById("settingsRefreshInterval").value) || 15;
+  userPreferences.toastEnabled = document.getElementById("settingsToastEnabled").checked;
+
+  try {
+    localStorage.setItem("finzotalk_prefs", JSON.stringify(userPreferences));
+  } catch (e) {
+    // ignore
+  }
+}
+
+function toggleAutoRefresh() {
+  userPreferences.autoRefresh = document.getElementById("settingsAutoRefresh").checked;
+
+  if (userPreferences.autoRefresh) {
+    initAutoRefresh();
+    ToastManager.success("Auto-Refresh On", "Prices will update automatically");
+  } else {
+    if (autoRefreshTimer) {
+      clearInterval(autoRefreshTimer);
+      autoRefreshTimer = null;
+    }
+    ToastManager.info("Auto-Refresh Off", "Use manual refresh button");
+  }
+
+  saveSettingsPref();
+}
+
+function showSettings() {
+  loadUserPreferences();
+
+  // Load user data from Firestore
   db.collection("users").doc(activeUser.uid).get().then(function(doc) {
     if (doc.exists) {
       var data = doc.data();
-      document.getElementById("displayUserCode").textContent = data.usercode || "--";
-      document.getElementById("displayNameInput").value = data.name || "";
+
+      // Avatar initials
+      var firstName = data.firstName || "";
+      var lastName = data.lastName || "";
+      var fullName = data.name || (firstName + " " + lastName).trim() || "User";
+      var initials = "";
+      if (firstName) initials += firstName.charAt(0).toUpperCase();
+      if (lastName) initials += lastName.charAt(0).toUpperCase();
+      if (!initials) initials = fullName.charAt(0).toUpperCase();
+
+      document.getElementById("settingsAvatar").textContent = initials;
+      document.getElementById("settingsProfileName").textContent = fullName;
+      document.getElementById("settingsProfileEmail").textContent = activeUser.email || "--";
+      document.getElementById("settingsEmailDisplay").textContent = activeUser.email || "--";
+      document.getElementById("settingsUserCode").textContent = data.usercode || "--";
+      document.getElementById("settingsFirstName").value = firstName;
+      document.getElementById("settingsLastName").value = lastName;
+
+      // Joined date
+      if (data.createdAt && data.createdAt.toDate) {
+        var joinDate = data.createdAt.toDate();
+        document.getElementById("settingsJoinedDate").textContent = "Member since " + joinDate.toLocaleDateString("en-IN", {
+          day: "numeric",
+          month: "long",
+          year: "numeric"
+        });
+      } else {
+        document.getElementById("settingsJoinedDate").textContent = "Member";
+      }
     }
   }).catch(function(error) {
     console.error("Settings load error:", error);
   });
 
+  // Set preference controls
+  document.getElementById("settingsDefaultTab").value = userPreferences.defaultTab;
+  document.getElementById("settingsAutoRefresh").checked = userPreferences.autoRefresh;
+  document.getElementById("settingsRefreshInterval").value = userPreferences.refreshInterval;
+  document.getElementById("settingsToastEnabled").checked = userPreferences.toastEnabled;
+
+  // Portfolio stats
+  document.getElementById("settingsHoldingsCount").textContent = userHoldings.length;
+  document.getElementById("settingsStocksAvailable").textContent = STOCK_DATA.length;
+  document.getElementById("settingsApiCalls").textContent = (apiCallCounts.yahoo + apiCallCounts.twelveData + apiCallCounts.alphaVantage);
+  document.getElementById("settingsCachedPrices").textContent = Object.keys(pricesData).length;
+
+  // API keys status
+  var keyInfo = getAvailableKeyCount();
+  document.getElementById("settingsKeyStatus").textContent =
+    "Alpha: " + keyInfo.alpha + "/" + ALPHA_VANTAGE_KEYS.length + " active • " +
+    "Twelve: " + keyInfo.twelve + "/" + TWELVE_DATA_KEYS.length + " active";
+
+  // Market status
+  document.getElementById("settingsMarketStatus").textContent = getMarketStatusText();
+
+  // Cache size
+  var cacheSize = 0;
+  try {
+    var cacheStr = localStorage.getItem("stockPricesCache") || "";
+    cacheSize = Math.round(cacheStr.length / 1024);
+  } catch (e) {}
+  document.getElementById("settingsCacheSize").textContent = cacheSize + " KB stored • " + Object.keys(pricesData).length + " prices";
+
+  // Show modal
   document.getElementById("settingsModal").style.display = "flex";
 }
+
 function hideSettings() {
   document.getElementById("settingsModal").style.display = "none";
 }
 
-function saveUserProfile() {
-  var newName = document.getElementById("displayNameInput").value.trim();
-  var saveBtn = document.getElementById("saveProfileBtn");
+function copyUserCode() {
+  var code = document.getElementById("settingsUserCode").textContent;
+  if (!code || code === "--") return;
 
-  if (!newName) {
-    ToastManager.warning("Missing Name", "Please enter a display name");
+  // Copy to clipboard
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(code).then(function() {
+      showCopiedTooltip("User ID " + code + " copied!");
+    }).catch(function() {
+      fallbackCopy(code);
+    });
+  } else {
+    fallbackCopy(code);
+  }
+}
+
+function fallbackCopy(text) {
+  var temp = document.createElement("textarea");
+  temp.value = text;
+  temp.style.position = "fixed";
+  temp.style.left = "-9999px";
+  document.body.appendChild(temp);
+  temp.select();
+  try {
+    document.execCommand("copy");
+    showCopiedTooltip("User ID " + text + " copied!");
+  } catch (e) {
+    ToastManager.error("Copy Failed", "Could not copy to clipboard");
+  }
+  document.body.removeChild(temp);
+}
+
+function showCopiedTooltip(message) {
+  var existing = document.querySelector(".copied-tooltip");
+  if (existing) existing.remove();
+
+  var tooltip = document.createElement("div");
+  tooltip.className = "copied-tooltip";
+  tooltip.textContent = "✓ " + message;
+  document.body.appendChild(tooltip);
+
+  setTimeout(function() {
+    if (tooltip.parentElement) tooltip.remove();
+  }, 1500);
+}
+
+function clearPriceCache() {
+  if (!confirm("Clear all cached prices? They will be re-fetched on next refresh.")) return;
+
+  pricesData = {};
+  prevPricesData = {};
+  indicesData = {};
+  indicesLastFetchTime = 0;
+
+  try {
+    localStorage.removeItem("stockPricesCache");
+    localStorage.removeItem("lastPriceUpdate");
+    localStorage.removeItem(INDICES_CACHE_KEY);
+  } catch (e) {}
+
+  ToastManager.success("Cache Cleared", "All price data cleared. Refreshing...");
+
+  // Update cache size display
+  document.getElementById("settingsCacheSize").textContent = "0 KB stored • 0 prices";
+  document.getElementById("settingsCachedPrices").textContent = "0";
+
+  // Refresh data
+  setTimeout(function() {
+    fetchAllIndices();
+    if (userHoldings.length > 0) {
+      fetchLatestPrices();
+    }
+    displayStocks(STOCK_DATA, false);
+  }, 500);
+}
+
+function saveUserProfile() {
+  var firstName = document.getElementById("settingsFirstName").value.trim();
+  var lastName = document.getElementById("settingsLastName").value.trim();
+  var saveBtn = document.getElementById("settingsSaveBtn");
+
+  if (!firstName) {
+    ToastManager.warning("Missing Name", "Please enter your first name");
     return;
   }
 
+  var fullName = firstName + (lastName ? " " + lastName : "");
+
   saveBtn.disabled = true;
-  saveBtn.textContent = "Saving...";
+  saveBtn.innerHTML = "💾 Saving...";
 
   db.collection("users").doc(activeUser.uid).update({
-    name: newName
+    firstName: firstName,
+    lastName: lastName,
+    name: fullName
   })
     .then(function() {
-      ToastManager.success("Saved!", "Your profile has been updated");
-      hideSettings();
+      // Update profile header immediately
+      var initials = firstName.charAt(0).toUpperCase();
+      if (lastName) initials += lastName.charAt(0).toUpperCase();
+      document.getElementById("settingsAvatar").textContent = initials;
+      document.getElementById("settingsProfileName").textContent = fullName;
+
+      // Also update friends list entry for all friends
+      updateNameInFriendsList(fullName);
+
+      ToastManager.success("Profile Saved!", "Your name has been updated to " + fullName);
     })
     .catch(function(err) {
-      ToastManager.error("Save Failed", err.message);
+      console.error("Save profile error:", err);
+      ToastManager.error("Save Failed", err.message || "Could not save profile");
     })
     .finally(function() {
       saveBtn.disabled = false;
-      saveBtn.textContent = "Save";
+      saveBtn.innerHTML = "💾 Save Profile";
     });
+
+  // Save preferences too
+  saveSettingsPref();
 }
-  
+
+// Update name in all friends' lists when user changes their name
+async function updateNameInFriendsList(newName) {
+  if (!activeUser) return;
+
+  try {
+    var friendsSnap = await db.collection("friends").doc(activeUser.uid).collection("list").get();
+
+    friendsSnap.forEach(function(friendDoc) {
+      var friendId = friendDoc.id;
+      // Update my name in their friends list
+      db.collection("friends").doc(friendId).collection("list").doc(activeUser.uid).update({
+        name: newName
+      }).catch(function(e) {
+        // Friend might have removed us, ignore
+      });
+    });
+  } catch (e) {
+    console.error("Update friends name error:", e);
+  }
+}
 </script>
 </body>
 </html>
+
 
 
 
