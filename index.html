@@ -4459,71 +4459,66 @@ document.addEventListener("DOMContentLoaded", function() {
     });
   });
   
-       // Stock search with smart market-aware price fetching
-  var searchDebounceTimer = null;
+     // Stock search with smart market-aware price fetching
+    var searchDebounceTimer = null;
 
-  document.getElementById("stockSearchInput").addEventListener("input", function() {
-    var query = this.value.toLowerCase().trim();
+    document.getElementById("stockSearchInput").addEventListener("input", function() {
+      var query = this.value.toLowerCase().trim();
 
-    // Stop any live refresh from previous search
-    if (searchLiveRefreshTimer) {
-      clearInterval(searchLiveRefreshTimer);
-      searchLiveRefreshTimer = null;
-    }
+      // Stop any live refresh from previous search
+      if (searchLiveRefreshTimer) {
+        clearInterval(searchLiveRefreshTimer);
+        searchLiveRefreshTimer = null;
+      }
 
-    if (query.length === 0) {
-      displayStocks(STOCK_DATA, false);
-      return;
-    }
+      if (query.length === 0) {
+        displayStocks(STOCK_DATA, false);
+        return;
+      }
 
-    if (query.length < 2) {
-      var partial = STOCK_DATA.filter(function(s) {
+      if (query.length < 2) {
+        var partial = STOCK_DATA.filter(function(s) {
+          return s.name.toLowerCase().indexOf(query) !== -1 || s.sym.toLowerCase().indexOf(query) !== -1;
+        });
+        displayStocks(partial, true);
+        return;
+      }
+
+      var matches = STOCK_DATA.filter(function(s) {
         return s.name.toLowerCase().indexOf(query) !== -1 || s.sym.toLowerCase().indexOf(query) !== -1;
       });
-      displayStocks(partial, true);
-      return;
-    }
+      displayStocks(matches, true);
 
-    var matches = STOCK_DATA.filter(function(s) {
-      return s.name.toLowerCase().indexOf(query) !== -1 || s.sym.toLowerCase().indexOf(query) !== -1;
-    });
-    displayStocks(matches, true);
+      clearTimeout(searchDebounceTimer);
+      searchDebounceTimer = setTimeout(function() {
+        var toFetch = [];
+        var marketOpen = isMarketOpen();
 
-    clearTimeout(searchDebounceTimer);
-    searchDebounceTimer = setTimeout(function() {
-      // During market hours: always fetch fresh prices (force bypass cache)
-      // After market hours: use cache if available, only fetch if no cached price
-      var toFetch = [];
-      var marketOpen = isMarketOpen();
+        for (var i = 0; i < matches.length && toFetch.length < 10; i++) {
+          var existing = pricesData[matches[i].sym];
 
-      for (var i = 0; i < matches.length && toFetch.length < 10; i++) {
-        var existing = pricesData[matches[i].sym];
-
-        if (marketOpen) {
-          // Market open: fetch if no price OR price is older than 15 seconds
-          if (!existing || !existing.price || existing.price <= 0) {
-            toFetch.push(matches[i]);
-          } else if (existing.fetchedAt && (Date.now() - existing.fetchedAt > 15000)) {
-            toFetch.push(matches[i]);
-          }
-        } else {
-          // Market closed: only fetch if we have NO cached price at all
-          if (!existing || !existing.price || existing.price <= 0) {
-            toFetch.push(matches[i]);
+          if (marketOpen) {
+            if (!existing || !existing.price || existing.price <= 0) {
+              toFetch.push(matches[i]);
+            } else if (existing.fetchedAt && (Date.now() - existing.fetchedAt > 15000)) {
+              toFetch.push(matches[i]);
+            }
+          } else {
+            if (!existing || !existing.price || existing.price <= 0) {
+              toFetch.push(matches[i]);
+            }
           }
         }
-      }
 
-      if (toFetch.length > 0) {
-        fetchSearchResults(toFetch, query);
-      }
+        if (toFetch.length > 0) {
+          fetchSearchResults(toFetch, query);
+        }
 
-      // If market is open and user is searching, start live refresh for search results
-      if (marketOpen && matches.length > 0 && matches.length <= 20) {
-        startSearchLiveRefresh(matches, query);
-      }
-    }, 500);
-  });
+        if (marketOpen && matches.length > 0 && matches.length <= 20) {
+          startSearchLiveRefresh(matches, query);
+        }
+      }, 500);
+    });
   // Close modals on backdrop click
   document.querySelectorAll(".modal-backdrop").forEach(function(modal) {
     modal.addEventListener("click", function(e) {
@@ -6677,6 +6672,7 @@ function saveUserProfile() {
 </script>
 </body>
 </html>
+
 
 
 
