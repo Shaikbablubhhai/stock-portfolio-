@@ -21,65 +21,12 @@ const firebaseConfig = {
   projectId: "stock-portfolio-web-final",
   databaseURL: "https://stock-portfolio-web-final-default-rtdb.firebaseio.com"
 };
-  firebase.initializeApp(firebaseConfig);
+firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.firestore();
 const rtdb = firebase.database();
-
-// Security Rules - IMPORTANT: You MUST set these in Firebase Console
-/*
-FIRESTORE RULES (Go to Firestore Database → Rules):
-rules_version = '2';
-service cloud.firestore {
-  match /databases/{database}/documents {
-    match /users/{userId} {
-      allow read: if request.auth != null;
-      allow write: if request.auth != null && request.auth.uid == userId;
-    }
-    match /holdings/{holdingId} {
-      allow read, write: if request.auth != null && 
-        request.auth.uid == resource.data.userId;
-      allow create: if request.auth != null && 
-        request.auth.uid == request.resource.data.userId;
-    }
-    match /friends/{userId}/list/{friendId} {
-      allow read: if request.auth != null && request.auth.uid == userId;
-      allow write: if request.auth != null && request.auth.uid == userId;
-    }
-    match /requests/{requestId} {
-      allow read: if request.auth != null && 
-        (request.auth.uid == resource.data.from || 
-         request.auth.uid == resource.data.to);
-      allow create: if request.auth != null && 
-        request.auth.uid == request.resource.data.from;
-      allow delete: if request.auth != null && 
-        request.auth.uid == resource.data.to;
-    }
-    match /chats/{chatId}/messages/{messageId} {
-      allow read: if request.auth != null && 
-        request.auth.uid in chatId.split('_');
-      allow create: if request.auth != null && 
-        request.auth.uid in chatId.split('_') &&
-        request.auth.uid == request.resource.data.from;
-      allow update: if request.auth != null && 
-        request.auth.uid in chatId.split('_');
-    }
-  }
-}
-
-REALTIME DATABASE RULES (Go to Realtime Database → Rules):
-{
-  "rules": {
-    "status": {
-      "$uid": {
-        ".read": true,
-        ".write": "$uid === auth.uid"
-      }
-    }
-  }
-}
-*/
 </script>
+
 <style>
 /* ================= RESET & BASE ================= */
 *{box-sizing:border-box;margin:0;padding:0}
@@ -125,25 +72,15 @@ body{
   font-family:'Inter',system-ui,-apple-system,sans-serif;
   background:var(--bg-primary);
   background-image:
-    radial-gradient(ellipse 80% 80% at 20% 10%,rgba(79,70,229,0.15) 0%,transparent 50%),
-    radial-gradient(ellipse 60% 60% at 80% 30%,rgba(124,58,237,0.12) 0%,transparent 50%),
-    radial-gradient(ellipse 70% 70% at 50% 80%,rgba(16,185,129,0.08) 0%,transparent 50%);
-  background-size: 200% 200%;
-  background-attachment: fixed;
-  animation: auroraFlow 20s ease-in-out infinite;
+    radial-gradient(ellipse at 20% 50%,rgba(79,70,229,0.05) 0%,transparent 50%),
+    radial-gradient(ellipse at 80% 20%,rgba(124,58,237,0.05) 0%,transparent 50%),
+    radial-gradient(ellipse at 50% 80%,rgba(16,185,129,0.03) 0%,transparent 50%);
   color:var(--text-primary);
   min-height:100vh;
   -webkit-font-smoothing:antialiased;
   -moz-osx-font-smoothing:grayscale;
-  overflow-x:hidden;
 }
 
-@keyframes auroraFlow{
-  0%{background-position:0% 50%}
-  50%{background-position:100% 50%}
-  100%{background-position:0% 50%}
-}
- 
 /* ================= SCROLLBAR ================= */
 ::-webkit-scrollbar{width:8px;height:8px}
 ::-webkit-scrollbar-track{background:transparent}
@@ -259,211 +196,22 @@ body{
 .toast-warning .toast-progress{background:var(--warning)}
 .toast-info .toast-progress{background:var(--info)}
 @keyframes toastProgress{from{width:100%}to{width:0%}}
-  /* ================= MARKET INDICES BAR ================= */
-.indices-bar{
-  background:rgba(30,27,75,0.6);
-  backdrop-filter:blur(15px);
-  -webkit-backdrop-filter:blur(15px);
-  padding:10px 0;
-  overflow:hidden;
-  border-bottom:1px solid rgba(255,255,255,0.08);
-  position:sticky;
-  top:0;
-  z-index:99;
-}
-.indices-scroll{
-  display:flex;
-  gap:8px;
-  padding:0 28px;
-  overflow-x:auto;
-  scrollbar-width:none;
-  -ms-overflow-style:none;
-  scroll-behavior:smooth;
-}
-.indices-scroll::-webkit-scrollbar{display:none}
-.index-chip{
-  display:flex;
-  align-items:center;
-  gap:10px;
-  padding:8px 18px;
-  background:rgba(255,255,255,0.08);
-  border:1px solid rgba(255,255,255,0.1);
-  border-radius:12px;
-  white-space:nowrap;
-  flex-shrink:0;
-  transition:all 0.3s ease;
-  cursor:default;
-  min-width:180px;
-}
-.index-chip:hover{
-  background:rgba(255,255,255,0.14);
-  transform:translateY(-1px);
-  box-shadow:0 4px 15px rgba(0,0,0,0.2);
-}
-.index-name{
-  font-size:11px;
-  font-weight:700;
-  color:rgba(255,255,255,0.6);
-  text-transform:uppercase;
-  letter-spacing:0.8px;
-}
-.index-price{
-  font-size:14px;
-  font-weight:700;
-  color:#fff;
-}
-.index-change{
-  font-size:12px;
-  font-weight:600;
-  padding:3px 8px;
-  border-radius:6px;
-}
-.index-change.positive{
-  background:rgba(16,185,129,0.2);
-  color:#34d399;
-}
-.index-change.negative{
-  background:rgba(239,68,68,0.2);
-  color:#f87171;
-}
-.index-chip.flash-up{
-  animation:indexFlashUp 0.6s ease;
-}
-.index-chip.flash-down{
-  animation:indexFlashDown 0.6s ease;
-}
-@keyframes indexFlashUp{
-  0%,100%{background:rgba(255,255,255,0.08)}
-  40%{background:rgba(16,185,129,0.2)}
-}
-@keyframes indexFlashDown{
-  0%,100%{background:rgba(255,255,255,0.08)}
-  40%{background:rgba(239,68,68,0.2)}
-}
-/* ================= WATCHLIST BUTTON ================= */
-.watchlist-btn{
-  width:36px;
-  height:36px;
-  border:none;
-  background:rgba(245,158,11,0.1);
-  border-radius:50%;
-  font-size:18px;
-  cursor:pointer;
-  transition:all 0.3s ease;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  flex-shrink:0;
-  color:#f59e0b;
-}
-.watchlist-btn:hover{
-  background:rgba(245,158,11,0.2);
-  transform:scale(1.15);
-}
-.watchlist-btn.active{
-  background:rgba(245,158,11,0.2);
-  color:#f59e0b;
-  animation:watchlistPop 0.3s ease;
-}
-@keyframes watchlistPop{
-  0%{transform:scale(1)}
-  50%{transform:scale(1.3)}
-  100%{transform:scale(1)}
-}
-/* ================= SKELETON LOADING ================= */
-.skeleton{
-  background:linear-gradient(90deg,#e2e8f0 25%,#f1f5f9 50%,#e2e8f0 75%);
-  background-size:200% 100%;
-  animation:skeletonShimmer 1.5s ease-in-out infinite;
-  border-radius:8px;
-}
-@keyframes skeletonShimmer{
-  0%{background-position:200% 0}
-  100%{background-position:-200% 0}
-}
-.skeleton-card{
-  background:var(--bg-card-solid);
-  border-radius:var(--radius-lg);
-  padding:24px;
-  border:1px solid var(--border-light);
-}
-.skeleton-line{
-  height:14px;
-  margin-bottom:12px;
-  border-radius:7px;
-}
-.skeleton-line.short{width:40%}
-.skeleton-line.medium{width:65%}
-.skeleton-line.long{width:90%}
-.skeleton-line.full{width:100%}
-.skeleton-circle{
-  width:54px;
-  height:54px;
-  border-radius:50%;
-  flex-shrink:0;
-}
-.skeleton-price{
-  height:32px;
-  width:120px;
-  border-radius:8px;
-  margin-top:8px;
-}
-.skeleton-btn{
-  height:46px;
-  width:100%;
-  border-radius:var(--radius-md);
-  margin-top:14px;
-}
-
-/* ================= WATCHLIST TAB BADGE ================= */
-.watchlist-count{
-  background:var(--warning);
-  color:#fff;
-  font-size:11px;
-  padding:2px 7px;
-  border-radius:10px;
-  margin-left:6px;
-  font-weight:700;
-}
-
-/* ================= LAZY LOAD FADE IN ================= */
-.stock-card-enter{
-  opacity:0;
-  transform:translateY(20px);
-  animation:cardFadeIn 0.4s ease forwards;
-}
-@keyframes cardFadeIn{
-  to{opacity:1;transform:translateY(0)}
-}
-
-/* ================= TOAST POSITION FIX MOBILE ================= */
-@media(max-width:680px){
-  .indices-bar{top:auto;position:relative}
-  .indices-scroll{padding:0 16px}
-  .index-chip{min-width:160px;padding:6px 14px}
-  .index-name{font-size:10px}
-  .index-price{font-size:13px}
-  .index-change{font-size:11px}
-}
 
 /* ================= NAV ================= */
 .navbar{
-  background:rgba(30,27,75,0.75);
-  backdrop-filter:blur(20px);
-  -webkit-backdrop-filter:blur(20px);
+  background:linear-gradient(135deg,#1e1b4b 0%,#312e81 40%,#4c1d95 100%);
   color:#fff;
   display:flex;
   align-items:center;
   gap:20px;
   padding:14px 28px;
-  box-shadow:0 8px 32px rgba(0,0,0,0.2);
+  box-shadow:0 4px 30px rgba(30,27,75,0.4);
   position:sticky;
   top:0;
   z-index:100;
-    /* Energy Line */
-  overflow:hidden; /* Keep the line inside */
   flex-wrap:wrap;
-  border-bottom:1px solid rgba(255,255,255,0.1);
+  border-bottom:1px solid rgba(255,255,255,0.08);
+  backdrop-filter:blur(10px);
 }
 .brand{
   font-size:24px;
@@ -635,14 +383,7 @@ body{
 .live-dot{
   width:10px;height:10px;border-radius:50%;
   background:currentColor;
-  animation:livePulse 1.5s infinite;
-  box-shadow:0 0 0 0 rgba(16,185,129,0.7);
-}
-
-@keyframes livePulse{
-  0% { box-shadow: 0 0 0 0 rgba(16,185,129,0.7); }
-  70% { box-shadow: 0 0 0 10px rgba(16,185,129,0); }
-  100% { box-shadow: 0 0 0 0 rgba(16,185,129,0); }
+  animation:livePulse 2s infinite;
 }
 @keyframes livePulse{
   0%,100%{opacity:1;transform:scale(1)}
@@ -699,8 +440,8 @@ body{
 }
 .stock-card{
   background:var(--glass-bg);
-  backdrop-filter:blur(20px);
-  -webkit-backdrop-filter:blur(20px);
+  backdrop-filter:var(--glass-blur);
+  -webkit-backdrop-filter:var(--glass-blur);
   border-radius:var(--radius-lg);
   padding:24px;
   border:1px solid var(--glass-border);
@@ -708,38 +449,6 @@ body{
   transition:var(--transition-smooth);
   position:relative;
   overflow:hidden;
-  transform-style:preserve-3d;
-  cursor:pointer;
-}
-
-/* The shiny overlay effect */
-.stock-card::before{
-  content:"";
-  position:absolute;
-  top:0;left:0;right:0;bottom:0;
-  background:radial-gradient(circle at var(--mouse-x, 50%) var(--mouse-y, 50%), rgba(255,255,255,0.15), transparent 40%);
-  opacity:0;
-  transition:opacity 0.3s;
-  pointer-events:none;
-}
-
-.stock-card:hover::before{
-  opacity:1;
-}
-
-/* The shiny overlay effect */
-.stock-card::before{
-  content:"";
-  position:absolute;
-  top:0;left:0;right:0;bottom:0;
-  background:radial-gradient(circle at var(--mouse-x, 50%) var(--mouse-y, 50%), rgba(255,255,255,0.15), transparent 40%);
-  opacity:0;
-  transition:opacity 0.3s;
-  pointer-events:none;
-}
-
-.stock-card:hover::before{
-  opacity:1;
 }
 .stock-card::before{
   content:"";
@@ -823,93 +532,26 @@ body{
   margin-bottom:16px;
   border:1px solid var(--border-lighter);
 }
-.current-price{
-  font-size:26px;
-  font-weight:700;
-  color:var(--text-primary);
-  /* NEON GLOW EFFECT */
-  text-shadow: 
-    0 0 5px rgba(255,255,255,0.3),
-    0 0 10px rgba(79,70,229,0.4),
-    0 0 20px rgba(79,70,229,0.3);
-  animation: textFlicker 3s infinite alternate;
-}
-
-/* Green Glow for Price Up */
-.price-up .current-price,
-.change-value.positive {
-  color:#10b981;
-  text-shadow: 
-    0 0 5px rgba(16,185,129,0.5),
-    0 0 15px rgba(16,185,129,0.4),
-    0 0 30px rgba(16,185,129,0.2);
-}
-
-/* Red Glow for Price Down */
-.price-down .current-price,
-.change-value.negative {
-  color:#ef4444;
-  text-shadow: 
-    0 0 5px rgba(239,68,68,0.5),
-    0 0 15px rgba(239,68,68,0.4),
-    0 0 30px rgba(239,68,68,0.2);
-}
-
-@keyframes textFlicker{
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.95; }
+.current-price{font-size:26px;font-weight:700;color:var(--text-primary)}
+.price-change{text-align:right}
+.change-value{font-size:15px;font-weight:600;margin-bottom:4px}
+.change-value.positive{color:var(--success)}
+.change-value.negative{color:var(--danger)}
+.change-badge{
+  font-size:12px;font-weight:600;
+  padding:5px 12px;border-radius:8px;display:inline-block;
 }
 .change-badge.positive{background:var(--success-light);color:#065f46}
 .change-badge.negative{background:var(--danger-light);color:#991b1b}
 
-.add-stock-btn, .login-primary-btn, #sendMsgBtn{
-  position:relative;
-  overflow:hidden;
-  z-index:1;
-  transition: 0.4s;
-}
-
-/* The Glowing Border */
-.add-stock-btn::before, .login-primary-btn::before, #sendMsgBtn::before{
-  content:"";
-  position:absolute;
-  top:50%;
-  left:50%;
-  width:300%;
-  height:300%;
-  background:conic-gradient(
-    from 0deg,
-    transparent 50%,
-    var(--primary),
-    var(--accent),
-    var(--primary),
-    transparent 70%
-  );
-  transform:translate(-50%, -50%);
-  opacity:0;
-  transition:opacity 0.3s;
-  animation: spinBorder 4s linear infinite;
-  z-index:-1;
-  filter:blur(5px);
-}
-
-/* Show glow on hover */
-.add-stock-btn:hover::before, 
-.login-primary-btn:hover::before, 
-#sendMsgBtn:hover::before{
-  opacity:1;
-}
-
-/* Make text brighter on hover */
-.add-stock-btn:hover, 
-.login-primary-btn:hover, 
-#sendMsgBtn:hover{
-  color:#fff;
-  box-shadow:0 0 20px rgba(79,70,229,0.6);
-}
-
-@keyframes spinBorder{
-  100% { transform: translate(-50%, -50%) rotate(360deg); }
+.add-stock-btn{
+  width:100%;padding:14px;border:none;
+  border-radius:var(--radius-md);
+  background:linear-gradient(135deg,var(--primary),var(--accent));
+  color:#fff;font-weight:600;font-size:15px;
+  cursor:pointer;transition:var(--transition-smooth);
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  position:relative;overflow:hidden;
 }
 .add-stock-btn::after{
   content:"";position:absolute;top:0;left:-100%;
@@ -1325,16 +967,11 @@ body{
   display:flex;
   align-items:center;
   justify-content:center;
-  position:fixed;
-  top:0;
-  left:0;
-  right:0;
-  bottom:0;
   background:linear-gradient(-45deg,#0f0c29,#302b63,#24243e,#1a1a2e);
   background-size:400% 400%;
   animation:gradientShift 15s ease infinite;
+  position:relative;
   overflow:hidden;
-  z-index:9999;
   padding:20px;
 }
 @keyframes gradientShift{
@@ -1398,8 +1035,6 @@ body{
 #loginPage{
   max-width:460px;width:100%;
   background:rgba(255,255,255,0.95);
-  position:relative;
-  z-index:10;
   backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
   padding:48px;border-radius:var(--radius-xl);
   border:1px solid rgba(255,255,255,0.3);
@@ -1484,11 +1119,6 @@ body{
 #registerForm input{margin-bottom:12px}
 
 #loginError{
-  @keyframes shake{
-  0%,100%{transform:translateX(0)}
-  20%,60%{transform:translateX(-8px)}
-  40%,80%{transform:translateX(8px)}
-}
   color:#dc2626;margin-top:16px;text-align:center;
   font-size:14px;min-height:20px;
 }
@@ -1585,30 +1215,6 @@ body{
   .toast-container{left:12px;right:12px;max-width:none}
   .main-content{padding:16px}
 }
-  /* Animated Energy Line for Navbar */
-.navbar::after{
-  content:"";
-  position:absolute;
-  bottom:0;
-  left:0;
-  width:100%;
-  height:2px;
-  background:linear-gradient(90deg, 
-    transparent, 
-    var(--primary), 
-    var(--accent), 
-    var(--primary), 
-    transparent
-  );
-  background-size: 200% 100%;
-  animation: energyFlow 3s linear infinite;
-  box-shadow: 0 0 10px var(--primary);
-}
-
-@keyframes energyFlow{
-  0% { background-position: -200% 0; }
-  100% { background-position: 200% 0; }
-}
 </style>
 </head>
 
@@ -1655,7 +1261,7 @@ body{
   <div id="loginForm">
     <input type="email" id="loginEmail" placeholder="Email address">
     <input type="password" id="loginPassword" placeholder="Password">
-   <button class="login-primary-btn" id="emailLoginBtn" onclick="handleEmailLogin()">Login</button>
+    <button class="login-primary-btn" id="emailLoginBtn" onclick="handleEmailLogin()">Login</button>
   </div>
 
   <!-- REGISTER FORM -->
@@ -1674,7 +1280,7 @@ body{
   </div>
 
   <!-- Google Login -->
- <button class="login-google-btn" id="googleLoginBtn" onclick="handleGoogleLogin()">
+  <button class="login-google-btn" id="googleLoginBtn" onclick="handleGoogleLogin()">
     <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="20" height="20" alt="Google">
     Continue with Google
   </button>
@@ -1695,7 +1301,6 @@ body{
     <span class="active" data-tab="stocks">📊 Stocks</span>
     <span data-tab="holdings">💼 Holdings</span>
     <span data-tab="mf">📈 Mutual Funds</span>
-    <span data-tab="watchlist">⭐ Watchlist <span class="watchlist-count" id="watchlistNavCount" style="display:none">0</span></span>
     <span data-tab="chat">💬 Chat</span>
   </div>
   <div class="nav-search">
@@ -1703,74 +1308,7 @@ body{
   </div>
   <div class="settings-icon" onclick="showSettings()">⚙️</div>
 </nav>
-  <div class="indices-bar" id="indicesBar" style="display:none">
-  <div class="indices-scroll">
-    <div class="index-chip" id="indexNifty">
-      <span class="index-name">NIFTY 50</span>
-      <span class="index-price" id="niftyPrice">--</span>
-      <span class="index-change positive" id="niftyChange">--%</span>
-    </div>
-    <div class="index-chip" id="indexSensex">
-      <span class="index-name">SENSEX</span>
-      <span class="index-price" id="sensexPrice">--</span>
-      <span class="index-change positive" id="sensexChange">--%</span>
-    </div>
-    <div class="index-chip" id="indexBankNifty">
-      <span class="index-name">BANK NIFTY</span>
-      <span class="index-price" id="bankNiftyPrice">--</span>
-      <span class="index-change positive" id="bankNiftyChange">--%</span>
-    </div>
-    <div class="index-chip" id="indexNiftyIT">
-      <span class="index-name">NIFTY IT</span>
-      <span class="index-price" id="niftyITPrice">--</span>
-      <span class="index-change positive" id="niftyITChange">--%</span>
-    </div>
-    <div class="index-chip" id="indexNiftyPharma">
-      <span class="index-name">NIFTY PHARMA</span>
-      <span class="index-price" id="niftyPharmaPrice">--</span>
-      <span class="index-change positive" id="niftyPharmaChange">--%</span>
-    </div>
-    <div class="index-chip" id="indexNiftyAuto">
-      <span class="index-name">NIFTY AUTO</span>
-      <span class="index-price" id="niftyAutoPrice">--</span>
-      <span class="index-change positive" id="niftyAutoChange">--%</span>
-    </div>
-  </div>
-</div>
-  <!-- ================= MARKET INDICES BAR ================= -->
-<div class="indices-bar" id="indicesBar" style="display:none">
-  <div class="indices-scroll">
-    <div class="index-chip" id="indexNifty">
-      <span class="index-name">NIFTY 50</span>
-      <span class="index-price" id="niftyPrice">--</span>
-      <span class="index-change positive" id="niftyChange">--%</span>
-    </div>
-    <div class="index-chip" id="indexSensex">
-      <span class="index-name">SENSEX</span>
-      <span class="index-price" id="sensexPrice">--</span>
-      <span class="index-change positive" id="sensexChange">--%</span>
-    </div>
-    <div class="index-chip" id="indexBankNifty">
-      <span class="index-name">BANK NIFTY</span>
-      <span class="index-price" id="bankNiftyPrice">--</span>
-      <span class="index-change positive" id="bankNiftyChange">--%</span>
-    </div>
-    <div class="index-chip" id="indexNiftyIT">
-      <span class="index-name">NIFTY IT</span>
-      <span class="index-price" id="niftyITPrice">--</span>
-      <span class="index-change positive" id="niftyITChange">--%</span>
-    </div>
-    <div class="index-chip" id="indexNiftyPharma">
-      <span class="index-name">NIFTY PHARMA</span>
-      <span class="index-price" id="niftyPharmaPrice">--</span>
-      <span class="index-change positive" id="niftyPharmaChange">--%</span>
-    </div>
-      <span class="index-name">NIFTY AUTO</span>
-      <span class="index-price" id="niftyAutoPrice">--</span>
-      <span class="index-change positive" id="niftyAutoChange">--%</span>
-    </div>
-  </div>
-</div>
+<div class="main-content">
   
   <!-- ========== STOCKS TAB ========== -->
   <section id="stocksSection">
@@ -1813,7 +1351,7 @@ body{
     </div>
   </section>
 
-<!-- ========== MUTUAL FUNDS TAB ========== -->
+  <!-- ========== MUTUAL FUNDS TAB ========== -->
   <section id="mfSection" style="display:none">
     <div class="mf-coming-soon">
       <h3>Mutual Funds</h3>
@@ -1821,20 +1359,6 @@ body{
     </div>
   </section>
 
-  <!-- ========== WATCHLIST TAB ========== -->
-  <section id="watchlistSection" style="display:none">
-    <div class="holdings-header">
-      <h2>⭐ Your Watchlist</h2>
-      <div class="holdings-controls">
-        <div class="holdings-live-badge">
-          <div class="live-dot" style="background:#f59e0b"></div>
-          <span id="watchlistUpdateDisplay">Live</span>
-        </div>
-        <button class="refresh-button" onclick="refreshWatchlistPrices()">🔄 Refresh Prices</button>
-      </div>
-    </div>
-    <div class="stocks-grid" id="watchlistContainer"></div>
-  </section>
   <!-- ========== CHAT TAB ========== -->
   <section id="chatSection" style="display:none">
     <div class="chat-wrapper">
@@ -1980,34 +1504,7 @@ body{
 
 <script>
 /* ================= TOAST NOTIFICATION SYSTEM ================= */
-// 3D Tilt Effect for Cards
-document.addEventListener("mousemove", function(e) {
-  const cards = document.querySelectorAll(".stock-card, .holding-stock-cell");
-  cards.forEach(card => {
-    const rect = card.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-    
-    const centerX = rect.width / 2;
-    const centerY = rect.height / 2;
-    
-    const rotateX = (y - centerY) / 15; // Tilt intensity
-    const rotateY = (centerX - x) / 15;
-    
-    card.style.setProperty('--mouse-x', x + 'px');
-    card.style.setProperty('--mouse-y', y + 'px');
-    
-    // Only apply tilt if mouse is over the card
-    if (e.clientX > rect.left && e.clientX < rect.right && e.clientY > rect.top && e.clientY < rect.bottom) {
-       card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) translateY(-6px) scale(1.02)`;
-       card.style.boxShadow = "0 25px 50px rgba(0,0,0,0.25), 0 0 30px rgba(79,70,229,0.2)";
-    } else {
-       card.style.transform = "perspective(1000px) rotateX(0) rotateY(0) translateY(0) scale(1)";
-       card.style.boxShadow = "var(--shadow-sm)";
-    }
-  });
-});
-  const ToastManager = {
+const ToastManager = {
   container: null,
   
   init: function() {
@@ -2079,277 +1576,10 @@ document.addEventListener("mousemove", function(e) {
     return this.show("info", title, message, duration);
   }
 };
-  /* ================= WATCHLIST SYSTEM ================= */
-var userWatchlist = [];
-
-function loadWatchlist() {
-  try {
-    var saved = localStorage.getItem("finzotalk_watchlist_" + (activeUser ? activeUser.uid : "guest"));
-    if (saved) {
-      userWatchlist = JSON.parse(saved);
-    }
-  } catch(e) {
-    userWatchlist = [];
-  }
-  updateWatchlistBadge();
-}
-
-function saveWatchlist() {
-  try {
-    var key = "finzotalk_watchlist_" + (activeUser ? activeUser.uid : "guest");
-    localStorage.setItem(key, JSON.stringify(userWatchlist));
-  } catch(e) {}
-  updateWatchlistBadge();
-}
-
-function toggleWatchlist(symbol) {
-  var index = userWatchlist.indexOf(symbol);
-  
-  if (index !== -1) {
-    userWatchlist.splice(index, 1);
-    ToastManager.info("Removed", symbol + " removed from watchlist");
-  } else {
-    userWatchlist.push(symbol);
-    ToastManager.success("Added", symbol + " added to watchlist");
-  }
-  
-  saveWatchlist();
-  
-  // Re-render current stock view
-  var searchVal = document.getElementById("stockSearchInput").value.toLowerCase().trim();
-  if (searchVal.length >= 2) {
-    var matches = STOCK_DATA.filter(function(s) {
-      return s.name.toLowerCase().indexOf(searchVal) !== -1 || s.sym.toLowerCase().indexOf(searchVal) !== -1;
-    });
-    displayStocks(matches, true);
-  } else {
-    displayStocks(STOCK_DATA, false);
-  }
-  
-  // Update watchlist tab if visible
-  if (document.getElementById("watchlistSection").style.display !== "none") {
-    displayWatchlist();
-  }
-}
-
-function updateWatchlistBadge() {
-  var badge = document.getElementById("watchlistNavCount");
-  if (badge) {
-    if (userWatchlist.length > 0) {
-      badge.textContent = userWatchlist.length;
-      badge.style.display = "inline";
-    } else {
-      badge.style.display = "none";
-    }
-  }
-}
-
-function displayWatchlist() {
-  var container = document.getElementById("watchlistContainer");
-  container.innerHTML = "";
-  
-  if (userWatchlist.length === 0) {
-    container.innerHTML = '<div class="empty-holdings" style="grid-column:1/-1"><h3>No stocks in watchlist</h3><p>Click the \u2606 star icon on any stock card to add it here!</p></div>';
-    return;
-  }
-  
-  var watchlistStocks = [];
-  for (var i = 0; i < userWatchlist.length; i++) {
-    for (var j = 0; j < STOCK_DATA.length; j++) {
-      if (STOCK_DATA[j].sym === userWatchlist[i]) {
-        watchlistStocks.push(STOCK_DATA[j]);
-        break;
-      }
-    }
-  }
-  
-  displayStocksInContainer(watchlistStocks, container, true);
-}
-
-function displayStocksInContainer(stockList, container, showAll) {
-  stockList.forEach(function(stock, index) {
-    var priceInfo = getStockData(stock.sym);
-    var currentPrice = priceInfo && priceInfo.price ? priceInfo.price : 0;
-    var priceChange = priceInfo && priceInfo.change ? priceInfo.change : 0;
-    var changePercent = priceInfo && priceInfo.changePercent ? priceInfo.changePercent : 0;
-    var isPositive = priceChange >= 0;
-
-    var card = document.createElement("div");
-    card.className = "stock-card stock-card-enter";
-    card.dataset.symbol = stock.sym;
-    card.style.animationDelay = (index * 30) + "ms";
-
-    var isWatchlisted = userWatchlist.indexOf(stock.sym) !== -1;
-    var watchBtnClass = isWatchlisted ? "watchlist-btn active" : "watchlist-btn";
-    var watchIcon = isWatchlisted ? "\u2605" : "\u2606";
-
-    var priceHTML = "";
-    if (currentPrice > 0) {
-      priceHTML = '<div class="current-price">\u20B9' + currentPrice.toFixed(2) + '</div>' +
-        '<div class="price-change">' +
-          '<div class="change-value ' + (isPositive ? 'positive' : 'negative') + '">' + (isPositive ? '+' : '') + '\u20B9' + priceChange.toFixed(2) + '</div>' +
-          '<div class="change-badge ' + (isPositive ? 'positive' : 'negative') + '">' + (isPositive ? '\u25B2' : '\u25BC') + ' ' + Math.abs(changePercent).toFixed(2) + '%</div>' +
-        '</div>';
-    } else {
-      priceHTML = '<div class="current-price" style="color:#94a3b8;font-size:18px">\u20B9 --</div>' +
-        '<div class="price-change"><div style="color:#94a3b8;font-size:12px">Price not fetched</div></div>';
-    }
-
-    card.innerHTML =
-      '<div class="stock-header">' +
-        '<div class="stock-logo">' +
-          '<img src="https://logo.clearbit.com/' + stock.logo + '" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'block\'" alt="' + stock.sym + '">' +
-          '<div class="stock-logo-fallback" style="display:none">' + stock.sym.charAt(0) + '</div>' +
-        '</div>' +
-        '<div class="stock-meta">' +
-          '<div class="stock-title" title="' + stock.name + '">' + stock.name + '</div>' +
-          '<div class="stock-symbol">' + stock.sym + '</div>' +
-        '</div>' +
-        '<button class="' + watchBtnClass + '" onclick="event.stopPropagation();toggleWatchlist(\'' + stock.sym + '\')" title="Toggle Watchlist">' + watchIcon + '</button>' +
-      '</div>' +
-      '<div class="price-display">' + priceHTML + '</div>' +
-      '<button class="add-stock-btn" onclick="showAddStockModal(\'' + stock.sym + '\')">\u2795 Add to Holdings</button>';
-
-    container.appendChild(card);
-  });
-}
-
-async function refreshWatchlistPrices() {
-  if (userWatchlist.length === 0) {
-    ToastManager.info("Empty", "Add stocks to watchlist first");
-    return;
-  }
-  
-  ToastManager.info("Refreshing", "Fetching prices for " + userWatchlist.length + " watchlist stocks...");
-  
-  var watchStocks = [];
-  for (var i = 0; i < userWatchlist.length; i++) {
-    for (var j = 0; j < STOCK_DATA.length; j++) {
-      if (STOCK_DATA[j].sym === userWatchlist[i]) {
-        // Clear cache to force fresh fetch
-        if (pricesData[userWatchlist[i]]) {
-          pricesData[userWatchlist[i]].fetchedAt = 0;
-        }
-        watchStocks.push(STOCK_DATA[j]);
-        break;
-      }
-    }
-  }
-  
-  var batchSize = 3;
-  for (var b = 0; b < watchStocks.length; b += batchSize) {
-    var batch = watchStocks.slice(b, b + batchSize);
-    var promises = batch.map(function(stock) {
-      return fetchStockPrice(stock, "watchlist");
-    });
-    await Promise.allSettled(promises);
-    
-    if (b + batchSize < watchStocks.length) {
-      await new Promise(function(r) { setTimeout(r, 400); });
-    }
-  }
-  
-  localStorage.setItem("stockPricesCache", JSON.stringify(pricesData));
-  displayWatchlist();
-  ToastManager.success("Done", "Watchlist prices updated!");
-}
-  /* ================= MARKET INDICES SYSTEM ================= */
-var indicesData = {};
-var indicesPrevData = {};
-
-var INDICES_LIST = [
-  {id:"nifty", name:"NIFTY 50", yahoo:"^NSEI", elPrice:"niftyPrice", elChange:"niftyChange", elChip:"indexNifty"},
-  {id:"sensex", name:"SENSEX", yahoo:"^BSESN", elPrice:"sensexPrice", elChange:"sensexChange", elChip:"indexSensex"},
-  {id:"bankNifty", name:"BANK NIFTY", yahoo:"^NSEBANK", elPrice:"bankNiftyPrice", elChange:"bankNiftyChange", elChip:"indexBankNifty"},
-  {id:"niftyIT", name:"NIFTY IT", yahoo:"^CNXIT", elPrice:"niftyITPrice", elChange:"niftyITChange", elChip:"indexNiftyIT"},
-  {id:"niftyPharma", name:"NIFTY PHARMA", yahoo:"^CNXPHARMA", elPrice:"niftyPharmaPrice", elChange:"niftyPharmaChange", elChip:"indexNiftyPharma"},
-];
-
-async function fetchIndicesData() {
-  for (var i = 0; i < INDICES_LIST.length; i++) {
-    var idx = INDICES_LIST[i];
-    try {
-      var proxyUrl = "https://api.allorigins.win/raw?url=";
-      var apiUrl = "https://query1.finance.yahoo.com/v8/finance/chart/" + idx.yahoo + "?interval=1d&range=1d";
-
-      var controller = new AbortController();
-      var timeoutId = setTimeout(function() { controller.abort(); }, 6000);
-
-      var response = await fetch(proxyUrl + encodeURIComponent(apiUrl), {signal: controller.signal});
-      clearTimeout(timeoutId);
-
-      var data = await response.json();
-
-      if (data.chart && data.chart.result && data.chart.result[0]) {
-        var meta = data.chart.result[0].meta;
-        var price = meta.regularMarketPrice || 0;
-        var prevClose = meta.previousClose || price;
-        var change = price - prevClose;
-        var changePct = prevClose > 0 ? (change / prevClose) * 100 : 0;
-
-        if (price > 0) {
-          indicesPrevData[idx.id] = indicesData[idx.id] || null;
-          indicesData[idx.id] = {
-            price: price,
-            change: change,
-            changePercent: changePct
-          };
-          updateIndexDisplay(idx, price, change, changePct);
-        }
-      }
-    } catch (err) {
-      console.log("[Indices] Failed to fetch " + idx.name + ": " + err.message);
-    }
-
-    // Small delay between requests
-    if (i < INDICES_LIST.length - 1) {
-      await new Promise(function(r) { setTimeout(r, 200); });
-    }
-  }
-}
-
-function updateIndexDisplay(idx, price, change, changePct) {
-  var priceEl = document.getElementById(idx.elPrice);
-  var changeEl = document.getElementById(idx.elChange);
-  var chipEl = document.getElementById(idx.elChip);
-
-  if (!priceEl || !changeEl || !chipEl) return;
-
-  var isPositive = change >= 0;
-
-  priceEl.textContent = price.toLocaleString("en-IN", {maximumFractionDigits: 2});
-
-  changeEl.textContent = (isPositive ? "+" : "") + changePct.toFixed(2) + "%";
-  changeEl.className = "index-change " + (isPositive ? "positive" : "negative");
-
-  // Flash animation
-  var prev = indicesPrevData[idx.id];
-  if (prev && prev.price !== price) {
-    chipEl.classList.remove("flash-up", "flash-down");
-    void chipEl.offsetWidth;
-    chipEl.classList.add(price > prev.price ? "flash-up" : "flash-down");
-    setTimeout(function() {
-      chipEl.classList.remove("flash-up", "flash-down");
-    }, 700);
-  }
-}
-
-function startIndicesAutoRefresh() {
-  // Fetch immediately
-  fetchIndicesData();
-
-  // Then every 60 seconds
-  setInterval(function() {
-    if (document.visibilityState === "visible") {
-      fetchIndicesData();
-    }
-  }, 60000);
-}
 
 /* ================= SMART API KEY MANAGEMENT ================= */
 
 // Alpha Vantage Keys (8 keys)
-// SECURITY: In production, move these to environment variables or Firebase Functions
 var ALPHA_VANTAGE_KEYS = [
   "30X7621M8XHIDT2W",
   "BH74ZWQO07ZCTGMN",
@@ -2361,6 +1591,7 @@ var ALPHA_VANTAGE_KEYS = [
   "I899CURGSPQK85MS"
 ];
 
+// Twelve Data Keys (5 keys)
 var TWELVE_DATA_KEYS = [
   "849b655fa36e4a7aa07e5636fb46455b",
   "73e16183c50347ee9129aede29928730",
@@ -2369,12 +1600,12 @@ var TWELVE_DATA_KEYS = [
   "29a5b2dccd5947dea4fdb058286b60d7"
 ];
 
-// Enhanced key management with better recovery logic
+// Key tracking - which keys are blocked and when they recover
 var alphaKeyStatus = {};
 var twelveKeyStatus = {};
 var lastUsedAPI = "none";
 var apiCallCounts = { yahoo: 0, twelveData: 0, alphaVantage: 0 };
-var keyRotationIndex = { alpha: 0, twelve: 0 };
+
 // Initialize key status for all keys
 function initKeyStatus() {
   for (var i = 0; i < ALPHA_VANTAGE_KEYS.length; i++) {
@@ -4522,7 +3753,7 @@ function handleGoogleLogin() {
     })
     .finally(function() {
       btn.disabled = false;
-    btn.innerHTML = '<img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="20" height="20" alt="Google" style="vertical-align:middle;margin-right:10px">Continue with Google';
+      btn.innerHTML = "🔵 Continue with Google";
     });
 }
 async function handleRegister() {
@@ -4628,67 +3859,44 @@ function handleEmailLogin() {
 
   // Clear previous error
   errorDiv.textContent = "";
-  errorDiv.style.display = "none";
 
-  // Client-side validation
   if (!emailVal) {
-    showLoginError("Please enter your email address");
-    return;
-  }
-
-  if (!isValidEmail(emailVal)) {
-    showLoginError("Please enter a valid email address");
+    errorDiv.textContent = "Please enter your email address";
+    ToastManager.warning("Missing Info", "Please enter your email address");
     return;
   }
 
   if (!passVal) {
-    showLoginError("Please enter your password");
-    return;
-  }
-
-  if (passVal.length < 6) {
-    showLoginError("Password must be at least 6 characters");
+    errorDiv.textContent = "Please enter your password";
+    ToastManager.warning("Missing Info", "Please enter your password");
     return;
   }
 
   btn.disabled = true;
-  btn.innerHTML = '<div class="loading-spinner" style="width:16px;height:16px;border:2px solid #fff;border-top-color:transparent;border-radius:50%;animation:spin 0.8s linear infinite;display:inline-block;margin-right:8px;vertical-align:middle;"></div>Signing in...';
+  btn.textContent = "Signing in...";
 
   auth.signInWithEmailAndPassword(emailVal, passVal)
     .then(function() {
       ToastManager.success("Welcome back!", "Successfully signed in");
-      errorDiv.style.display = "none";
     })
     .catch(function(error) {
       console.error("Login error:", error);
-      
+
       var errorMessage = "Login failed. Please try again.";
-      
-      switch(error.code) {
-        case "auth/user-not-found":
-          errorMessage = "No account found with this email. Please register first.";
-          break;
-        case "auth/wrong-password":
-        case "auth/invalid-credential":
-          errorMessage = "Incorrect password. Please try again.";
-          break;
-        case "auth/invalid-email":
-          errorMessage = "Please enter a valid email address.";
-          break;
-        case "auth/too-many-requests":
-          errorMessage = "Too many failed attempts. Please try again in a few minutes.";
-          break;
-        case "auth/network-request-failed":
-          errorMessage = "Network error. Please check your connection.";
-          break;
-        case "auth/user-disabled":
-          errorMessage = "This account has been disabled. Contact support.";
-          break;
-        default:
-          errorMessage = error.message || "An error occurred. Please try again.";
+
+      if (error.code === "auth/user-not-found") {
+        errorMessage = "No account found with this email. Please register first.";
+      } else if (error.code === "auth/wrong-password" || error.code === "auth/invalid-credential") {
+        errorMessage = "Incorrect password. Please try again.";
+      } else if (error.code === "auth/invalid-email") {
+        errorMessage = "Please enter a valid email address.";
+      } else if (error.code === "auth/too-many-requests") {
+        errorMessage = "Too many failed attempts. Please try again later.";
+      } else if (error.message) {
+        errorMessage = error.message;
       }
-      
-      showLoginError(errorMessage);
+
+      errorDiv.textContent = errorMessage;
       ToastManager.error("Login Failed", errorMessage);
     })
     .finally(function() {
@@ -4697,29 +3905,13 @@ function handleEmailLogin() {
     });
 }
 
-// Helper function for email validation
-function isValidEmail(email) {
-  var re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  return re.test(email);
-}
-
-// Helper function to show login errors with animation
-function showLoginError(message) {
-  var errorDiv = document.getElementById("loginError");
-  errorDiv.textContent = message;
-  errorDiv.style.display = "block";
-  errorDiv.style.animation = "shake 0.5s";
-  setTimeout(function() {
-    errorDiv.style.animation = "";
-  }, 500);
-}
 auth.onAuthStateChanged(async function(user) {
   if (!user) return;
 
   activeUser = user;
     document.getElementById("loginWrapper").style.display = "none";
-document.getElementById("indicesBar").style.display = "flex";
   document.getElementById("mainApp").style.display = "block";
+
   // Create/verify user document
   try {
     var userDocRef = db.collection("users").doc(user.uid);
@@ -4784,16 +3976,10 @@ document.getElementById("indicesBar").style.display = "flex";
   // Start auto refresh
   initAutoRefresh();
 
-   // Fetch fresh prices
+  // Fetch fresh prices
   setTimeout(function() {
     fetchLatestPrices();
   }, 1000);
-
-  // Load watchlist
-  loadWatchlist();
-
-  // Start market indices
-  startIndicesAutoRefresh();
 });
 function performLogout() {
   if (confirm("Are you sure you want to logout?")) {
@@ -5082,11 +4268,9 @@ function switchTab(tabName) {
   document.getElementById("stocksSection").style.display = tabName === "stocks" ? "block" : "none";
   document.getElementById("holdingsSection").style.display = tabName === "holdings" ? "block" : "none";
   document.getElementById("mfSection").style.display = tabName === "mf" ? "block" : "none";
-  document.getElementById("watchlistSection").style.display = tabName === "watchlist" ? "block" : "none";
   document.getElementById("chatSection").style.display = tabName === "chat" ? "block" : "none";
   
   if (tabName === "holdings") displayHoldings();
-  if (tabName === "watchlist") displayWatchlist();
 }
 
 /* ================= MULTI-SOURCE API PRICE FETCHING ================= */
@@ -5566,6 +4750,8 @@ function displayStocks(stockList, showAll) {
   var container = document.getElementById("stocksContainer");
   container.innerHTML = "";
 
+  // Default: show only top 25 popular stocks
+  // Search: show all matching results
   var displayList;
   if (showAll) {
     displayList = stockList;
@@ -5573,12 +4759,7 @@ function displayStocks(stockList, showAll) {
     displayList = stockList.slice(0, 25);
   }
 
-  if (displayList.length === 0) {
-    container.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:60px 20px;color:#64748b;font-size:16px;background:#fff;border-radius:18px;border:1px solid #e2e8f0;">🔍 No stocks found matching your search</div>';
-    return;
-  }
-
-  displayList.forEach(function(stock, index) {
+  displayList.forEach(function(stock) {
     var priceInfo = getStockData(stock.sym);
     var currentPrice = priceInfo && priceInfo.price ? priceInfo.price : 0;
     var priceChange = priceInfo && priceInfo.change ? priceInfo.change : 0;
@@ -5586,26 +4767,20 @@ function displayStocks(stockList, showAll) {
     var isPositive = priceChange >= 0;
 
     var card = document.createElement("div");
-    card.className = "stock-card stock-card-enter";
+    card.className = "stock-card";
     card.dataset.symbol = stock.sym;
-    card.style.animationDelay = (index * 30) + "ms";
-
-    // Check if in watchlist
-    var isWatchlisted = userWatchlist.indexOf(stock.sym) !== -1;
-    var watchBtnClass = isWatchlisted ? "watchlist-btn active" : "watchlist-btn";
-    var watchIcon = isWatchlisted ? "★" : "☆";
 
     var priceHTML = "";
     if (currentPrice > 0) {
-      priceHTML = '<div class="current-price">\u20B9' + currentPrice.toFixed(2) + '</div>' +
+      priceHTML = '<div class="current-price">₹' + currentPrice.toFixed(2) + '</div>' +
         '<div class="price-change">' +
-          '<div class="change-value ' + (isPositive ? 'positive' : 'negative') + '">' + (isPositive ? '+' : '') + '\u20B9' + priceChange.toFixed(2) + '</div>' +
-          '<div class="change-badge ' + (isPositive ? 'positive' : 'negative') + '">' + (isPositive ? '\u25B2' : '\u25BC') + ' ' + Math.abs(changePercent).toFixed(2) + '%</div>' +
+          '<div class="change-value ' + (isPositive ? 'positive' : 'negative') + '">' + (isPositive ? '+' : '') + '₹' + priceChange.toFixed(2) + '</div>' +
+          '<div class="change-badge ' + (isPositive ? 'positive' : 'negative') + '">' + (isPositive ? '▲' : '▼') + ' ' + Math.abs(changePercent).toFixed(2) + '%</div>' +
         '</div>';
     } else {
-      priceHTML = '<div class="current-price" style="color:#94a3b8;font-size:18px">\u20B9 --</div>' +
+      priceHTML = '<div class="current-price" style="color:#94a3b8;font-size:18px">₹ --</div>' +
         '<div class="price-change">' +
-          '<div style="color:#94a3b8;font-size:12px">Search to fetch price</div>' +
+          '<div style="color:#94a3b8;font-size:12px">Click + to fetch price</div>' +
         '</div>';
     }
 
@@ -5621,44 +4796,22 @@ function displayStocks(stockList, showAll) {
           '<div class="stock-title" title="' + stock.name + '">' + stock.name + '</div>' +
           '<div class="stock-symbol">' + stock.sym + '</div>' +
         '</div>' +
-        '<button class="' + watchBtnClass + '" onclick="event.stopPropagation();toggleWatchlist(\'' + stock.sym + '\')" title="' + (isWatchlisted ? 'Remove from Watchlist' : 'Add to Watchlist') + '">' + watchIcon + '</button>' +
       '</div>' +
       '<div class="price-display">' + priceHTML + '</div>' +
-      '<button class="add-stock-btn" onclick="showAddStockModal(\'' + stock.sym + '\')">\u2795 Add to Holdings</button>';
+      '<button class="add-stock-btn" onclick="showAddStockModal(\'' + stock.sym + '\')">➕ Add to Holdings</button>';
 
     container.appendChild(card);
   });
 
+  // Show "search for more" message if showing default view
   if (!showAll && stockList.length > 25) {
     var moreMsg = document.createElement("div");
     moreMsg.style.cssText = "grid-column:1/-1;text-align:center;padding:40px 20px;color:#64748b;font-size:15px;background:#fff;border-radius:18px;border:1px solid #e2e8f0;";
-    moreMsg.innerHTML = '\uD83D\uDD0D <strong>' + (stockList.length - 25) + '+ more stocks available</strong><br><span style="font-size:13px;margin-top:8px;display:block">Use the search bar above to find any stock or ETF</span>';
+    moreMsg.innerHTML = '🔍 <strong>' + (stockList.length - 25) + '+ more stocks available</strong><br><span style="font-size:13px;margin-top:8px;display:block">Use the search bar above to find any stock or ETF</span>';
     container.appendChild(moreMsg);
   }
 }
-
-function showSkeletonCards(count) {
-  var container = document.getElementById("stocksContainer");
-  container.innerHTML = "";
-  
-  for (var i = 0; i < (count || 6); i++) {
-    var skeleton = document.createElement("div");
-    skeleton.className = "skeleton-card";
-    skeleton.innerHTML = 
-      '<div style="display:flex;gap:14px;margin-bottom:18px">' +
-        '<div class="skeleton skeleton-circle"></div>' +
-        '<div style="flex:1">' +
-          '<div class="skeleton skeleton-line medium"></div>' +
-          '<div class="skeleton skeleton-line short"></div>' +
-        '</div>' +
-      '</div>' +
-      '<div class="skeleton skeleton-price"></div>' +
-      '<div class="skeleton skeleton-btn"></div>';
-    container.appendChild(skeleton);
-  }
-}
-
-function displayStocksWithAnimation(stockList, showAll) { {
+function displayStocksWithAnimation(stockList) {
   stockList.forEach(function(stock) {
     var oldPrice = prevPricesData[stock.sym] ? prevPricesData[stock.sym].price : 0;
     var newPrice = pricesData[stock.sym] ? pricesData[stock.sym].price : 0;
@@ -5673,7 +4826,7 @@ function displayStocksWithAnimation(stockList, showAll) { {
     }
   });
 
-  displayStocks(stockList, showAll || false);
+  displayStocks(stockList);
 }
 
 /* ================= ADD STOCK MODAL ================= */
@@ -6617,6 +5770,7 @@ function saveUserProfile() {
 </script>
 </body>
 </html>
+
 
 
 
