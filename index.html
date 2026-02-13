@@ -431,7 +431,167 @@ body{
   animation:spin 0.8s linear infinite;
 }
 @keyframes spin{to{transform:rotate(360deg)}}
+/* ================= MARKET INDICES BAR ================= */
+.indices-bar{
+  display:flex;
+  gap:14px;
+  margin-bottom:24px;
+  overflow-x:auto;
+  padding-bottom:8px;
+  scroll-behavior:smooth;
+  -webkit-overflow-scrolling:touch;
+}
+.indices-bar::-webkit-scrollbar{height:4px}
+.indices-bar::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:4px}
 
+.index-card{
+  min-width:195px;
+  max-width:220px;
+  flex-shrink:0;
+  background:var(--glass-bg);
+  backdrop-filter:var(--glass-blur);
+  -webkit-backdrop-filter:var(--glass-blur);
+  border-radius:var(--radius-md);
+  padding:16px 18px;
+  border:1px solid var(--glass-border);
+  box-shadow:var(--shadow-sm);
+  transition:var(--transition-smooth);
+  cursor:default;
+  position:relative;
+  overflow:hidden;
+}
+.index-card::before{
+  content:"";
+  position:absolute;
+  top:0;left:0;right:0;
+  height:3px;
+  border-radius:3px 3px 0 0;
+  transition:opacity 0.3s;
+}
+.index-card.idx-up::before{
+  background:linear-gradient(90deg,var(--success),#34d399);
+  opacity:1;
+}
+.index-card.idx-down::before{
+  background:linear-gradient(90deg,var(--danger),#f87171);
+  opacity:1;
+}
+.index-card.idx-neutral::before{
+  background:linear-gradient(90deg,var(--text-muted),#94a3b8);
+  opacity:0.5;
+}
+.index-card:hover{
+  transform:translateY(-3px);
+  box-shadow:var(--shadow-md);
+  border-color:rgba(79,70,229,0.15);
+}
+
+.index-card-name{
+  font-size:11px;
+  font-weight:700;
+  text-transform:uppercase;
+  letter-spacing:0.8px;
+  color:var(--text-secondary);
+  margin-bottom:8px;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+.index-card-price{
+  font-size:20px;
+  font-weight:800;
+  color:var(--text-primary);
+  margin-bottom:6px;
+  letter-spacing:-0.3px;
+}
+.index-card-change{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  flex-wrap:nowrap;
+}
+.index-change-value{
+  font-size:13px;
+  font-weight:600;
+}
+.index-change-percent{
+  font-size:11px;
+  font-weight:700;
+  padding:3px 8px;
+  border-radius:6px;
+  white-space:nowrap;
+}
+.index-card.idx-up .index-change-value{color:var(--success)}
+.index-card.idx-up .index-change-percent{background:var(--success-light);color:#065f46}
+.index-card.idx-down .index-change-value{color:var(--danger)}
+.index-card.idx-down .index-change-percent{background:var(--danger-light);color:#991b1b}
+.index-card.idx-neutral .index-change-value{color:var(--text-muted)}
+.index-card.idx-neutral .index-change-percent{background:var(--border-lighter);color:var(--text-secondary)}
+
+.index-card-loading{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  color:var(--text-muted);
+  font-size:12px;
+}
+.index-card-loading .idx-spinner{
+  width:14px;height:14px;
+  border:2px solid var(--border-light);
+  border-top-color:var(--primary);
+  border-radius:50%;
+  animation:spin 0.8s linear infinite;
+}
+
+.indices-section-header{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  margin-bottom:14px;
+}
+.indices-section-title{
+  font-size:15px;
+  font-weight:700;
+  color:var(--text-primary);
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+.indices-refresh-btn{
+  padding:6px 14px;
+  border:1px solid var(--border-light);
+  border-radius:var(--radius-sm);
+  background:var(--bg-card-solid);
+  color:var(--text-secondary);
+  font-size:12px;
+  font-weight:600;
+  cursor:pointer;
+  transition:var(--transition-fast);
+  display:flex;
+  align-items:center;
+  gap:6px;
+}
+.indices-refresh-btn:hover{
+  background:var(--border-lighter);
+  border-color:var(--primary);
+  color:var(--primary);
+}
+.indices-refresh-btn:disabled{
+  opacity:0.5;cursor:not-allowed;
+}
+.indices-last-update{
+  font-size:11px;
+  color:var(--text-muted);
+  font-weight:400;
+}
+
+/* Indices responsive */
+@media(max-width:680px){
+  .index-card{min-width:165px;padding:14px 14px}
+  .index-card-price{font-size:17px}
+  .index-card-name{font-size:10px}
+  .indices-section-header{flex-direction:column;align-items:flex-start;gap:8px}
+}
 /* ================= STOCK GRID ================= */
 .stocks-grid{
   display:grid;
@@ -1311,8 +1471,22 @@ body{
 <div class="main-content">
   
   <!-- ========== STOCKS TAB ========== -->
-  <section id="stocksSection">
-       <div class="status-bar">
+ <section id="stocksSection">
+    <!-- ===== MARKET INDICES ===== -->
+    <div id="indicesSection">
+      <div class="indices-section-header">
+        <div class="indices-section-title">📊 Market Indices</div>
+        <div style="display:flex;align-items:center;gap:12px">
+          <span class="indices-last-update" id="indicesLastUpdate"></span>
+          <button class="indices-refresh-btn" id="indicesRefreshBtn" onclick="refreshIndices()">🔄 Refresh</button>
+        </div>
+      </div>
+      <div class="indices-bar" id="indicesBar">
+        <!-- Indices cards will be injected here -->
+      </div>
+    </div>
+
+    <div class="status-bar">
       <div class="status-left">
         <div class="live-status" id="liveStatusBadge">
           <div class="live-dot"></div>
@@ -1786,6 +1960,60 @@ function getAvailableKeyCount() {
 
   return { alpha: alphaAvail, twelve: twelveAvail };
 }
+
+  /* ================= MARKET INDICES CONFIG ================= */
+const MARKET_INDICES = [
+  {
+    name: "NIFTY 50",
+    shortName: "NIFTY",
+    yahoo: "^NSEI",
+    symbol: "NIFTY_50"
+  },
+  {
+    name: "SENSEX",
+    shortName: "SENSEX",
+    yahoo: "^BSESN",
+    symbol: "SENSEX"
+  },
+  {
+    name: "BANK NIFTY",
+    shortName: "BANKNIFTY",
+    yahoo: "^NSEBANK",
+    symbol: "BANKNIFTY"
+  },
+  {
+    name: "FINNIFTY",
+    shortName: "FINNIFTY",
+    yahoo: "NIFTY_FIN_SERVICE.NS",
+    symbol: "FINNIFTY"
+  },
+  {
+    name: "NIFTY MIDCAP 100",
+    shortName: "MIDCAP",
+    yahoo: "NIFTY_MID_SELECT.NS",
+    symbol: "MIDCAP100"
+  },
+  {
+    name: "NIFTY SMLCAP 100",
+    shortName: "SMALLCAP",
+    yahoo: "NIFTY_SMLCAP_100.NS",
+    symbol: "SMALLCAP100"
+  },
+  {
+    name: "NIFTY 500",
+    shortName: "NIFTY 500",
+    yahoo: "^CRSLDX",
+    symbol: "NIFTY500"
+  }
+];
+
+// Indices data store
+let indicesData = {};
+let indicesFetching = false;
+let indicesLastFetchTime = 0;
+const INDICES_CACHE_KEY = "finzotalk_indices_cache";
+const INDICES_CACHE_DURATION = 60000; // 1 minute cache
+let indicesAutoTimer = null;
 /* ================= 300+ INDIAN STOCKS LIST ================= */
 const STOCK_DATA = [
   // ==================== NIFTY 50 ====================
@@ -3612,6 +3840,346 @@ STOCK_DATA.length = 0;
 STOCK_DATA.push(...STOCK_DATA_CLEAN);
 console.log("Total unique stocks after dedup: " + STOCK_DATA.length);
 
+  /* ================= INDICES FETCH ENGINE ================= */
+
+// Load indices from localStorage cache
+function loadIndicesCache() {
+  try {
+    var cached = localStorage.getItem(INDICES_CACHE_KEY);
+    if (cached) {
+      var parsed = JSON.parse(cached);
+      if (parsed && parsed.data && parsed.timestamp) {
+        indicesData = parsed.data;
+        indicesLastFetchTime = parsed.timestamp;
+        return true;
+      }
+    }
+  } catch (e) {
+    // ignore
+  }
+  return false;
+}
+
+// Save indices to localStorage cache
+function saveIndicesCache() {
+  try {
+    localStorage.setItem(INDICES_CACHE_KEY, JSON.stringify({
+      data: indicesData,
+      timestamp: Date.now()
+    }));
+  } catch (e) {
+    // ignore
+  }
+}
+
+// Fetch single index price from Yahoo Finance
+async function fetchSingleIndexPrice(index) {
+  try {
+    var proxyUrl = "https://api.allorigins.win/raw?url=";
+    var apiUrl = "https://query1.finance.yahoo.com/v8/finance/chart/" + encodeURIComponent(index.yahoo) + "?interval=1d&range=1d";
+
+    var controller = new AbortController();
+    var timeoutId = setTimeout(function() { controller.abort(); }, 10000);
+
+    var response = await fetch(proxyUrl + encodeURIComponent(apiUrl), {
+      signal: controller.signal
+    });
+
+    clearTimeout(timeoutId);
+
+    var data = await response.json();
+
+    if (data && data.chart && data.chart.result && data.chart.result[0]) {
+      var meta = data.chart.result[0].meta;
+      var currentPrice = meta.regularMarketPrice || 0;
+      var previousClose = meta.previousClose || meta.chartPreviousClose || currentPrice;
+      var priceChange = currentPrice - previousClose;
+      var changePercent = previousClose > 0 ? (priceChange / previousClose) * 100 : 0;
+
+      if (currentPrice > 0) {
+        return {
+          price: currentPrice,
+          change: priceChange,
+          changePercent: changePercent,
+          prevClose: previousClose,
+          fetchedAt: Date.now(),
+          source: "Yahoo"
+        };
+      }
+    }
+  } catch (error) {
+    if (error.name !== "AbortError") {
+      console.log("[INDICES] Failed to fetch " + index.shortName + ": " + error.message);
+    }
+  }
+  return null;
+}
+
+// Fetch single index price from TwelveData (backup)
+async function fetchSingleIndexTwelveData(index) {
+  // Only works for some indices
+  var symbolMap = {
+    "NIFTY_50": "NIFTY 50",
+    "SENSEX": "SENSEX",
+    "BANKNIFTY": "NIFTY BANK"
+  };
+
+  var tdSymbol = symbolMap[index.symbol];
+  if (!tdSymbol) return null;
+
+  var apiKey = getBestTwelveKey();
+
+  try {
+    var url = "https://api.twelvedata.com/quote?symbol=" + encodeURIComponent(tdSymbol) + "&apikey=" + apiKey;
+
+    var controller = new AbortController();
+    var timeoutId = setTimeout(function() { controller.abort(); }, 8000);
+
+    var response = await fetch(url, { signal: controller.signal });
+    clearTimeout(timeoutId);
+
+    var data = await response.json();
+
+    if (data && data.close && !data.code && data.status !== "error") {
+      var currentPrice = parseFloat(data.close) || 0;
+      var previousClose = parseFloat(data.previous_close) || currentPrice;
+      var priceChange = parseFloat(data.change) || (currentPrice - previousClose);
+      var changePercent = parseFloat(data.percent_change) || 0;
+
+      if (currentPrice > 0) {
+        markTwelveKeySuccess(apiKey);
+        return {
+          price: currentPrice,
+          change: priceChange,
+          changePercent: changePercent,
+          prevClose: previousClose,
+          fetchedAt: Date.now(),
+          source: "TwelveData"
+        };
+      }
+    }
+
+    if (data && (data.code === 429 || data.status === "error")) {
+      markTwelveKeyBlocked(apiKey);
+    }
+  } catch (error) {
+    if (error.name !== "AbortError") {
+      markTwelveKeyBlocked(apiKey);
+    }
+  }
+  return null;
+}
+
+// Fetch all indices with fallback
+async function fetchAllIndices() {
+  if (indicesFetching) return;
+
+  // Check cache age
+  var now = Date.now();
+  if (now - indicesLastFetchTime < INDICES_CACHE_DURATION && Object.keys(indicesData).length > 0) {
+    console.log("[INDICES] Using cached data (age: " + Math.floor((now - indicesLastFetchTime) / 1000) + "s)");
+    renderIndicesBar();
+    return;
+  }
+
+  indicesFetching = true;
+  var refreshBtn = document.getElementById("indicesRefreshBtn");
+  if (refreshBtn) {
+    refreshBtn.disabled = true;
+    refreshBtn.innerHTML = '<span style="display:inline-block;animation:spin 0.8s linear infinite">🔄</span> Fetching...';
+  }
+
+  console.log("[INDICES] Fetching " + MARKET_INDICES.length + " indices...");
+
+  var successCount = 0;
+
+  // Fetch in parallel batches of 3
+  var batchSize = 3;
+  for (var i = 0; i < MARKET_INDICES.length; i += batchSize) {
+    var batch = MARKET_INDICES.slice(i, i + batchSize);
+
+    var promises = batch.map(function(idx) {
+      return fetchSingleIndexPrice(idx).then(function(result) {
+        return { index: idx, result: result };
+      });
+    });
+
+    var results = await Promise.allSettled(promises);
+
+    for (var j = 0; j < results.length; j++) {
+      if (results[j].status === "fulfilled") {
+        var item = results[j].value;
+        if (item.result && item.result.price > 0) {
+          indicesData[item.index.symbol] = item.result;
+          successCount++;
+        } else {
+          // Try TwelveData fallback for failed ones
+          var fallbackResult = await fetchSingleIndexTwelveData(item.index);
+          if (fallbackResult && fallbackResult.price > 0) {
+            indicesData[item.index.symbol] = fallbackResult;
+            successCount++;
+          }
+        }
+      }
+    }
+
+    // Small delay between batches
+    if (i + batchSize < MARKET_INDICES.length) {
+      await new Promise(function(r) { setTimeout(r, 200); });
+    }
+  }
+
+  indicesLastFetchTime = Date.now();
+  indicesFetching = false;
+
+  // Save to cache
+  saveIndicesCache();
+
+  // Update UI
+  renderIndicesBar();
+
+  if (refreshBtn) {
+    refreshBtn.disabled = false;
+    refreshBtn.innerHTML = '🔄 Refresh';
+  }
+
+  // Update timestamp display
+  updateIndicesTimestamp();
+
+  console.log("[INDICES] Fetched " + successCount + "/" + MARKET_INDICES.length + " indices successfully");
+}
+
+// Manual refresh
+function refreshIndices() {
+  // Force clear cache to refetch
+  indicesLastFetchTime = 0;
+  fetchAllIndices();
+}
+
+// Update indices timestamp display
+function updateIndicesTimestamp() {
+  var el = document.getElementById("indicesLastUpdate");
+  if (!el) return;
+
+  if (indicesLastFetchTime <= 0) {
+    el.textContent = "";
+    return;
+  }
+
+  var diffSec = Math.floor((Date.now() - indicesLastFetchTime) / 1000);
+  var text = "";
+
+  if (diffSec < 5) text = "Just now";
+  else if (diffSec < 60) text = diffSec + "s ago";
+  else if (diffSec < 3600) text = Math.floor(diffSec / 60) + "m ago";
+  else text = Math.floor(diffSec / 3600) + "h ago";
+
+  el.textContent = "Updated " + text;
+}
+
+// Start indices auto-refresh (every 60 seconds)
+function startIndicesAutoRefresh() {
+  if (indicesAutoTimer) clearInterval(indicesAutoTimer);
+
+  indicesAutoTimer = setInterval(function() {
+    // Only refresh if tab is visible and stocks tab is active
+    if (document.visibilityState === "visible") {
+      var stocksSection = document.getElementById("stocksSection");
+      if (stocksSection && stocksSection.style.display !== "none") {
+        fetchAllIndices();
+      }
+    }
+    // Update timestamp display every interval
+    updateIndicesTimestamp();
+  }, 60000);
+
+  // Also update timestamp every 10 seconds for accurate display
+  setInterval(function() {
+    updateIndicesTimestamp();
+  }, 10000);
+}
+
+/* ================= INDICES UI RENDERER ================= */
+function renderIndicesBar() {
+  var container = document.getElementById("indicesBar");
+  if (!container) return;
+
+  container.innerHTML = "";
+
+  for (var i = 0; i < MARKET_INDICES.length; i++) {
+    var idx = MARKET_INDICES[i];
+    var data = indicesData[idx.symbol];
+
+    var card = document.createElement("div");
+    card.className = "index-card";
+    card.dataset.indexSymbol = idx.symbol;
+
+    if (data && data.price > 0) {
+      var isUp = data.change >= 0;
+      var isNeutral = data.change === 0;
+
+      card.className += isNeutral ? " idx-neutral" : (isUp ? " idx-up" : " idx-down");
+
+      var priceStr = "";
+      // Format price based on value (indices are large numbers)
+      if (data.price >= 10000) {
+        priceStr = data.price.toLocaleString("en-IN", { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+      } else {
+        priceStr = data.price.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      }
+
+      var changeStr = (isUp ? "+" : "") + data.change.toFixed(2);
+      var percentStr = (isUp ? "▲ +" : "▼ ") + Math.abs(data.changePercent).toFixed(2) + "%";
+
+      if (isNeutral) {
+        percentStr = "— 0.00%";
+      }
+
+      card.innerHTML =
+        '<div class="index-card-name">' + idx.shortName + '</div>' +
+        '<div class="index-card-price">' + priceStr + '</div>' +
+        '<div class="index-card-change">' +
+          '<span class="index-change-value">' + changeStr + '</span>' +
+          '<span class="index-change-percent">' + percentStr + '</span>' +
+        '</div>';
+
+    } else {
+      // Loading / no data state
+      card.className += " idx-neutral";
+      card.innerHTML =
+        '<div class="index-card-name">' + idx.shortName + '</div>' +
+        '<div class="index-card-loading">' +
+          '<div class="idx-spinner"></div>' +
+          '<span>Loading...</span>' +
+        '</div>';
+    }
+
+    container.appendChild(card);
+  }
+}
+
+// Render initial loading state for indices
+function renderIndicesLoadingState() {
+  var container = document.getElementById("indicesBar");
+  if (!container) return;
+
+  container.innerHTML = "";
+
+  for (var i = 0; i < MARKET_INDICES.length; i++) {
+    var idx = MARKET_INDICES[i];
+    var card = document.createElement("div");
+    card.className = "index-card idx-neutral";
+    card.dataset.indexSymbol = idx.symbol;
+    card.innerHTML =
+      '<div class="index-card-name">' + idx.shortName + '</div>' +
+      '<div class="index-card-loading">' +
+        '<div class="idx-spinner"></div>' +
+        '<span>Loading...</span>' +
+      '</div>';
+    container.appendChild(card);
+  }
+}
+
 /* ================= GLOBAL VARIABLES ================= */
 let activeUser = null;
 let userHoldings = [];
@@ -3973,13 +4541,23 @@ auth.onAuthStateChanged(async function(user) {
   setupFriendsListener();
   setupRequestsListener();
 
-  // Start auto refresh
+   // Start auto refresh
   initAutoRefresh();
 
-  // Fetch fresh prices
+  // Load indices cache and render
+  loadIndicesCache();
+  renderIndicesLoadingState();
+
+  // Fetch indices first (fast, only 7 calls)
+  setTimeout(function() {
+    fetchAllIndices();
+    startIndicesAutoRefresh();
+  }, 500);
+
+  // Fetch holdings prices after indices
   setTimeout(function() {
     fetchLatestPrices();
-  }, 1000);
+  }, 1500);
 });
 function performLogout() {
   if (confirm("Are you sure you want to logout?")) {
@@ -4271,8 +4849,17 @@ function switchTab(tabName) {
   document.getElementById("chatSection").style.display = tabName === "chat" ? "block" : "none";
   
   if (tabName === "holdings") displayHoldings();
-}
 
+  // Refresh indices when switching to stocks tab (if data is stale)
+  if (tabName === "stocks") {
+    var age = Date.now() - indicesLastFetchTime;
+    if (age > INDICES_CACHE_DURATION) {
+      fetchAllIndices();
+    } else {
+      updateIndicesTimestamp();
+    }
+  }
+}
 /* ================= MULTI-SOURCE API PRICE FETCHING ================= */
 
 // Yahoo Finance API (Primary)
@@ -5770,6 +6357,7 @@ function saveUserProfile() {
 </script>
 </body>
 </html>
+
 
 
 
