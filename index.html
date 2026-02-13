@@ -1882,18 +1882,85 @@ body{
 
 <!-- ================= SETTINGS MODAL ================= -->
 <div class="modal-backdrop" id="settingsModal">
-  <div class="modal-container" style="width:520px;max-width:95%;padding:28px">
-    <div class="settings-container">
+  <div class="modal-container" style="width:460px">
+    <h3>⚙️ Settings</h3>
 
-      <!-- Profile Header -->
-      <div class="settings-profile-header">
-        <div class="settings-avatar" id="settingsAvatar">FT</div>
-        <div class="settings-profile-info">
-          <div class="settings-profile-name" id="settingsProfileName">FinzoTalk User</div>
-          <div class="settings-profile-email" id="settingsProfileEmail">--</div>
-          <div class="settings-profile-joined" id="settingsJoinedDate">Member since --</div>
+    <!-- User Info Box -->
+    <div class="modal-info-box" style="display:flex;align-items:center;gap:16px">
+      <div id="settingsAvatarSimple" style="width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,#4338ca,#6d28d9);color:#fff;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:800;flex-shrink:0">FT</div>
+      <div style="flex:1;min-width:0">
+        <p style="margin:0 0 4px 0;font-weight:700;font-size:16px;color:#1e293b" id="settingsNameShow">User</p>
+        <p style="margin:0 0 4px 0;font-size:13px;color:#64748b" id="settingsEmailShow">--</p>
+        <p style="margin:0;font-size:12px;color:#94a3b8" id="settingsJoinShow">Member since --</p>
+      </div>
+    </div>
+
+    <!-- User ID -->
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:14px;background:#f1f5f9;border-radius:12px;margin-bottom:16px">
+      <div>
+        <div style="font-size:12px;color:#64748b;font-weight:600">YOUR USER ID</div>
+        <div style="font-size:24px;font-weight:800;color:#4f46e5;letter-spacing:2px" id="settingsCodeShow">--</div>
+      </div>
+      <button onclick="copyMyCode()" style="padding:8px 16px;border:1px solid #e2e8f0;border-radius:8px;background:#fff;cursor:pointer;font-size:13px;font-weight:600;color:#4f46e5">📋 Copy</button>
+    </div>
+
+    <!-- Edit Name -->
+    <label style="font-size:13px;font-weight:600;color:#64748b;display:block;margin-bottom:6px">Display Name</label>
+    <input type="text" id="settingsNameInput" placeholder="Enter your name" style="width:100%;padding:14px 16px;border:2px solid #e2e8f0;border-radius:12px;font-size:15px;margin-bottom:16px;box-sizing:border-box">
+
+    <!-- Dark Mode Toggle -->
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:14px;background:#f8fafc;border-radius:12px;border:1px solid #e2e8f0;margin-bottom:16px">
+      <div style="display:flex;align-items:center;gap:10px">
+        <span style="font-size:20px">🌙</span>
+        <div>
+          <div style="font-size:14px;font-weight:600;color:#1e293b">Dark Mode</div>
+          <div style="font-size:12px;color:#94a3b8">Coming soon</div>
         </div>
       </div>
+      <div style="padding:5px 12px;background:#fef3c7;color:#92400e;border-radius:6px;font-size:11px;font-weight:700">SOON</div>
+    </div>
+
+    <!-- Market Status -->
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:14px;background:#f8fafc;border-radius:12px;border:1px solid #e2e8f0;margin-bottom:16px">
+      <div style="display:flex;align-items:center;gap:10px">
+        <span style="font-size:20px">📈</span>
+        <div>
+          <div style="font-size:14px;font-weight:600;color:#1e293b">Market Status</div>
+          <div style="font-size:12px;color:#94a3b8" id="settingsMarketShow">--</div>
+        </div>
+      </div>
+      <div id="settingsMarketDot" style="width:12px;height:12px;border-radius:50%;background:#ef4444"></div>
+    </div>
+
+    <!-- Stats Row -->
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:20px">
+      <div style="text-align:center;padding:12px;background:#f1f5f9;border-radius:10px">
+        <div style="font-size:20px;font-weight:800;color:#4f46e5" id="settingsHoldCount">0</div>
+        <div style="font-size:10px;color:#94a3b8;font-weight:600;margin-top:2px">HOLDINGS</div>
+      </div>
+      <div style="text-align:center;padding:12px;background:#f1f5f9;border-radius:10px">
+        <div style="font-size:20px;font-weight:800;color:#4f46e5" id="settingsStockCount">0</div>
+        <div style="font-size:10px;color:#94a3b8;font-weight:600;margin-top:2px">STOCKS</div>
+      </div>
+      <div style="text-align:center;padding:12px;background:#f1f5f9;border-radius:10px">
+        <div style="font-size:20px;font-weight:800;color:#4f46e5" id="settingsApiCount">0</div>
+        <div style="font-size:10px;color:#94a3b8;font-weight:600;margin-top:2px">API CALLS</div>
+      </div>
+    </div>
+
+    <!-- Buttons -->
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <button class="modal-primary" id="settingsSaveBtn" onclick="saveSettingsProfile()" style="padding:14px;border-radius:12px;border:none;font-size:15px;font-weight:600;cursor:pointer">💾 Save Changes</button>
+      <button class="modal-secondary" onclick="hideSettings()" style="padding:14px;border-radius:12px;border:none;font-size:15px;font-weight:600;cursor:pointer">✕ Close</button>
+      <button onclick="performLogout()" style="padding:14px;border-radius:12px;border:none;font-size:15px;font-weight:600;cursor:pointer;background:#fee2e2;color:#dc2626">🚪 Logout</button>
+    </div>
+
+    <!-- Version -->
+    <div style="text-align:center;margin-top:16px;font-size:12px;color:#94a3b8">
+      <strong style="color:#4f46e5">FinzoTalk</strong> v2.0
+    </div>
+  </div>
+</div>
 
       <!-- Personal Info Section -->
       <div class="settings-section">
@@ -6874,128 +6941,61 @@ function sendChatMsg() {
     sendBtn.disabled = false;
   });
 }
-/* ================= ENHANCED SETTINGS ================= */
-var userPreferences = {
-  defaultTab: "stocks",
-  autoRefresh: true,
-  refreshInterval: 15,
-  toastEnabled: true
-};
-
-// Load preferences from localStorage
-function loadUserPreferences() {
-  try {
-    var saved = localStorage.getItem("finzotalk_prefs");
-    if (saved) {
-      var parsed = JSON.parse(saved);
-      userPreferences = Object.assign(userPreferences, parsed);
-    }
-  } catch (e) {
-    // ignore
-  }
-}
-
-// Save preferences to localStorage
-function saveSettingsPref() {
-  userPreferences.defaultTab = document.getElementById("settingsDefaultTab").value;
-  userPreferences.refreshInterval = parseInt(document.getElementById("settingsRefreshInterval").value) || 15;
-  userPreferences.toastEnabled = document.getElementById("settingsToastEnabled").checked;
-
-  try {
-    localStorage.setItem("finzotalk_prefs", JSON.stringify(userPreferences));
-  } catch (e) {
-    // ignore
-  }
-}
-
-function toggleAutoRefresh() {
-  userPreferences.autoRefresh = document.getElementById("settingsAutoRefresh").checked;
-
-  if (userPreferences.autoRefresh) {
-    initAutoRefresh();
-    ToastManager.success("Auto-Refresh On", "Prices will update automatically");
-  } else {
-    if (autoRefreshTimer) {
-      clearInterval(autoRefreshTimer);
-      autoRefreshTimer = null;
-    }
-    ToastManager.info("Auto-Refresh Off", "Use manual refresh button");
-  }
-
-  saveSettingsPref();
-}
-
+/* ================= SETTINGS ================= */
 function showSettings() {
-  loadUserPreferences();
+  if (!activeUser) return;
 
-  // Load user data from Firestore
+  // Load user data
   db.collection("users").doc(activeUser.uid).get().then(function(doc) {
     if (doc.exists) {
       var data = doc.data();
-
-      // Avatar initials
       var firstName = data.firstName || "";
       var lastName = data.lastName || "";
       var fullName = data.name || (firstName + " " + lastName).trim() || "User";
+
+      // Avatar initials
       var initials = "";
       if (firstName) initials += firstName.charAt(0).toUpperCase();
       if (lastName) initials += lastName.charAt(0).toUpperCase();
       if (!initials) initials = fullName.charAt(0).toUpperCase();
 
-      document.getElementById("settingsAvatar").textContent = initials;
-      document.getElementById("settingsProfileName").textContent = fullName;
-      document.getElementById("settingsProfileEmail").textContent = activeUser.email || "--";
-      document.getElementById("settingsEmailDisplay").textContent = activeUser.email || "--";
-      document.getElementById("settingsUserCode").textContent = data.usercode || "--";
-      document.getElementById("settingsFirstName").value = firstName;
-      document.getElementById("settingsLastName").value = lastName;
+      document.getElementById("settingsAvatarSimple").textContent = initials;
+      document.getElementById("settingsNameShow").textContent = fullName;
+      document.getElementById("settingsEmailShow").textContent = activeUser.email || "--";
+      document.getElementById("settingsCodeShow").textContent = data.usercode || "--";
+      document.getElementById("settingsNameInput").value = fullName;
 
       // Joined date
       if (data.createdAt && data.createdAt.toDate) {
         var joinDate = data.createdAt.toDate();
-        document.getElementById("settingsJoinedDate").textContent = "Member since " + joinDate.toLocaleDateString("en-IN", {
+        document.getElementById("settingsJoinShow").textContent = "Member since " + joinDate.toLocaleDateString("en-IN", {
           day: "numeric",
           month: "long",
           year: "numeric"
         });
-      } else {
-        document.getElementById("settingsJoinedDate").textContent = "Member";
       }
     }
-  }).catch(function(error) {
-    console.error("Settings load error:", error);
+  }).catch(function(err) {
+    console.error("Settings load error:", err);
   });
 
-  // Set preference controls
-  document.getElementById("settingsDefaultTab").value = userPreferences.defaultTab;
-  document.getElementById("settingsAutoRefresh").checked = userPreferences.autoRefresh;
-  document.getElementById("settingsRefreshInterval").value = userPreferences.refreshInterval;
-  document.getElementById("settingsToastEnabled").checked = userPreferences.toastEnabled;
-
-  // Portfolio stats
-  document.getElementById("settingsHoldingsCount").textContent = userHoldings.length;
-  document.getElementById("settingsStocksAvailable").textContent = STOCK_DATA.length;
-  document.getElementById("settingsApiCalls").textContent = (apiCallCounts.yahoo + apiCallCounts.twelveData + apiCallCounts.alphaVantage);
-  document.getElementById("settingsCachedPrices").textContent = Object.keys(pricesData).length;
-
-  // API keys status
-  var keyInfo = getAvailableKeyCount();
-  document.getElementById("settingsKeyStatus").textContent =
-    "Alpha: " + keyInfo.alpha + "/" + ALPHA_VANTAGE_KEYS.length + " active • " +
-    "Twelve: " + keyInfo.twelve + "/" + TWELVE_DATA_KEYS.length + " active";
-
   // Market status
-  document.getElementById("settingsMarketStatus").textContent = getMarketStatusText();
+  var marketText = getMarketStatusText();
+  document.getElementById("settingsMarketShow").textContent = marketText;
+  var dot = document.getElementById("settingsMarketDot");
+  if (isMarketOpen()) {
+    dot.style.background = "#10b981";
+  } else if (isPreMarket()) {
+    dot.style.background = "#f59e0b";
+  } else {
+    dot.style.background = "#ef4444";
+  }
 
-  // Cache size
-  var cacheSize = 0;
-  try {
-    var cacheStr = localStorage.getItem("stockPricesCache") || "";
-    cacheSize = Math.round(cacheStr.length / 1024);
-  } catch (e) {}
-  document.getElementById("settingsCacheSize").textContent = cacheSize + " KB stored • " + Object.keys(pricesData).length + " prices";
+  // Stats
+  document.getElementById("settingsHoldCount").textContent = userHoldings.length;
+  document.getElementById("settingsStockCount").textContent = STOCK_DATA.length;
+  document.getElementById("settingsApiCount").textContent = (apiCallCounts.yahoo + apiCallCounts.twelveData + apiCallCounts.alphaVantage);
 
-  // Show modal
   document.getElementById("settingsModal").style.display = "flex";
 }
 
@@ -7003,23 +7003,22 @@ function hideSettings() {
   document.getElementById("settingsModal").style.display = "none";
 }
 
-function copyUserCode() {
-  var code = document.getElementById("settingsUserCode").textContent;
+function copyMyCode() {
+  var code = document.getElementById("settingsCodeShow").textContent;
   if (!code || code === "--") return;
 
-  // Copy to clipboard
   if (navigator.clipboard && navigator.clipboard.writeText) {
     navigator.clipboard.writeText(code).then(function() {
-      showCopiedTooltip("User ID " + code + " copied!");
+      ToastManager.success("Copied!", "User ID " + code + " copied to clipboard");
     }).catch(function() {
-      fallbackCopy(code);
+      oldCopy(code);
     });
   } else {
-    fallbackCopy(code);
+    oldCopy(code);
   }
 }
 
-function fallbackCopy(text) {
+function oldCopy(text) {
   var temp = document.createElement("textarea");
   temp.value = text;
   temp.style.position = "fixed";
@@ -7028,125 +7027,78 @@ function fallbackCopy(text) {
   temp.select();
   try {
     document.execCommand("copy");
-    showCopiedTooltip("User ID " + text + " copied!");
+    ToastManager.success("Copied!", "User ID " + text + " copied to clipboard");
   } catch (e) {
-    ToastManager.error("Copy Failed", "Could not copy to clipboard");
+    ToastManager.error("Failed", "Could not copy");
   }
   document.body.removeChild(temp);
 }
 
-function showCopiedTooltip(message) {
-  var existing = document.querySelector(".copied-tooltip");
-  if (existing) existing.remove();
-
-  var tooltip = document.createElement("div");
-  tooltip.className = "copied-tooltip";
-  tooltip.textContent = "✓ " + message;
-  document.body.appendChild(tooltip);
-
-  setTimeout(function() {
-    if (tooltip.parentElement) tooltip.remove();
-  }, 1500);
-}
-
-function clearPriceCache() {
-  if (!confirm("Clear all cached prices? They will be re-fetched on next refresh.")) return;
-
-  pricesData = {};
-  prevPricesData = {};
-  indicesData = {};
-  indicesLastFetchTime = 0;
-
-  try {
-    localStorage.removeItem("stockPricesCache");
-    localStorage.removeItem("lastPriceUpdate");
-    localStorage.removeItem(INDICES_CACHE_KEY);
-  } catch (e) {}
-
-  ToastManager.success("Cache Cleared", "All price data cleared. Refreshing...");
-
-  // Update cache size display
-  document.getElementById("settingsCacheSize").textContent = "0 KB stored • 0 prices";
-  document.getElementById("settingsCachedPrices").textContent = "0";
-
-  // Refresh data
-  setTimeout(function() {
-    fetchAllIndices();
-    if (userHoldings.length > 0) {
-      fetchLatestPrices();
-    }
-    displayStocks(STOCK_DATA, false);
-  }, 500);
-}
-
-function saveUserProfile() {
-  var firstName = document.getElementById("settingsFirstName").value.trim();
-  var lastName = document.getElementById("settingsLastName").value.trim();
+function saveSettingsProfile() {
+  var newName = document.getElementById("settingsNameInput").value.trim();
   var saveBtn = document.getElementById("settingsSaveBtn");
 
-  if (!firstName) {
-    ToastManager.warning("Missing Name", "Please enter your first name");
+  if (!newName) {
+    ToastManager.warning("Missing Name", "Please enter a display name");
     return;
   }
 
-  var fullName = firstName + (lastName ? " " + lastName : "");
-
   saveBtn.disabled = true;
-  saveBtn.innerHTML = "💾 Saving...";
+  saveBtn.textContent = "Saving...";
+
+  // Split name into first and last
+  var parts = newName.split(" ");
+  var firstName = parts[0] || "";
+  var lastName = parts.length > 1 ? parts.slice(1).join(" ") : "";
 
   db.collection("users").doc(activeUser.uid).update({
+    name: newName,
     firstName: firstName,
-    lastName: lastName,
-    name: fullName
+    lastName: lastName
   })
     .then(function() {
-      // Update profile header immediately
+      // Update avatar
       var initials = firstName.charAt(0).toUpperCase();
       if (lastName) initials += lastName.charAt(0).toUpperCase();
-      document.getElementById("settingsAvatar").textContent = initials;
-      document.getElementById("settingsProfileName").textContent = fullName;
+      document.getElementById("settingsAvatarSimple").textContent = initials;
+      document.getElementById("settingsNameShow").textContent = newName;
 
-      // Also update friends list entry for all friends
-      updateNameInFriendsList(fullName);
+      // Update in friends lists
+      updateFriendsName(newName);
 
-      ToastManager.success("Profile Saved!", "Your name has been updated to " + fullName);
+      ToastManager.success("Saved!", "Profile updated to " + newName);
     })
     .catch(function(err) {
-      console.error("Save profile error:", err);
-      ToastManager.error("Save Failed", err.message || "Could not save profile");
+      ToastManager.error("Save Failed", err.message || "Could not save");
     })
     .finally(function() {
       saveBtn.disabled = false;
-      saveBtn.innerHTML = "💾 Save Profile";
+      saveBtn.textContent = "💾 Save Changes";
     });
-
-  // Save preferences too
-  saveSettingsPref();
 }
 
-// Update name in all friends' lists when user changes their name
-async function updateNameInFriendsList(newName) {
+// Update name in all friends' friend lists
+function updateFriendsName(newName) {
   if (!activeUser) return;
 
-  try {
-    var friendsSnap = await db.collection("friends").doc(activeUser.uid).collection("list").get();
-
-    friendsSnap.forEach(function(friendDoc) {
-      var friendId = friendDoc.id;
-      // Update my name in their friends list
-      db.collection("friends").doc(friendId).collection("list").doc(activeUser.uid).update({
-        name: newName
-      }).catch(function(e) {
-        // Friend might have removed us, ignore
+  db.collection("friends").doc(activeUser.uid).collection("list").get()
+    .then(function(snap) {
+      snap.forEach(function(friendDoc) {
+        db.collection("friends").doc(friendDoc.id).collection("list").doc(activeUser.uid).update({
+          name: newName
+        }).catch(function() {});
       });
-    });
-  } catch (e) {
-    console.error("Update friends name error:", e);
-  }
+    })
+    .catch(function() {});
 }
+
 </script>
 </body>
 </html>
+</script>
+</body>
+</html>
+
 
 
 
