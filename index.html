@@ -3872,56 +3872,91 @@ function saveIndicesCache() {
   }
 }
 
-// Fetch single index price from Yahoo Finance
+// Fetch single index price from Yahoo Finance (multi-proxy fallback)
 async function fetchSingleIndexPrice(index) {
-  try {
-    var proxyUrl = "https://api.allorigins.win/raw?url=";
-    var apiUrl = "https://query1.finance.yahoo.com/v8/finance/chart/" + encodeURIComponent(index.yahoo) + "?interval=1d&range=1d";
+  var yahooUrl = "https://query1.finance.yahoo.com/v8/finance/chart/" + encodeURIComponent(index.yahoo) + "?interval=1d&range=1d";
 
-    var controller = new AbortController();
-    var timeoutId = setTimeout(function() { controller.abort(); }, 10000);
+  // Multiple CORS proxies - try each until one works
+  var proxies = [
+    "https://api.allorigins.win/raw?url=",
+    "https://corsproxy.io/?",
+    "https://api.codetabs.com/v1/proxy?quest="
+  ];
 
-    var response = await fetch(proxyUrl + encodeURIComponent(apiUrl), {
-      signal: controller.signal
-    });
+  for (var p = 0; p < proxies.length; p++) {
+    try {
+      var fullUrl = proxies[p] + encodeURIComponent(yahooUrl);
 
-    clearTimeout(timeoutId);
+      var controller = new AbortController();
+      var timeoutId = setTimeout(function() { controller.abort(); }, 8000);
 
-    var data = await response.json();
+      var response = await fetch(fullUrl, { signal: controller.signal });
+      clearTimeout(timeoutId);
 
-    if (data && data.chart && data.chart.result && data.chart.result[0]) {
-      var meta = data.chart.result[0].meta;
-      var currentPrice = meta.regularMarketPrice || 0;
-      var previousClose = meta.previousClose || meta.chartPreviousClose || currentPrice;
-      var priceChange = currentPrice - previousClose;
-      var changePercent = previousClose > 0 ? (priceChange / previousClose) * 100 : 0;
-
-      if (currentPrice > 0) {
-        return {
-          price: currentPrice,
-          change: priceChange,
-          changePercent: changePercent,
-          prevClose: previousClose,
-          fetchedAt: Date.now(),
-          source: "Yahoo"
-        };
+      if (!response.ok) {
+        console.log("[INDICES] Proxy " + (p + 1) + " returned status " + response.status + " for " + index.shortName);
+        continue;
       }
-    }
-  } catch (error) {
-    if (error.name !== "AbortError") {
-      console.log("[INDICES] Failed to fetch " + index.shortName + ": " + error.message);
+
+      var text = await response.text();
+
+      // Check if response is valid JSON (some proxies return HTML errors)
+      if (!text || text.charAt(0) !== '{') {
+        console.log("[INDICES] Proxy " + (p + 1) + " returned non-JSON for " + index.shortName);
+        continue;
+      }
+
+      var data = JSON.parse(text);
+
+      if (data && data.chart && data.chart.result && data.chart.result[0]) {
+        var meta = data.chart.result[0].meta;
+        var currentPrice = meta.regularMarketPrice || 0;
+        var previousClose = meta.previousClose || meta.chartPreviousClose || currentPrice;
+        var priceChange = currentPrice - previousClose;
+        var changePercent = previousClose > 0 ? (priceChange / previousClose) * 100 : 0;
+
+        if (currentPrice > 0) {
+          console.log("[INDICES] ✓ " + index.shortName + " = " + currentPrice + " via proxy " + (p + 1));
+          return {
+            price: currentPrice,
+            change: priceChange,
+            changePercent: changePercent,
+            prevClose: previousClose,
+            fetchedAt: Date.now(),
+            source: "Yahoo-P" + (p + 1)
+          };
+        }
+      }
+
+      // If data exists but no price, don't try other proxies (API issue, not proxy issue)
+      if (data && data.chart && data.chart.error) {
+        console.log("[INDICES] Yahoo API error for " + index.shortName + ": " + (data.chart.error.description || "unknown"));
+        break;
+      }
+
+    } catch (error) {
+      if (error.name === "AbortError") {
+        console.log("[INDICES] Proxy " + (p + 1) + " timed out for " + index.shortName);
+      } else {
+        console.log("[INDICES] Proxy " + (p + 1) + " failed for " + index.shortName + ": " + error.message);
+      }
+      // Continue to next proxy
     }
   }
+
   return null;
 }
 
 // Fetch single index price from TwelveData (backup)
 async function fetchSingleIndexTwelveData(index) {
-  // Only works for some indices
   var symbolMap = {
     "NIFTY_50": "NIFTY 50",
     "SENSEX": "SENSEX",
-    "BANKNIFTY": "NIFTY BANK"
+    "BANKNIFTY": "NIFTY BANK",
+    "FINNIFTY": "NIFTY FIN SERVICE",
+    "MIDCAP100": "NIFTY MIDCAP 100",
+    "SMALLCAP100": "NIFTY SMLCAP 100",
+    "NIFTY500": "NIFTY 500"
   };
 
   var tdSymbol = symbolMap[index.symbol];
@@ -3938,7 +3973,12 @@ async function fetchSingleIndexTwelveData(index) {
     var response = await fetch(url, { signal: controller.signal });
     clearTimeout(timeoutId);
 
-    var data = await response.json();
+    if (!response.ok) return null;
+
+    var text = await response.text();
+    if (!text || text.charAt(0) !== '{') return null;
+
+    var data = JSON.parse(text);
 
     if (data && data.close && !data.code && data.status !== "error") {
       var currentPrice = parseFloat(data.close) || 0;
@@ -3948,6 +3988,7 @@ async function fetchSingleIndexTwelveData(index) {
 
       if (currentPrice > 0) {
         markTwelveKeySuccess(apiKey);
+        console.log("[INDICES] ✓ " + index.shortName + " = " + currentPrice + " via TwelveData");
         return {
           price: currentPrice,
           change: priceChange,
@@ -3961,15 +4002,58 @@ async function fetchSingleIndexTwelveData(index) {
 
     if (data && (data.code === 429 || data.status === "error")) {
       markTwelveKeyBlocked(apiKey);
+      console.log("[INDICES] TwelveData rate limited for " + index.shortName);
+
+      // Retry with different key
+      var nextKey = getBestTwelveKey();
+      if (nextKey !== apiKey) {
+        var retryUrl = "https://api.twelvedata.com/quote?symbol=" + encodeURIComponent(tdSymbol) + "&apikey=" + nextKey;
+        var retryController = new AbortController();
+        var retryTimeout = setTimeout(function() { retryController.abort(); }, 8000);
+
+        var retryResponse = await fetch(retryUrl, { signal: retryController.signal });
+        clearTimeout(retryTimeout);
+
+        if (retryResponse.ok) {
+          var retryText = await retryResponse.text();
+          if (retryText && retryText.charAt(0) === '{') {
+            var retryData = JSON.parse(retryText);
+
+            if (retryData && retryData.close && !retryData.code && retryData.status !== "error") {
+              var retryPrice = parseFloat(retryData.close) || 0;
+              var retryPrevClose = parseFloat(retryData.previous_close) || retryPrice;
+              var retryChange = parseFloat(retryData.change) || (retryPrice - retryPrevClose);
+              var retryPercent = parseFloat(retryData.percent_change) || 0;
+
+              if (retryPrice > 0) {
+                markTwelveKeySuccess(nextKey);
+                console.log("[INDICES] ✓ " + index.shortName + " = " + retryPrice + " via TwelveData (retry)");
+                return {
+                  price: retryPrice,
+                  change: retryChange,
+                  changePercent: retryPercent,
+                  prevClose: retryPrevClose,
+                  fetchedAt: Date.now(),
+                  source: "TwelveData"
+                };
+              }
+            }
+
+            if (retryData && (retryData.code === 429 || retryData.status === "error")) {
+              markTwelveKeyBlocked(nextKey);
+            }
+          }
+        }
+      }
     }
   } catch (error) {
     if (error.name !== "AbortError") {
       markTwelveKeyBlocked(apiKey);
+      console.log("[INDICES] TwelveData error for " + index.shortName + ": " + error.message);
     }
   }
   return null;
 }
-
 // Fetch all indices with fallback
 async function fetchAllIndices() {
   if (indicesFetching) return;
