@@ -6021,7 +6021,6 @@ function triggerManualRefresh() {
   function refreshHoldingsData() {
   if (userHoldings.length > 0) {
     ToastManager.info("Refreshing", "Fetching live prices for " + userHoldings.length + " holdings...");
-
     // Force clear cache for holdings to get fresh prices
     for (var i = 0; i < userHoldings.length; i++) {
       var sym = userHoldings[i].sym;
@@ -6038,13 +6037,11 @@ function triggerManualRefresh() {
 function initAutoRefresh() {
   if (autoRefreshTimer) clearInterval(autoRefreshTimer);
   refreshCountdown = 30;
-
   autoRefreshTimer = setInterval(function() {
     refreshCountdown--;
     var countdownEl = document.getElementById("countdownDisplay");
     if (countdownEl) countdownEl.textContent = refreshCountdown;
     refreshLastUpdateDisplay();
-
     if (refreshCountdown <= 0) {
       refreshCountdown = 30;
       if (!isFetchingData && document.visibilityState === "visible" && userHoldings.length > 0) {
@@ -6055,11 +6052,9 @@ function initAutoRefresh() {
 }
 function setRefreshStatus(text, isLoading) {
   const badge = document.getElementById("liveStatusBadge");
-  const statusText = document.getElementById("liveStatusText");
-  
+  const statusText = document.getElementById("liveStatusText"); 
   statusText.textContent = text;
-  badge.classList.toggle("updating", isLoading);
-  
+  badge.classList.toggle("updating", isLoading); 
   const btn = document.getElementById("mainRefreshBtn");
   btn.disabled = isLoading;
   btn.innerHTML = isLoading ? '<div class="loading-spinner"></div> Updating...' : '🔄 Refresh Now';
@@ -6067,16 +6062,13 @@ function setRefreshStatus(text, isLoading) {
 
 function refreshLastUpdateDisplay() {
   const lastUpdate = localStorage.getItem("lastPriceUpdate");
-  if (!lastUpdate) return;
-  
+  if (!lastUpdate) return;  
   const diffSec = Math.floor((Date.now() - parseInt(lastUpdate)) / 1000);
   let displayText = "";
-  
   if (diffSec < 5) displayText = "Just now";
   else if (diffSec < 60) displayText = diffSec + "s ago";
   else if (diffSec < 3600) displayText = Math.floor(diffSec / 60) + "m ago";
-  else displayText = Math.floor(diffSec / 3600) + "h ago";
-  
+  else displayText = Math.floor(diffSec / 3600) + "h ago"; 
   document.getElementById("lastUpdateDisplay").textContent = displayText;
   document.getElementById("holdingsUpdateDisplay").textContent = displayText;
 }
@@ -6152,11 +6144,9 @@ function displayStocks(stockList, showAll) {
     var priceChange = priceInfo && priceInfo.change ? priceInfo.change : 0;
     var changePercent = priceInfo && priceInfo.changePercent ? priceInfo.changePercent : 0;
     var isPositive = priceChange >= 0;
-
     var card = document.createElement("div");
     card.className = "stock-card";
     card.dataset.symbol = stock.sym;
-
     var priceHTML = "";
     if (currentPrice > 0) {
       priceHTML = '<div class="current-price">₹' + currentPrice.toFixed(2) + '</div>' +
@@ -6186,7 +6176,6 @@ function displayStocks(stockList, showAll) {
       '</div>' +
       '<div class="price-display">' + priceHTML + '</div>' +
       '<button class="add-stock-btn" onclick="showAddStockModal(\'' + stock.sym + '\')">➕ Add to Holdings</button>';
-
     container.appendChild(card);
   });
 
@@ -6202,7 +6191,6 @@ function displayStocksWithAnimation(stockList) {
   stockList.forEach(function(stock) {
     var oldPrice = prevPricesData[stock.sym] ? prevPricesData[stock.sym].price : 0;
     var newPrice = pricesData[stock.sym] ? pricesData[stock.sym].price : 0;
-
     if (oldPrice > 0 && newPrice > 0 && oldPrice !== newPrice) {
       var card = document.querySelector('[data-symbol="' + stock.sym + '"]');
       if (card) {
@@ -6230,9 +6218,7 @@ function showAddStockModal(symbol) {
     ToastManager.error("Error", "Stock not found: " + symbol);
     return;
   }
-
   pendingAddStock = { name: stock.name, sym: stock.sym };
-
   var price = getStockPrice(symbol);
 
   document.getElementById("modalStockName").textContent = stock.name + " (" + symbol + ")";
@@ -6294,7 +6280,6 @@ async function confirmStockAdd() {
   try {
     // Round buy price to 2 decimals before saving (prevents inconsistent stored precision)
     const buyPriceRounded = Math.round(buyPrice * 100) / 100;
-
     // Use the centralized save function (ensures consistent normalization)
     await saveHoldingToFirebase({
       name: stockName,
@@ -6302,10 +6287,8 @@ async function confirmStockAdd() {
       buyPrice: buyPriceRounded,
       qty: quantity
     });
-
     document.getElementById("addStockModal").style.display = "none";
     pendingAddStock = null;
-
     ToastManager.success("Stock Added!", stockName + " added to your holdings");
 
   } catch (error) {
@@ -7389,4 +7372,5 @@ async function updateNameInFriendsList(newName) {
 </script>
 </body>
 </html>
+
 
