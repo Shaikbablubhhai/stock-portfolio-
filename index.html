@@ -297,14 +297,29 @@ body{
 .settings-icon{
   font-size:22px;
   cursor:pointer;
-  padding:10px;
+  padding:12px 14px;
   border-radius:var(--radius-sm);
   transition:var(--transition-smooth);
   background:rgba(255,255,255,0.08);
+  border:none;
+  color:#fff;
+  outline:none;
+  font-family:inherit;
+  min-width:46px;
+  min-height:46px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  -webkit-tap-highlight-color:transparent;
+  touch-action:manipulation;
 }
 .settings-icon:hover{
   background:rgba(255,255,255,0.18);
   transform:rotate(90deg);
+}
+.settings-icon:active{
+  transform:scale(0.92);
+  background:rgba(255,255,255,0.25);
 }
 
   /* Brand logo */
@@ -1741,7 +1756,7 @@ body{
   <div class="nav-search">
     <input type="text" id="stockSearchInput" placeholder="Search 2000+ stocks & ETFs...">
   </div>
-  <div class="settings-icon" onclick="showSettings()">⚙️</div>
+  <button class="settings-icon" onclick="showSettings()" type="button" aria-label="Settings" title="Settings">⚙️</button>
 </nav>
 <div class="main-content">
   
@@ -7147,3 +7162,4 @@ async function updateNameInFriendsList(newName) {
 </script>
 </body>
 </html>
+
