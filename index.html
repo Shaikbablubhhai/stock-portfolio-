@@ -4736,239 +4736,6 @@ function renderIndicesLoadingState() {
   }
 }
 
-  /* ================= MARKET HOURS DETECTION ================= */
-const MarketHours = {
-  // IST timezone offset: UTC+5:30
-  _getIST: function() {
-    var now = new Date();
-    var utc = now.getTime() + (now.getTimezoneOffset() * 60000);
-    return new Date(utc + (5.5 * 3600000));
-  },
-
-  isMarketOpen: function() {
-    var ist = this._getIST();
-    var day = ist.getDay(); // 0=Sun, 6=Sat
-    if (day === 0 || day === 6) return false;
-
-    var hours = ist.getHours();
-    var minutes = ist.getMinutes();
-    var totalMinutes = hours * 60 + minutes;
-
-    // Market: 9:15 AM to 3:30 PM IST
-    var openTime = 9 * 60 + 15;   // 555
-    var closeTime = 15 * 60 + 30;  // 930
-
-    return totalMinutes >= openTime && totalMinutes <= closeTime;
-  },
-
-  isPreMarket: function() {
-    var ist = this._getIST();
-    var day = ist.getDay();
-    if (day === 0 || day === 6) return false;
-
-    var hours = ist.getHours();
-    var minutes = ist.getMinutes();
-    var totalMinutes = hours * 60 + minutes;
-
-    // Pre-market: 9:00 AM to 9:15 AM IST
-    return totalMinutes >= 540 && totalMinutes < 555;
-  },
-
-  isPostMarket: function() {
-    var ist = this._getIST();
-    var day = ist.getDay();
-    if (day === 0 || day === 6) return false;
-
-    var hours = ist.getHours();
-    var minutes = ist.getMinutes();
-    var totalMinutes = hours * 60 + minutes;
-
-    // Post-market: 3:30 PM to 4:00 PM IST
-    return totalMinutes > 930 && totalMinutes <= 960;
-  },
-
-  getStatus: function() {
-    if (this.isMarketOpen()) return "open";
-    if (this.isPreMarket()) return "pre-market";
-    if (this.isPostMarket()) return "post-market";
-    return "closed";
-  },
-
-  getStatusText: function() {
-    var status = this.getStatus();
-    var ist = this._getIST();
-    var timeStr = ist.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" });
-
-    switch (status) {
-      case "open": return "🟢 Market Open (" + timeStr + " IST)";
-      case "pre-market": return "🟡 Pre-Market (" + timeStr + " IST)";
-      case "post-market": return "🟠 Post-Market (" + timeStr + " IST)";
-      default: return "🔴 Market Closed (" + timeStr + " IST)";
-    }
-  },
-
-  // Smart refresh interval based on market status
-  getOptimalRefreshInterval: function() {
-    var status = this.getStatus();
-    switch (status) {
-      case "open": return 15;        // 15 seconds during market
-      case "pre-market": return 30;  // 30 seconds pre-market
-      case "post-market": return 60; // 60 seconds post-market
-      default: return 300;           // 5 minutes when closed
-    }
-  }
-};
-
-/* ================= SMART PRICE CACHE ENGINE ================= */
-const PriceCache = {
-  // In-memory cache (fast access)
-  _memoryCache: {},
-
-  // Cache TTL settings (milliseconds)
-  _TTL: {
-    marketOpen: 15000,      // 15 seconds during market hours
-    marketClosed: 300000,   // 5 minutes when market is closed
-    preMarket: 30000,       // 30 seconds pre-market
-    postMarket: 60000,      // 1 minute post-market
-    search: 120000,         // 2 minutes for search results
-    indices: 60000          // 1 minute for indices
-  },
-
-  // Get appropriate TTL based on market status and reason
-  getTTL: function(reason) {
-    if (reason === "search") return this._TTL.search;
-    if (reason === "indices") return this._TTL.indices;
-
-    var status = MarketHours.getStatus();
-    switch (status) {
-      case "open": return this._TTL.marketOpen;
-      case "pre-market": return this._TTL.preMarket;
-      case "post-market": return this._TTL.postMarket;
-      default: return this._TTL.marketClosed;
-    }
-  },
-
-  // Get price from cache (memory first, then localStorage)
-  get: function(symbol, reason) {
-    var ttl = this.getTTL(reason || "holdings");
-    var now = Date.now();
-
-    // Check memory cache first (fastest)
-    var memEntry = this._memoryCache[symbol];
-    if (memEntry && memEntry.price > 0 && memEntry.fetchedAt) {
-      var memAge = now - memEntry.fetchedAt;
-      if (memAge < ttl) {
-        return memEntry;
-      }
-    }
-
-    return null; // Cache miss or expired
-  },
-
-  // Set price in cache (both memory and localStorage)
-  set: function(symbol, data) {
-    if (!data || !data.price || data.price <= 0) return;
-
-    // Always add fetchedAt
-    data.fetchedAt = data.fetchedAt || Date.now();
-
-    // Set in memory cache
-    this._memoryCache[symbol] = data;
-  },
-
-  // Bulk set (for loading from localStorage)
-  bulkSet: function(dataObj) {
-    if (!dataObj || typeof dataObj !== "object") return;
-    var keys = Object.keys(dataObj);
-    for (var i = 0; i < keys.length; i++) {
-      var sym = keys[i];
-      if (dataObj[sym] && dataObj[sym].price > 0) {
-        this._memoryCache[sym] = dataObj[sym];
-      }
-    }
-  },
-
-  // Get all cached data (for saving to localStorage)
-  getAll: function() {
-    return this._memoryCache;
-  },
-
-  // Save entire cache to localStorage
-  persistToStorage: function() {
-    try {
-      var data = JSON.stringify(this._memoryCache);
-      localStorage.setItem("stockPricesCache", data);
-      localStorage.setItem("lastPriceUpdate", Date.now().toString());
-    } catch (e) {
-      // Storage full or unavailable — silently fail
-      console.warn("[Cache] Failed to persist to localStorage:", e.message);
-    }
-  },
-
-  // Load cache from localStorage
-  loadFromStorage: function() {
-    try {
-      var saved = localStorage.getItem("stockPricesCache");
-      if (saved) {
-        var parsed = JSON.parse(saved);
-        this.bulkSet(parsed);
-        return true;
-      }
-    } catch (e) {
-      // Corrupted cache — clear it
-      localStorage.removeItem("stockPricesCache");
-    }
-    return false;
-  },
-
-  // Check if a symbol needs refresh
-  needsRefresh: function(symbol, reason) {
-    return this.get(symbol, reason) === null;
-  },
-
-  // Get count of cached prices
-  getCount: function() {
-    return Object.keys(this._memoryCache).length;
-  },
-
-  // Get cache size in KB
-  getSizeKB: function() {
-    try {
-      var str = JSON.stringify(this._memoryCache);
-      return Math.round(str.length / 1024);
-    } catch (e) {
-      return 0;
-    }
-  },
-
-  // Clear all cache
-  clear: function() {
-    this._memoryCache = {};
-    try {
-      localStorage.removeItem("stockPricesCache");
-      localStorage.removeItem("lastPriceUpdate");
-    } catch (e) {}
-  },
-
-  // Get stale data (expired but still has value — useful as fallback)
-  getStale: function(symbol) {
-    var memEntry = this._memoryCache[symbol];
-    if (memEntry && memEntry.price > 0) {
-      return memEntry;
-    }
-    return null;
-  }
-};
-
-/* ================= API USAGE TRACKER ================= */
-const APITracker = {
-  _counters: { yahoo: 0, twelveData: 0, alphaVantage: 0 },
-  _dailyKey: "",
-  _scores: { yahoo: 100, twelveData: 80, alphaVantage: 60 },
-  _responseTimes: { yahoo: [], twelveData: [], alphaVantage: [] },
-
-  init: function() {
-    // Load today's 
 /* ================= GLOBAL VARIABLES ================= */
 let activeUser = null;
 let userHoldings = [];
@@ -5004,6 +4771,7 @@ document.addEventListener("DOMContentLoaded", function() {
       prevPricesData = {};
     }
   }
+  
   // Tab navigation
   document.querySelectorAll(".nav-tabs span").forEach(function(tab) {
     tab.addEventListener("click", function() {
@@ -5839,7 +5607,7 @@ async function fetchAlphaVantagePrice(symbol) {
   }
   return null;
 }
-
+// Combined fetch with fallback chain
 // MASTER PRICE FUNCTION - single source of truth
 async function fetchStockPrice(stock, reason) {
   reason = reason || "unknown";
@@ -5848,7 +5616,7 @@ async function fetchStockPrice(stock, reason) {
   var cached = pricesData[stock.sym];
   if (cached && cached.price > 0 && cached.fetchedAt) {
     var age = Date.now() - cached.fetchedAt;
-    var maxAge = (reason === "search") ? 120000 : 30000;
+    var maxAge = (reason === "search") ? 120000 : 30000; // 2min for search, 30s for holdings
     if (age < maxAge) {
       return cached;
     }
@@ -5893,6 +5661,7 @@ async function fetchStockPrice(stock, reason) {
 
   return null;
 }
+
 async function fetchLatestPrices() {
   if (isFetchingData) return;
 
@@ -5977,7 +5746,6 @@ async function fetchLatestPrices() {
 // Fetch prices for search results only (max 10)
 async function fetchSearchResults(stocksToFetch, originalQuery) {
   setRefreshStatus("Searching...", true);
-}
 
   var batchSize = 3;
   for (var i = 0; i < stocksToFetch.length; i += batchSize) {
@@ -6021,6 +5789,7 @@ function triggerManualRefresh() {
   function refreshHoldingsData() {
   if (userHoldings.length > 0) {
     ToastManager.info("Refreshing", "Fetching live prices for " + userHoldings.length + " holdings...");
+
     // Force clear cache for holdings to get fresh prices
     for (var i = 0; i < userHoldings.length; i++) {
       var sym = userHoldings[i].sym;
@@ -6037,11 +5806,13 @@ function triggerManualRefresh() {
 function initAutoRefresh() {
   if (autoRefreshTimer) clearInterval(autoRefreshTimer);
   refreshCountdown = 30;
+
   autoRefreshTimer = setInterval(function() {
     refreshCountdown--;
     var countdownEl = document.getElementById("countdownDisplay");
     if (countdownEl) countdownEl.textContent = refreshCountdown;
     refreshLastUpdateDisplay();
+
     if (refreshCountdown <= 0) {
       refreshCountdown = 30;
       if (!isFetchingData && document.visibilityState === "visible" && userHoldings.length > 0) {
@@ -6052,9 +5823,11 @@ function initAutoRefresh() {
 }
 function setRefreshStatus(text, isLoading) {
   const badge = document.getElementById("liveStatusBadge");
-  const statusText = document.getElementById("liveStatusText"); 
+  const statusText = document.getElementById("liveStatusText");
+  
   statusText.textContent = text;
-  badge.classList.toggle("updating", isLoading); 
+  badge.classList.toggle("updating", isLoading);
+  
   const btn = document.getElementById("mainRefreshBtn");
   btn.disabled = isLoading;
   btn.innerHTML = isLoading ? '<div class="loading-spinner"></div> Updating...' : '🔄 Refresh Now';
@@ -6062,13 +5835,16 @@ function setRefreshStatus(text, isLoading) {
 
 function refreshLastUpdateDisplay() {
   const lastUpdate = localStorage.getItem("lastPriceUpdate");
-  if (!lastUpdate) return;  
+  if (!lastUpdate) return;
+  
   const diffSec = Math.floor((Date.now() - parseInt(lastUpdate)) / 1000);
   let displayText = "";
+  
   if (diffSec < 5) displayText = "Just now";
   else if (diffSec < 60) displayText = diffSec + "s ago";
   else if (diffSec < 3600) displayText = Math.floor(diffSec / 60) + "m ago";
-  else displayText = Math.floor(diffSec / 3600) + "h ago"; 
+  else displayText = Math.floor(diffSec / 3600) + "h ago";
+  
   document.getElementById("lastUpdateDisplay").textContent = displayText;
   document.getElementById("holdingsUpdateDisplay").textContent = displayText;
 }
@@ -6144,9 +5920,11 @@ function displayStocks(stockList, showAll) {
     var priceChange = priceInfo && priceInfo.change ? priceInfo.change : 0;
     var changePercent = priceInfo && priceInfo.changePercent ? priceInfo.changePercent : 0;
     var isPositive = priceChange >= 0;
+
     var card = document.createElement("div");
     card.className = "stock-card";
     card.dataset.symbol = stock.sym;
+
     var priceHTML = "";
     if (currentPrice > 0) {
       priceHTML = '<div class="current-price">₹' + currentPrice.toFixed(2) + '</div>' +
@@ -6176,6 +5954,7 @@ function displayStocks(stockList, showAll) {
       '</div>' +
       '<div class="price-display">' + priceHTML + '</div>' +
       '<button class="add-stock-btn" onclick="showAddStockModal(\'' + stock.sym + '\')">➕ Add to Holdings</button>';
+
     container.appendChild(card);
   });
 
@@ -6191,6 +5970,7 @@ function displayStocksWithAnimation(stockList) {
   stockList.forEach(function(stock) {
     var oldPrice = prevPricesData[stock.sym] ? prevPricesData[stock.sym].price : 0;
     var newPrice = pricesData[stock.sym] ? pricesData[stock.sym].price : 0;
+
     if (oldPrice > 0 && newPrice > 0 && oldPrice !== newPrice) {
       var card = document.querySelector('[data-symbol="' + stock.sym + '"]');
       if (card) {
@@ -6218,7 +5998,9 @@ function showAddStockModal(symbol) {
     ToastManager.error("Error", "Stock not found: " + symbol);
     return;
   }
+
   pendingAddStock = { name: stock.name, sym: stock.sym };
+
   var price = getStockPrice(symbol);
 
   document.getElementById("modalStockName").textContent = stock.name + " (" + symbol + ")";
@@ -6280,6 +6062,7 @@ async function confirmStockAdd() {
   try {
     // Round buy price to 2 decimals before saving (prevents inconsistent stored precision)
     const buyPriceRounded = Math.round(buyPrice * 100) / 100;
+
     // Use the centralized save function (ensures consistent normalization)
     await saveHoldingToFirebase({
       name: stockName,
@@ -6287,8 +6070,10 @@ async function confirmStockAdd() {
       buyPrice: buyPriceRounded,
       qty: quantity
     });
+
     document.getElementById("addStockModal").style.display = "none";
     pendingAddStock = null;
+
     ToastManager.success("Stock Added!", stockName + " added to your holdings");
 
   } catch (error) {
@@ -7192,6 +6977,7 @@ function showSettings() {
   document.getElementById("settingsStocksAvailable").textContent = STOCK_DATA.length;
   document.getElementById("settingsApiCalls").textContent = (apiCallCounts.yahoo + apiCallCounts.twelveData + apiCallCounts.alphaVantage);
   document.getElementById("settingsCachedPrices").textContent = Object.keys(pricesData).length;
+
   // API keys status
   var keyInfo = getAvailableKeyCount();
   document.getElementById("settingsKeyStatus").textContent =
@@ -7200,8 +6986,15 @@ function showSettings() {
 
   // Market status
   document.getElementById("settingsMarketStatus").textContent = getMarketStatusText();
+
   // Cache size
-  document.getElementById("settingsCacheSize").textContent = PriceCache.getSizeKB() + " KB stored • " + PriceCache.getCount() + " prices";
+  var cacheSize = 0;
+  try {
+    var cacheStr = localStorage.getItem("stockPricesCache") || "";
+    cacheSize = Math.round(cacheStr.length / 1024);
+  } catch (e) {}
+  document.getElementById("settingsCacheSize").textContent = cacheSize + " KB stored • " + Object.keys(pricesData).length + " prices";
+
   // Show modal
   document.getElementById("settingsModal").style.display = "flex";
 }
@@ -7209,21 +7002,7 @@ function showSettings() {
 function hideSettings() {
   document.getElementById("settingsModal").style.display = "none";
 }
-function getMarketStatusText() {
-  var now = new Date();
-  var utc = now.getTime() + (now.getTimezoneOffset() * 60000);
-  var ist = new Date(utc + (5.5 * 3600000));
-  var day = ist.getDay();
-  var hours = ist.getHours();
-  var minutes = ist.getMinutes();
-  var totalMinutes = hours * 60 + minutes;
 
-  if (day === 0 || day === 6) return "🔴 Market Closed (Weekend)";
-  if (totalMinutes >= 555 && totalMinutes <= 930) return "🟢 Market Open";
-  if (totalMinutes >= 540 && totalMinutes < 555) return "🟡 Pre-Market";
-  if (totalMinutes > 930 && totalMinutes <= 960) return "🟠 Post-Market";
-  return "🔴 Market Closed";
-}
 function copyUserCode() {
   var code = document.getElementById("settingsUserCode").textContent;
   if (!code || code === "--") return;
@@ -7273,7 +7052,7 @@ function showCopiedTooltip(message) {
 function clearPriceCache() {
   if (!confirm("Clear all cached prices? They will be re-fetched on next refresh.")) return;
 
-   pricesData = {};
+  pricesData = {};
   prevPricesData = {};
   indicesData = {};
   indicesLastFetchTime = 0;
@@ -7287,12 +7066,7 @@ function clearPriceCache() {
   ToastManager.success("Cache Cleared", "All price data cleared. Refreshing...");
 
   // Update cache size display
-    var cacheSize = 0;
-  try {
-    var cacheStr = localStorage.getItem("stockPricesCache") || "";
-    cacheSize = Math.round(cacheStr.length / 1024);
-  } catch (e) {}
-  document.getElementById("settingsCacheSize").textContent = cacheSize + " KB stored • " + Object.keys(pricesData).length + " prices";
+  document.getElementById("settingsCacheSize").textContent = "0 KB stored • 0 prices";
   document.getElementById("settingsCachedPrices").textContent = "0";
 
   // Refresh data
@@ -7359,6 +7133,7 @@ async function updateNameInFriendsList(newName) {
 
     friendsSnap.forEach(function(friendDoc) {
       var friendId = friendDoc.id;
+      // Update my name in their friends list
       db.collection("friends").doc(friendId).collection("list").doc(activeUser.uid).update({
         name: newName
       }).catch(function(e) {
@@ -7372,5 +7147,3 @@ async function updateNameInFriendsList(newName) {
 </script>
 </body>
 </html>
-
-
