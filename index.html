@@ -2078,7 +2078,7 @@ body{
         </div>
       </div>
 
-      <!-- Data Management Section -->
+        <!-- Data Management Section -->
       <div class="settings-section">
         <div class="settings-section-title">🗄️ Data Management</div>
 
@@ -2094,7 +2094,105 @@ body{
             <button class="settings-btn-warning settings-btn" style="width:auto;padding:8px 16px;font-size:12px" onclick="clearPriceCache()">Clear Cache</button>
           </div>
         </div>
+
+        <div class="settings-row">
+          <div class="settings-row-left">
+            <div class="settings-row-icon">📊</div>
+            <div>
+              <div class="settings-row-label">Indices Cache</div>
+              <div class="settings-row-sublabel" id="settingsIndicesCacheInfo">--</div>
+            </div>
+          </div>
+          <div class="settings-row-right">
+            <button class="settings-btn-warning settings-btn" style="width:auto;padding:8px 16px;font-size:12px" onclick="clearIndicesCache()">Clear</button>
+          </div>
+        </div>
+
+        <div class="settings-row">
+          <div class="settings-row-left">
+            <div class="settings-row-icon">🧹</div>
+            <div>
+              <div class="settings-row-label">Clear All App Data</div>
+              <div class="settings-row-sublabel">Reset cache, preferences & local data</div>
+            </div>
+          </div>
+          <div class="settings-row-right">
+            <button class="settings-btn-danger settings-btn" style="width:auto;padding:8px 16px;font-size:12px" onclick="clearAllAppData()">Reset All</button>
+          </div>
+        </div>
       </div>
+
+      <!-- Performance Section -->
+      <div class="settings-section">
+        <div class="settings-section-title">⚡ Performance & API</div>
+
+        <div class="settings-row">
+          <div class="settings-row-left">
+            <div class="settings-row-icon">📡</div>
+            <div>
+              <div class="settings-row-label">API Calls Breakdown</div>
+              <div class="settings-row-sublabel" id="settingsApiBreakdown">--</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="settings-row">
+          <div class="settings-row-left">
+            <div class="settings-row-icon">⏱️</div>
+            <div>
+              <div class="settings-row-label">Current Refresh Rate</div>
+              <div class="settings-row-sublabel" id="settingsCurrentRefreshRate">--</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="settings-row">
+          <div class="settings-row-left">
+            <div class="settings-row-icon">📱</div>
+            <div>
+              <div class="settings-row-label">Memory Usage</div>
+              <div class="settings-row-sublabel" id="settingsMemoryUsage">--</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- About Section -->
+      <div class="settings-section">
+        <div class="settings-section-title">ℹ️ About FinzoTalk</div>
+
+        <div class="settings-row">
+          <div class="settings-row-left">
+            <div class="settings-row-icon">🔧</div>
+            <div>
+              <div class="settings-row-label">Build Features</div>
+              <div class="settings-row-sublabel">Multi-API Fallback • Real-time Chat • Live Indices • Smart Key Rotation</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="settings-row">
+          <div class="settings-row-left">
+            <div class="settings-row-icon">🛡️</div>
+            <div>
+              <div class="settings-row-label">Data Sources</div>
+              <div class="settings-row-sublabel">Yahoo Finance • TwelveData • Alpha Vantage</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="settings-row">
+          <div class="settings-row-left">
+            <div class="settings-row-icon">⚠️</div>
+            <div>
+              <div class="settings-row-label">Disclaimer</div>
+              <div class="settings-row-sublabel" style="color:var(--warning)">For educational purposes only. Not financial advice. Prices may be delayed.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
 
       <!-- Action Buttons -->
       <div class="settings-btn-group">
@@ -7178,6 +7276,7 @@ async function updateNameInFriendsList(newName) {
 </script>
 </body>
 </html>
+
 
 
 
