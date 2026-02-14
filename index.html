@@ -4736,6 +4736,239 @@ function renderIndicesLoadingState() {
   }
 }
 
+  /* ================= MARKET HOURS DETECTION ================= */
+const MarketHours = {
+  // IST timezone offset: UTC+5:30
+  _getIST: function() {
+    var now = new Date();
+    var utc = now.getTime() + (now.getTimezoneOffset() * 60000);
+    return new Date(utc + (5.5 * 3600000));
+  },
+
+  isMarketOpen: function() {
+    var ist = this._getIST();
+    var day = ist.getDay(); // 0=Sun, 6=Sat
+    if (day === 0 || day === 6) return false;
+
+    var hours = ist.getHours();
+    var minutes = ist.getMinutes();
+    var totalMinutes = hours * 60 + minutes;
+
+    // Market: 9:15 AM to 3:30 PM IST
+    var openTime = 9 * 60 + 15;   // 555
+    var closeTime = 15 * 60 + 30;  // 930
+
+    return totalMinutes >= openTime && totalMinutes <= closeTime;
+  },
+
+  isPreMarket: function() {
+    var ist = this._getIST();
+    var day = ist.getDay();
+    if (day === 0 || day === 6) return false;
+
+    var hours = ist.getHours();
+    var minutes = ist.getMinutes();
+    var totalMinutes = hours * 60 + minutes;
+
+    // Pre-market: 9:00 AM to 9:15 AM IST
+    return totalMinutes >= 540 && totalMinutes < 555;
+  },
+
+  isPostMarket: function() {
+    var ist = this._getIST();
+    var day = ist.getDay();
+    if (day === 0 || day === 6) return false;
+
+    var hours = ist.getHours();
+    var minutes = ist.getMinutes();
+    var totalMinutes = hours * 60 + minutes;
+
+    // Post-market: 3:30 PM to 4:00 PM IST
+    return totalMinutes > 930 && totalMinutes <= 960;
+  },
+
+  getStatus: function() {
+    if (this.isMarketOpen()) return "open";
+    if (this.isPreMarket()) return "pre-market";
+    if (this.isPostMarket()) return "post-market";
+    return "closed";
+  },
+
+  getStatusText: function() {
+    var status = this.getStatus();
+    var ist = this._getIST();
+    var timeStr = ist.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" });
+
+    switch (status) {
+      case "open": return "🟢 Market Open (" + timeStr + " IST)";
+      case "pre-market": return "🟡 Pre-Market (" + timeStr + " IST)";
+      case "post-market": return "🟠 Post-Market (" + timeStr + " IST)";
+      default: return "🔴 Market Closed (" + timeStr + " IST)";
+    }
+  },
+
+  // Smart refresh interval based on market status
+  getOptimalRefreshInterval: function() {
+    var status = this.getStatus();
+    switch (status) {
+      case "open": return 15;        // 15 seconds during market
+      case "pre-market": return 30;  // 30 seconds pre-market
+      case "post-market": return 60; // 60 seconds post-market
+      default: return 300;           // 5 minutes when closed
+    }
+  }
+};
+
+/* ================= SMART PRICE CACHE ENGINE ================= */
+const PriceCache = {
+  // In-memory cache (fast access)
+  _memoryCache: {},
+
+  // Cache TTL settings (milliseconds)
+  _TTL: {
+    marketOpen: 15000,      // 15 seconds during market hours
+    marketClosed: 300000,   // 5 minutes when market is closed
+    preMarket: 30000,       // 30 seconds pre-market
+    postMarket: 60000,      // 1 minute post-market
+    search: 120000,         // 2 minutes for search results
+    indices: 60000          // 1 minute for indices
+  },
+
+  // Get appropriate TTL based on market status and reason
+  getTTL: function(reason) {
+    if (reason === "search") return this._TTL.search;
+    if (reason === "indices") return this._TTL.indices;
+
+    var status = MarketHours.getStatus();
+    switch (status) {
+      case "open": return this._TTL.marketOpen;
+      case "pre-market": return this._TTL.preMarket;
+      case "post-market": return this._TTL.postMarket;
+      default: return this._TTL.marketClosed;
+    }
+  },
+
+  // Get price from cache (memory first, then localStorage)
+  get: function(symbol, reason) {
+    var ttl = this.getTTL(reason || "holdings");
+    var now = Date.now();
+
+    // Check memory cache first (fastest)
+    var memEntry = this._memoryCache[symbol];
+    if (memEntry && memEntry.price > 0 && memEntry.fetchedAt) {
+      var memAge = now - memEntry.fetchedAt;
+      if (memAge < ttl) {
+        return memEntry;
+      }
+    }
+
+    return null; // Cache miss or expired
+  },
+
+  // Set price in cache (both memory and localStorage)
+  set: function(symbol, data) {
+    if (!data || !data.price || data.price <= 0) return;
+
+    // Always add fetchedAt
+    data.fetchedAt = data.fetchedAt || Date.now();
+
+    // Set in memory cache
+    this._memoryCache[symbol] = data;
+  },
+
+  // Bulk set (for loading from localStorage)
+  bulkSet: function(dataObj) {
+    if (!dataObj || typeof dataObj !== "object") return;
+    var keys = Object.keys(dataObj);
+    for (var i = 0; i < keys.length; i++) {
+      var sym = keys[i];
+      if (dataObj[sym] && dataObj[sym].price > 0) {
+        this._memoryCache[sym] = dataObj[sym];
+      }
+    }
+  },
+
+  // Get all cached data (for saving to localStorage)
+  getAll: function() {
+    return this._memoryCache;
+  },
+
+  // Save entire cache to localStorage
+  persistToStorage: function() {
+    try {
+      var data = JSON.stringify(this._memoryCache);
+      localStorage.setItem("stockPricesCache", data);
+      localStorage.setItem("lastPriceUpdate", Date.now().toString());
+    } catch (e) {
+      // Storage full or unavailable — silently fail
+      console.warn("[Cache] Failed to persist to localStorage:", e.message);
+    }
+  },
+
+  // Load cache from localStorage
+  loadFromStorage: function() {
+    try {
+      var saved = localStorage.getItem("stockPricesCache");
+      if (saved) {
+        var parsed = JSON.parse(saved);
+        this.bulkSet(parsed);
+        return true;
+      }
+    } catch (e) {
+      // Corrupted cache — clear it
+      localStorage.removeItem("stockPricesCache");
+    }
+    return false;
+  },
+
+  // Check if a symbol needs refresh
+  needsRefresh: function(symbol, reason) {
+    return this.get(symbol, reason) === null;
+  },
+
+  // Get count of cached prices
+  getCount: function() {
+    return Object.keys(this._memoryCache).length;
+  },
+
+  // Get cache size in KB
+  getSizeKB: function() {
+    try {
+      var str = JSON.stringify(this._memoryCache);
+      return Math.round(str.length / 1024);
+    } catch (e) {
+      return 0;
+    }
+  },
+
+  // Clear all cache
+  clear: function() {
+    this._memoryCache = {};
+    try {
+      localStorage.removeItem("stockPricesCache");
+      localStorage.removeItem("lastPriceUpdate");
+    } catch (e) {}
+  },
+
+  // Get stale data (expired but still has value — useful as fallback)
+  getStale: function(symbol) {
+    var memEntry = this._memoryCache[symbol];
+    if (memEntry && memEntry.price > 0) {
+      return memEntry;
+    }
+    return null;
+  }
+};
+
+/* ================= API USAGE TRACKER ================= */
+const APITracker = {
+  _counters: { yahoo: 0, twelveData: 0, alphaVantage: 0 },
+  _dailyKey: "",
+  _scores: { yahoo: 100, twelveData: 80, alphaVantage: 60 },
+  _responseTimes: { yahoo: [], twelveData: [], alphaVantage: [] },
+
+  init: function() {
+    // Load today's 
 /* ================= GLOBAL VARIABLES ================= */
 let activeUser = null;
 let userHoldings = [];
@@ -4760,18 +4993,17 @@ document.addEventListener("DOMContentLoaded", function() {
   // Initialize toast manager
   ToastManager.init();
   
-  // Load cached prices
-  const savedPrices = localStorage.getItem("stockPricesCache");
-  if (savedPrices) {
-    try {
-      pricesData = JSON.parse(savedPrices);
-      prevPricesData = JSON.parse(savedPrices);
-    } catch(e) {
-      pricesData = {};
-      prevPricesData = {};
-    }
-  }
-  
+  // Initialize Smart Cache Engine
+  PriceCache.loadFromStorage();
+  pricesData = PriceCache.getAll();
+  prevPricesData = JSON.parse(JSON.stringify(pricesData));
+
+  // Initialize API Tracker
+  APITracker.init();
+
+  console.log("[INIT] Cache loaded: " + PriceCache.getCount() + " prices, " + PriceCache.getSizeKB() + " KB");
+  console.log("[INIT] Market Status: " + MarketHours.getStatusText());
+  console.log("[INIT] API calls today: " + APITracker.getTotalCalls());
   // Tab navigation
   document.querySelectorAll(".nav-tabs span").forEach(function(tab) {
     tab.addEventListener("click", function() {
@@ -5608,60 +5840,76 @@ async function fetchAlphaVantagePrice(symbol) {
   return null;
 }
 // Combined fetch with fallback chain
-// MASTER PRICE FUNCTION - single source of truth
+// MASTER PRICE FUNCTION - single source of truth (Smart Cache + API Scoring)
 async function fetchStockPrice(stock, reason) {
-  reason = reason || "unknown";
+  reason = reason || "holdings";
 
-  // Cache check - avoid hitting APIs repeatedly
-  var cached = pricesData[stock.sym];
-  if (cached && cached.price > 0 && cached.fetchedAt) {
-    var age = Date.now() - cached.fetchedAt;
-    var maxAge = (reason === "search") ? 120000 : 30000; // 2min for search, 30s for holdings
-    if (age < maxAge) {
-      return cached;
+  // Smart Cache check — TTL adapts to market hours
+  var cached = PriceCache.get(stock.sym, reason);
+  if (cached) {
+    return cached;
+  }
+
+  console.log("[FETCH] " + stock.sym + " | reason: " + reason + " | market: " + MarketHours.getStatus());
+
+  // Get optimal API order based on scoring
+  var apiOrder = APITracker.getBestAPIOrder();
+  var result = null;
+
+  for (var a = 0; a < apiOrder.length; a++) {
+    var apiName = apiOrder[a];
+    var startTime = Date.now();
+
+    try {
+      if (apiName === "yahoo") {
+        result = await fetchYahooPrice(stock.yahoo);
+      } else if (apiName === "twelveData") {
+        result = await fetchTwelveDataPrice(stock.sym);
+      } else if (apiName === "alphaVantage") {
+        result = await fetchAlphaVantagePrice(stock.sym);
+      }
+
+      var elapsed = Date.now() - startTime;
+
+      if (result && result.price > 0) {
+        // Record success metrics
+        APITracker.recordCall(apiName);
+        APITracker.recordSuccess(apiName);
+        APITracker.recordResponseTime(apiName, elapsed);
+
+        // Update legacy counter
+        apiCallCounts[apiName] = (apiCallCounts[apiName] || 0) + 1;
+
+        // Store in Smart Cache
+        result.fetchedAt = Date.now();
+        result.source = apiName === "yahoo" ? "Yahoo" : (apiName === "twelveData" ? "TwelveData" : "AlphaVantage");
+        PriceCache.set(stock.sym, result);
+        pricesData[stock.sym] = result;
+
+        lastUsedAPI = result.source;
+        return result;
+      } else {
+        // API returned but no valid price
+        APITracker.recordFailure(apiName);
+        APITracker.recordResponseTime(apiName, elapsed);
+      }
+    } catch (fetchErr) {
+      var elapsed2 = Date.now() - startTime;
+      APITracker.recordFailure(apiName);
+      APITracker.recordResponseTime(apiName, elapsed2);
+      console.log("[FETCH] " + apiName + " failed for " + stock.sym + ": " + fetchErr.message);
     }
   }
 
-  console.log("[FETCH] " + stock.sym + " | reason: " + reason);
-
-  // Try Yahoo first
-  var result = await fetchYahooPrice(stock.yahoo);
-  if (result && result.price > 0) {
-    result.fetchedAt = Date.now();
-    result.source = "Yahoo";
-    lastUsedAPI = "Yahoo";
-    pricesData[stock.sym] = result;
-    return result;
-  }
-
-  // Try TwelveData
-  result = await fetchTwelveDataPrice(stock.sym);
-  if (result && result.price > 0) {
-    result.fetchedAt = Date.now();
-    result.source = "TwelveData";
-    lastUsedAPI = "TwelveData";
-    pricesData[stock.sym] = result;
-    return result;
-  }
-
-  // Try Alpha Vantage
-  result = await fetchAlphaVantagePrice(stock.sym);
-  if (result && result.price > 0) {
-    result.fetchedAt = Date.now();
-    result.source = "AlphaVantage";
-    lastUsedAPI = "AlphaVantage";
-    pricesData[stock.sym] = result;
-    return result;
-  }
-
-  // All failed - return stale cache if any
-  if (cached && cached.price > 0) {
-    return cached;
+  // All APIs failed — return stale cache if available
+  var stale = PriceCache.getStale(stock.sym);
+  if (stale) {
+    console.log("[FETCH] Using stale cache for " + stock.sym + " (age: " + Math.round((Date.now() - stale.fetchedAt) / 1000) + "s)");
+    return stale;
   }
 
   return null;
 }
-
 async function fetchLatestPrices() {
   if (isFetchingData) return;
 
@@ -5718,11 +5966,12 @@ async function fetchLatestPrices() {
     }
   }
 
-  localStorage.setItem("stockPricesCache", JSON.stringify(pricesData));
-  localStorage.setItem("lastPriceUpdate", Date.now().toString());
+  // Persist through Smart Cache Engine
+  PriceCache.persistToStorage();
+  pricesData = PriceCache.getAll();
 
   isFetchingData = false;
-  refreshCountdown = 30;
+  refreshCountdown = MarketHours.getOptimalRefreshInterval();
 
   if (successCount > 0) {
     setRefreshStatus("Live", false);
@@ -5774,9 +6023,9 @@ async function fetchSearchResults(stocksToFetch, originalQuery) {
     }
   }
 
-  localStorage.setItem("stockPricesCache", JSON.stringify(pricesData));
+  PriceCache.persistToStorage();
+  pricesData = PriceCache.getAll();
   setRefreshStatus("Ready", false);
-}
   
 function triggerManualRefresh() {
   if (userHoldings.length > 0) {
@@ -5805,7 +6054,7 @@ function triggerManualRefresh() {
 }
 function initAutoRefresh() {
   if (autoRefreshTimer) clearInterval(autoRefreshTimer);
-  refreshCountdown = 30;
+  refreshCountdown = MarketHours.getOptimalRefreshInterval();
 
   autoRefreshTimer = setInterval(function() {
     refreshCountdown--;
@@ -5814,8 +6063,20 @@ function initAutoRefresh() {
     refreshLastUpdateDisplay();
 
     if (refreshCountdown <= 0) {
-      refreshCountdown = 30;
+      // Dynamically set next interval based on market status
+      refreshCountdown = MarketHours.getOptimalRefreshInterval();
+
+      // Respect user preference if set
+      if (userPreferences && userPreferences.refreshInterval) {
+        var userInterval = parseInt(userPreferences.refreshInterval) || 15;
+        // During market hours, use user preference; otherwise use market-based interval
+        if (MarketHours.isMarketOpen()) {
+          refreshCountdown = userInterval;
+        }
+      }
+
       if (!isFetchingData && document.visibilityState === "visible" && userHoldings.length > 0) {
+        console.log("[AUTO-REFRESH] Market: " + MarketHours.getStatus() + " | Next in: " + refreshCountdown + "s");
         fetchLatestPrices();
       }
     }
@@ -6975,26 +7236,18 @@ function showSettings() {
   // Portfolio stats
   document.getElementById("settingsHoldingsCount").textContent = userHoldings.length;
   document.getElementById("settingsStocksAvailable").textContent = STOCK_DATA.length;
-  document.getElementById("settingsApiCalls").textContent = (apiCallCounts.yahoo + apiCallCounts.twelveData + apiCallCounts.alphaVantage);
-  document.getElementById("settingsCachedPrices").textContent = Object.keys(pricesData).length;
-
+  document.getElementById("settingsApiCalls").textContent = APITracker.getTotalCalls();
+  document.getElementById("settingsCachedPrices").textContent = PriceCache.getCount();
   // API keys status
   var keyInfo = getAvailableKeyCount();
   document.getElementById("settingsKeyStatus").textContent =
     "Alpha: " + keyInfo.alpha + "/" + ALPHA_VANTAGE_KEYS.length + " active • " +
     "Twelve: " + keyInfo.twelve + "/" + TWELVE_DATA_KEYS.length + " active";
 
-  // Market status
-  document.getElementById("settingsMarketStatus").textContent = getMarketStatusText();
-
+  // Market status (uses MarketHours engine)
+  document.getElementById("settingsMarketStatus").textContent = MarketHours.getStatusText();
   // Cache size
-  var cacheSize = 0;
-  try {
-    var cacheStr = localStorage.getItem("stockPricesCache") || "";
-    cacheSize = Math.round(cacheStr.length / 1024);
-  } catch (e) {}
-  document.getElementById("settingsCacheSize").textContent = cacheSize + " KB stored • " + Object.keys(pricesData).length + " prices";
-
+  document.getElementById("settingsCacheSize").textContent = PriceCache.getSizeKB() + " KB stored • " + PriceCache.getCount() + " prices";
   // Show modal
   document.getElementById("settingsModal").style.display = "flex";
 }
@@ -7052,14 +7305,13 @@ function showCopiedTooltip(message) {
 function clearPriceCache() {
   if (!confirm("Clear all cached prices? They will be re-fetched on next refresh.")) return;
 
+  PriceCache.clear();
   pricesData = {};
   prevPricesData = {};
   indicesData = {};
   indicesLastFetchTime = 0;
 
   try {
-    localStorage.removeItem("stockPricesCache");
-    localStorage.removeItem("lastPriceUpdate");
     localStorage.removeItem(INDICES_CACHE_KEY);
   } catch (e) {}
 
@@ -7147,6 +7399,7 @@ async function updateNameInFriendsList(newName) {
 </script>
 </body>
 </html>
+
 
 
 
