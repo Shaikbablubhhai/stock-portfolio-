@@ -7273,9 +7273,147 @@ async function updateNameInFriendsList(newName) {
     console.error("Update friends name error:", e);
   }
 }
+// ================= NEW SETTINGS FUNCTIONS =================
+
+function getMarketStatusText() {
+  var now = new Date();
+  var utc = now.getTime() + (now.getTimezoneOffset() * 60000);
+  var ist = new Date(utc + (5.5 * 3600000));
+  var day = ist.getDay();
+  var hours = ist.getHours();
+  var minutes = ist.getMinutes();
+  var totalMinutes = hours * 60 + minutes;
+
+  if (day === 0 || day === 6) return "🔴 Market Closed (Weekend)";
+  if (totalMinutes >= 555 && totalMinutes <= 930) return "🟢 Market Open";
+  if (totalMinutes >= 540 && totalMinutes < 555) return "🟡 Pre-Market";
+  if (totalMinutes > 930 && totalMinutes <= 960) return "🟠 Post-Market";
+  return "🔴 Market Closed";
+}
+
+function clearPriceCache() {
+  if (!confirm("Clear all cached stock prices? They will re-fetch on next load.")) return;
+  
+  pricesData = {};
+  prevPricesData = {};
+  
+  try {
+    localStorage.removeItem("stockPricesCache");
+    localStorage.removeItem("lastPriceUpdate");
+  } catch (e) {}
+  
+  // Update display
+  document.getElementById("settingsCacheSize").textContent = "0 KB • 0 prices";
+  ToastManager.success("Cache Cleared", "Prices will refresh shortly.");
+  
+  // Trigger a refresh
+  setTimeout(function() {
+    fetchLatestPrices();
+  }, 500);
+}
+
+function clearIndicesCache() {
+  if (!confirm("Clear cached index data?")) return;
+  
+  indicesData = {};
+  indicesLastFetchTime = 0;
+  
+  try {
+    localStorage.removeItem(INDICES_CACHE_KEY);
+  } catch (e) {}
+  
+  document.getElementById("settingsIndicesCacheInfo").textContent = "0 indices cached";
+  ToastManager.success("Indices Cleared", "Will re-fetch on next load.");
+  
+  setTimeout(function() {
+    renderIndicesLoadingState();
+    fetchAllIndices();
+  }, 500);
+}
+
+function clearAllAppData() {
+  if (!confirm("⚠️ WARNING: This will delete ALL local data (cache, preferences).\n\nYour Firebase holdings and chat will NOT be affected.\n\nContinue?")) {
+    return;
+  }
+
+  // Clear price cache
+  pricesData = {};
+  prevPricesData = {};
+  
+  // Clear indices
+  indicesData = {};
+  indicesLastFetchTime = 0;
+  
+  // Clear localStorage
+  try {
+    var keysToRemove = [];
+    for (var i = 0; i < localStorage.length; i++) {
+      var key = localStorage.key(i);
+      if (key && (key.indexOf("finzotalk") !== -1 || key.indexOf("stockPrices") !== -1 || key.indexOf("lastPriceUpdate") !== -1 || key === INDICES_CACHE_KEY)) {
+        keysToRemove.push(key);
+      }
+    }
+    for (var k = 0; k < keysToRemove.length; k++) {
+      localStorage.removeItem(keysToRemove[k]);
+    }
+  } catch (e) {}
+
+  // Reset preferences
+  userPreferences = {
+    defaultTab: "stocks",
+    autoRefresh: true,
+    refreshInterval: 15,
+    toastEnabled: true
+  };
+  
+  ToastManager.success("All Data Cleared", "Reloading page...");
+  setTimeout(function() {
+    location.reload();
+  }, 1000);
+}
+
+// Update showSettings to populate the new fields
+var originalShowSettings = showSettings;
+showSettings = function() {
+  // Run the original function first
+  if (originalShowSettings) originalShowSettings();
+  
+  // Now populate the new advanced fields
+  try {
+    // Cache size
+    var cacheSize = 0;
+    try {
+      var cacheStr = localStorage.getItem("stockPricesCache") || "";
+      cacheSize = Math.round(cacheStr.length / 1024);
+    } catch (e) {}
+    document.getElementById("settingsCacheSize").textContent = cacheSize + " KB • " + Object.keys(pricesData).length + " prices";
+    
+    // Indices info
+    var indicesCount = Object.keys(indicesData).length;
+    var indicesAge = indicesLastFetchTime > 0 ? Math.floor((Date.now() - indicesLastFetchTime) / 1000) + "s ago" : "Never";
+    document.getElementById("settingsIndicesCacheInfo").textContent = indicesCount + " indices • " + indicesAge;
+    
+    // API Breakdown
+    document.getElementById("settingsApiBreakdown").textContent = 
+      "Yahoo: " + (apiCallCounts.yahoo || 0) + " • Twelve: " + (apiCallCounts.twelveData || 0) + " • Alpha: " + (apiCallCounts.alphaVantage || 0);
+    
+    // Refresh Rate
+    document.getElementById("settingsCurrentRefreshRate").textContent = "Every " + (userPreferences.refreshInterval || 15) + "s (" + getMarketStatusText() + ")";
+    
+    // Memory Usage
+    var stockDataSize = Math.round(JSON.stringify(STOCK_DATA || []).length / 1024);
+    var pricesSize = Math.round(JSON.stringify(pricesData || {}).length / 1024);
+    var holdingsSize = Math.round(JSON.stringify(userHoldings || []).length / 1024);
+    document.getElementById("settingsMemoryUsage").textContent = "Stocks: " + stockDataSize + "KB • Prices: " + pricesSize + "KB • Holdings: " + holdingsSize + "KB";
+    
+  } catch (e) {
+    console.error("Settings populate error:", e);
+  }
+};
 </script>
 </body>
 </html>
+
 
 
 
