@@ -7374,7 +7374,6 @@ async function updateNameInFriendsList(newName) {
 
     friendsSnap.forEach(function(friendDoc) {
       var friendId = friendDoc.id;
-      // Update my name in their friends list
       db.collection("friends").doc(friendId).collection("list").doc(activeUser.uid).update({
         name: newName
       }).catch(function(e) {
