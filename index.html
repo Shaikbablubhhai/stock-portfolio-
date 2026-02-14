@@ -50,48 +50,25 @@ const rtdb = firebase.database();
   --text-secondary:#64748b;
   --text-muted:#94a3b8;
 
-  --bg-primary:#f0f2f5;
-  --bg-card:rgba(255,255,255,0.85);
+  --bg-primary:#f8fafc; 
+  --bg-card:#ffffff;
   --bg-card-solid:#ffffff;
 
   --border-light:#e2e8f0;
   --border-lighter:#f1f5f9;
 
-  --shadow-sm:0 2px 8px rgba(0,0,0,0.04);
-  --shadow-md:0 8px 24px rgba(0,0,0,0.08);
-  --shadow-lg:0 16px 48px rgba(0,0,0,0.12);
-  --shadow-glow:0 0 30px rgba(79,70,229,0.18);
+  /* 👇 FLAT SHADOWS - NO GLOW */
+  --shadow-sm:0 1px 3px rgba(0,0,0,0.06);
+  --shadow-md:0 4px 10px rgba(0,0,0,0.08);
+  --shadow-lg:0 10px 25px rgba(0,0,0,0.1);
+  
+  --radius-sm:8px;
+  --radius-md:12px;
+  --radius-lg:16px;
+  --radius-xl:20px;
 
-  --radius-sm:10px;
-  --radius-md:16px;
-  --radius-lg:22px;
-  --radius-xl:28px;
-
-  --glass-bg:rgba(255,255,255,0.7);
-  --glass-border:rgba(255,255,255,0.3);
-  --glass-blur:blur(20px);
-
-  --transition-fast:0.2s cubic-bezier(0.4,0,0.2,1);
-  --transition-smooth:0.3s cubic-bezier(0.16,1,0.3,1);
-  --transition-bounce:0.5s cubic-bezier(0.34,1.56,0.64,1);
-
-  /* Extended palette for gradients & dark theme */
-  --bg-primary-dark:#020617;
-  --bg-card-dark:rgba(15,23,42,0.9);
-  --bg-card-solid-dark:#020617;
-  --border-light-dark:rgba(148,163,184,0.45);
-  --border-lighter-dark:rgba(30,64,175,0.45);
-
-  --text-primary-dark:#e5e7eb;
-  --text-secondary-dark:#9ca3af;
-  --text-muted-dark:#6b7280;
-
-  --accent-gradient:linear-gradient(135deg,#4f46e5 0%,#7c3aed 45%,#22d3ee 100%);
-  --success-gradient:linear-gradient(135deg,#22c55e 0%,#16a34a 40%,#4ade80 100%);
-  --danger-gradient:linear-gradient(135deg,#f87171 0%,#ef4444 40%,#fb923c 100%);
-
-  --glass-bg-dark:rgba(15,23,42,0.86);
-  --glass-border-dark:rgba(148,163,184,0.35);
+  --transition-fast:0.2s ease;
+  --transition-smooth:0.3s cubic-bezier(0.4,0,0.2,1);
 }
 body{
   font-family:'Inter',system-ui,-apple-system,sans-serif;
@@ -7632,6 +7609,7 @@ showSettings = function() {
 </script>
 </body>
 </html>
+
 
 
 
