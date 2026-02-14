@@ -5977,6 +5977,7 @@ async function fetchLatestPrices() {
 // Fetch prices for search results only (max 10)
 async function fetchSearchResults(stocksToFetch, originalQuery) {
   setRefreshStatus("Searching...", true);
+}
 
   var batchSize = 3;
   for (var i = 0; i < stocksToFetch.length; i += batchSize) {
@@ -6007,6 +6008,7 @@ async function fetchSearchResults(stocksToFetch, originalQuery) {
 
   localStorage.setItem("stockPricesCache", JSON.stringify(pricesData));
   setRefreshStatus("Ready", false);
+}
   
 function triggerManualRefresh() {
   if (userHoldings.length > 0) {
@@ -7387,3 +7389,4 @@ async function updateNameInFriendsList(newName) {
 </script>
 </body>
 </html>
+
