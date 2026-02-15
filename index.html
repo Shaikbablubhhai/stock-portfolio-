@@ -7238,7 +7238,7 @@ function saveUserProfile() {
       // Also update friends list entry for all friends
       updateNameInFriendsList(fullName);
 
-      ToastManager.success("Profile Saved!", "Your name has been updated to " + fullName);
+    ToastManager.success("Profile Saved!", "Your name has been updated to " + fullName);
     })
     .catch(function(err) {
       console.error("Save profile error:", err);
@@ -7253,23 +7253,87 @@ function saveUserProfile() {
   saveSettingsPref();
 }
 
-// Update name in all friends' lists when user changes their name
-async function updateNameInFriendsList(newName) {
-  if (!activeUser) return;
+// 🆕 DARK MODE SUPER SCRIPT (Injects Button + CSS)
+function toggleDarkMode() {
+    var isChecked = document.getElementById("darkModeToggle").checked;
+    var body = document.body;
+    
+    // 1. Apply/Remove Class
+    if (isChecked) {
+        body.classList.add("dark-mode");
+        localStorage.setItem("finzo_darkMode", "true");
+    } else {
+        body.classList.remove("dark-mode");
+        localStorage.setItem("finzo_darkMode", "false");
+    }
+}
 
-  try {
-    var friendsSnap = await db.collection("friends").doc(activeUser.uid).collection("list").get();
+// 2. Inject the CSS Styles into the Head
+(function() {
+    var style = document.createElement('style');
+    style.innerHTML = `
+        :root {
+            --bg-body: #f8fafc; --bg-card: #ffffff; --bg-hover: #f1f5f9;
+            --text-main: #1e293b; --text-muted: #64748b;
+            --glass-border: rgba(0, 0, 0, 0.05); --glass-bg: rgba(255, 255, 255, 0.8);
+        }
+        body.dark-mode {
+            --bg-body: #0f172a; --bg-card: #1e293b; --bg-hover: #334155;
+            --text-main: #f8fafc; --text-muted: #94a3b8;
+            --glass-border: rgba(255, 255, 255, 0.1); --glass-bg: rgba(30, 41, 59, 0.7);
+        }
+        /* Toggle Switch Styles */
+        .toggle-switch { position: relative; display: inline-block; width: 50px; height: 24px; }
+        .toggle-switch input { opacity: 0; width: 0; height: 0; }
+        .toggle-slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 34px; }
+        .toggle-slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
+        input:checked + .toggle-slider { background-color: #6366f1; }
+        input:checked + .toggle-slider:before { transform: translateX(26px); }
+    `;
+    document.head.appendChild(style);
+})();
 
-    friendsSnap.forEach(function(friendDoc) {
-      var friendId = friendDoc.id;
-      // Update my name in their friends list
-      db.collection("friends").doc(friendId).collection("list").doc(activeUser.uid).update({
-        name: newName
-      }).catch(function(e) {
-        // Friend might have removed us, ignore
-      });
-    });
-  } catch (e) {
+// 3. Inject the Button HTML into Settings
+function addDarkModeToggle() {
+    // Check if already added to prevent duplicates
+    if (document.getElementById("darkModeToggle")) return;
+
+    // Find the "Save Profile" row
+    var saveBtnRow = document.querySelector('#settingsModal .settings-row:has(#settingsSaveBtn)');
+    
+    if (saveBtnRow) {
+        var darkModeRow = document.createElement('div');
+        darkModeRow.className = 'settings-row';
+        darkModeRow.innerHTML = `
+            <div class="settings-label">Dark Mode</div>
+            <div class="settings-value">
+                <label class="toggle-switch">
+                    <input type="checkbox" id="darkModeToggle" onchange="toggleDarkMode()">
+                    <span class="toggle-slider"></span>
+                </label>
+            </div>
+        `;
+        saveBtnRow.parentNode.insertBefore(darkModeRow, saveBtnRow.nextSibling);
+    }
+}
+
+// 4. Run on Page Load
+window.onload = function() {
+    // Load preference
+    if(localStorage.getItem("finzo_darkMode") === "true") {
+        document.body.classList.add("dark-mode");
+    }
+    
+    // Wait a bit for settings modal to exist, then add button
+    setTimeout(addDarkModeToggle, 500);
+    
+    // Re-add button if settings modal is re-opened
+    var origShowSettings = window.showSettings;
+    window.showSettings = function() {
+        if(origShowSettings) origShowSettings();
+        setTimeout(addDarkModeToggle, 100);
+    };
+}; catch (e) {
     console.error("Update friends name error:", e);
   }
 }
@@ -7413,3 +7477,4 @@ showSettings = function() {
 </script>
 </body>
 </html>
+
