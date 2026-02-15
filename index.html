@@ -6971,52 +6971,17 @@ function openChatConversation(friendId, friendName) {
           }
         }
 
-             // ✨ FIXED CHAT BUBBLE DESIGN (NOW SHOWS MESSAGE TEXT)
+              // ✅ FIXED: Messages visible + smooth animation
         var msgEl = document.createElement("div");
         msgEl.className = "chat-message " + (isMine ? "outgoing" : "incoming");
-        msgEl.style.cssText = `
-            max-width: 72%;
-            padding: 14px 18px;
-            border-radius: var(--radius-lg);
-            margin-bottom: 14px;
-            font-size: 15px;
-            line-height: 1.5;
-            animation: fadeInUp 0.3s ease-out ${index * 0.05}s forwards;
-            opacity: 0;
-            box-shadow: var(--shadow-sm);
-            transition: all 0.3s ease;
-        `;
-        if (isMine) {
-            msgEl.style.cssText += `
-                background: linear-gradient(135deg, var(--primary), var(--accent));
-                color: #fff;
-                margin-left: auto;
-                border-bottom-right-radius: 6px;
-                box-shadow: 0 4px 15px rgba(79,70,229,0.25);
-            `;
-        } else {
-            msgEl.style.cssText += `
-                background: var(--bg-card-solid);
-                color: var(--text-primary);
-                border: 1px solid var(--border-light);
-                border-bottom-left-radius: 6px;
-            `;
-        }
-
-        // ✅ FIXED: Preserve message text and timestamp/status
-        msgEl.innerHTML = (msg.text || "") + '<span class="msg-time">' + timeStr + statusHTML + '</span>';
+        
+        // ONLY add animation (keeps your original CSS styles intact)
+        msgEl.style.animation = `fadeInUp 0.3s ease-out ${index * 0.05}s forwards`;
+        msgEl.style.opacity = "0"; // Animation will fade it in
+        
+        // CRITICAL: Use your ORIGINAL message content code
+        msgEl.innerHTML = msg.text + '<span class="msg-time">' + timeStr + statusHTML + '</span>';
         messagesArea.appendChild(msgEl);
-      });
-      
-      messagesArea.scrollTop = messagesArea.scrollHeight;
-      
-    }, function(error) {
-      console.error("Chat listener error:", error);
-      messagesArea.innerHTML = '<div class="chat-placeholder"><p>Error loading messages</p></div>';
-      ToastManager.error("Chat Error", "Failed to load messages");
-    });
-}
-
 function getDateLabel(date) {
   const now = new Date();
   
@@ -7498,6 +7463,7 @@ showSettings = function() {
 </script>
 </body>
 </html>
+
 
 
 
