@@ -62,616 +62,12 @@ const rtdb = firebase.database();
   --radius-xl:28px;
   --glass-bg:rgba(255,255,255,0.7);
   --glass-border:rgba(255,255,255,0.3);
- --glass-blur:blur(20px);
+  --glass-blur:blur(20px);
   --transition-fast:0.2s cubic-bezier(0.4,0,0.2,1);
   --transition-smooth:0.3s cubic-bezier(0.16,1,0.3,1);
   --transition-bounce:0.5s cubic-bezier(0.34,1.56,0.64,1);
 }
-/* ================= DARK MODE THEME ================= */
-body.dark-mode{
-  --primary:#818cf8;
-  --primary-light:#a5b4fc;
-  --primary-dark:#6366f1;
-  --accent:#a78bfa;
-  --accent-light:#c4b5fd;
-  --success:#34d399;
-  --success-light:rgba(16,185,129,0.15);
-  --danger:#f87171;
-  --danger-light:rgba(239,68,68,0.15);
-  --warning:#fbbf24;
-  --warning-light:rgba(245,158,11,0.15);
-  --info:#60a5fa;
-  --info-light:rgba(59,130,246,0.15);
-  --text-primary:#f1f5f9;
-  --text-secondary:#94a3b8;
-  --text-muted:#64748b;
-  --bg-primary:#0b1120;
-  --bg-card:rgba(30,41,59,0.7);
-  --bg-card-solid:#1e293b;
-  --border-light:#334155;
-  --border-lighter:#1e293b;
-  --shadow-sm:0 2px 8px rgba(0,0,0,0.3);
-  --shadow-md:0 8px 24px rgba(0,0,0,0.4);
-  --shadow-lg:0 16px 48px rgba(0,0,0,0.5);
-  --shadow-glow:0 0 30px rgba(129,140,248,0.15);
-  --glass-bg:rgba(30,41,59,0.6);
-  --glass-border:rgba(51,65,85,0.5);
-  --glass-blur:blur(20px);
-}
 
-/* Dark mode - Body */
-body.dark-mode{
-  background:#0b1120;
-  background-image:
-    radial-gradient(ellipse at 20% 50%,rgba(99,102,241,0.08) 0%,transparent 50%),
-    radial-gradient(ellipse at 80% 20%,rgba(139,92,246,0.06) 0%,transparent 50%),
-    radial-gradient(ellipse at 50% 80%,rgba(16,185,129,0.04) 0%,transparent 50%),
-    radial-gradient(circle at 90% 90%,rgba(245,158,11,0.03) 0%,transparent 40%);
-  background-attachment:fixed;
-  color:#f1f5f9;
-}
-
-/* Dark mode - Scrollbar */
-body.dark-mode ::-webkit-scrollbar-thumb{
-  background:linear-gradient(180deg,#475569,#64748b,#475569);
-  border:1px solid rgba(100,116,139,0.3);
-}
-body.dark-mode ::-webkit-scrollbar-thumb:hover{
-  background:linear-gradient(180deg,#64748b,#818cf8,#64748b);
-}
-
-/* Dark mode - Navbar */
-body.dark-mode .navbar{
-  background:linear-gradient(135deg,#020617 0%,#0f172a 30%,#1e1b4b 60%,#312e81 100%);
-  border-bottom:1px solid rgba(99,102,241,0.15);
-  box-shadow:0 4px 30px rgba(0,0,0,0.6),0 1px 0 rgba(99,102,241,0.1) inset;
-}
-
-/* Dark mode - Nav search */
-body.dark-mode .nav-search input{
-  background:rgba(255,255,255,0.06);
-  border-color:rgba(255,255,255,0.08);
-  box-shadow:0 2px 12px rgba(0,0,0,0.2),inset 0 1px 0 rgba(255,255,255,0.03);
-}
-body.dark-mode .nav-search input:focus{
-  background:rgba(30,41,59,0.95);
-  color:#f1f5f9;
-  border-color:rgba(99,102,241,0.4);
-  box-shadow:0 8px 30px rgba(0,0,0,0.3),0 0 0 3px rgba(99,102,241,0.15);
-}
-body.dark-mode .nav-search input:focus::placeholder{color:#64748b}
-
-/* Dark mode - Status bar */
-body.dark-mode .status-bar{
-  background:linear-gradient(135deg,rgba(30,41,59,0.8) 0%,rgba(15,23,42,0.85) 100%);
-  border:1px solid rgba(51,65,85,0.5);
-  box-shadow:0 4px 20px rgba(0,0,0,0.2),0 1px 0 rgba(51,65,85,0.3) inset;
-}
-
-/* Dark mode - Live status badges */
-body.dark-mode .live-status{
-  background:rgba(16,185,129,0.15);
-  color:#34d399;
-}
-body.dark-mode .live-status.updating{
-  background:rgba(245,158,11,0.15);
-  color:#fbbf24;
-}
-body.dark-mode .live-status.error{
-  background:rgba(239,68,68,0.15);
-  color:#f87171;
-}
-
-/* Dark mode - API indicator */
-body.dark-mode .api-indicator{
-  background:rgba(51,65,85,0.5);
-  color:#94a3b8;
-}
-
-/* Dark mode - Index cards */
-body.dark-mode .index-card{
-  background:linear-gradient(145deg,rgba(30,41,59,0.85) 0%,rgba(15,23,42,0.9) 100%);
-  border:1px solid rgba(51,65,85,0.5);
-  box-shadow:0 4px 16px rgba(0,0,0,0.2),0 1px 0 rgba(51,65,85,0.3) inset;
-}
-body.dark-mode .index-card:hover{
-  box-shadow:0 12px 35px rgba(0,0,0,0.3),0 0 15px rgba(99,102,241,0.1);
-  border-color:rgba(99,102,241,0.25);
-}
-body.dark-mode .index-card-price{color:#f1f5f9}
-body.dark-mode .index-card.idx-up .index-change-percent{
-  background:rgba(16,185,129,0.15);color:#34d399;
-}
-body.dark-mode .index-card.idx-down .index-change-percent{
-  background:rgba(239,68,68,0.15);color:#f87171;
-}
-body.dark-mode .index-card.idx-neutral .index-change-percent{
-  background:rgba(51,65,85,0.5);color:#94a3b8;
-}
-
-/* Dark mode - Indices section */
-body.dark-mode .indices-refresh-btn{
-  background:rgba(30,41,59,0.8);
-  border-color:#334155;
-  color:#94a3b8;
-}
-body.dark-mode .indices-refresh-btn:hover{
-  background:rgba(51,65,85,0.6);
-  border-color:#818cf8;
-  color:#818cf8;
-}
-
-/* Dark mode - Stock cards */
-body.dark-mode .stock-card{
-  background:linear-gradient(150deg,rgba(30,41,59,0.85) 0%,rgba(15,23,42,0.9) 100%);
-  border:1px solid rgba(51,65,85,0.4);
-  box-shadow:0 4px 20px rgba(0,0,0,0.2),0 1px 0 rgba(51,65,85,0.3) inset;
-}
-body.dark-mode .stock-card:hover{
-  border-color:rgba(99,102,241,0.3);
-  box-shadow:0 20px 50px rgba(0,0,0,0.3),0 0 25px rgba(99,102,241,0.1);
-}
-body.dark-mode .stock-card.price-up{animation:darkPriceUpFlash 0.8s ease}
-body.dark-mode .stock-card.price-down{animation:darkPriceDownFlash 0.8s ease}
-@keyframes darkPriceUpFlash{
-  0%,100%{border-color:rgba(51,65,85,0.4)}
-  30%{background:rgba(16,185,129,0.08);border-color:rgba(52,211,153,0.4)}
-}
-@keyframes darkPriceDownFlash{
-  0%,100%{border-color:rgba(51,65,85,0.4)}
-  30%{background:rgba(239,68,68,0.08);border-color:rgba(248,113,113,0.4)}
-}
-
-/* Dark mode - Stock logo */
-body.dark-mode .stock-logo{
-  background:linear-gradient(135deg,#1e293b,#0f172a);
-  border-color:#334155;
-}
-body.dark-mode .stock-card:hover .stock-logo{
-  box-shadow:0 4px 12px rgba(99,102,241,0.2);
-}
-
-/* Dark mode - Stock symbol badge */
-body.dark-mode .stock-symbol{
-  background:linear-gradient(135deg,rgba(99,102,241,0.1),rgba(30,41,59,0.8));
-  border-color:rgba(99,102,241,0.15);
-  color:#a5b4fc;
-}
-
-/* Dark mode - Price display */
-body.dark-mode .price-display{
-  background:linear-gradient(135deg,rgba(15,23,42,0.6) 0%,rgba(30,41,59,0.5) 100%);
-  border-color:rgba(51,65,85,0.4);
-}
-body.dark-mode .stock-card:hover .price-display{
-  background:linear-gradient(135deg,rgba(99,102,241,0.06) 0%,rgba(30,41,59,0.6) 100%);
-  border-color:rgba(99,102,241,0.15);
-}
-body.dark-mode .current-price{color:#f1f5f9}
-body.dark-mode .change-badge.positive{background:rgba(16,185,129,0.15);color:#34d399}
-body.dark-mode .change-badge.negative{background:rgba(239,68,68,0.15);color:#f87171}
-
-/* Dark mode - Add stock button */
-body.dark-mode .add-stock-btn{
-  background:linear-gradient(135deg,#4f46e5,#7c3aed);
-}
-body.dark-mode .add-stock-btn:hover{
-  box-shadow:0 10px 30px rgba(99,102,241,0.4),0 0 15px rgba(139,92,246,0.2);
-}
-
-/* Dark mode - Holdings section */
-body.dark-mode .holdings-header h2{
-  background:linear-gradient(135deg,#e2e8f0 0%,#818cf8 50%,#a78bfa 100%);
-  -webkit-background-clip:text;
-  -webkit-text-fill-color:transparent;
-  background-clip:text;
-}
-
-/* Dark mode - Stat cards text shadow */
-body.dark-mode .stat-value{
-  text-shadow:0 2px 10px rgba(0,0,0,0.3);
-}
-
-/* Dark mode - Holdings table */
-body.dark-mode .holdings-table-wrap{
-  background:linear-gradient(180deg,rgba(30,41,59,0.7) 0%,rgba(15,23,42,0.8) 100%);
-  border-color:rgba(51,65,85,0.5);
-}
-body.dark-mode .holdings-table th{
-  background:linear-gradient(135deg,#0f172a 0%,#1e293b 100%);
-  color:#94a3b8;
-  border-bottom-color:#334155;
-}
-body.dark-mode .holdings-table td{
-  color:#cbd5e1;
-  border-bottom-color:rgba(51,65,85,0.4);
-}
-body.dark-mode .holdings-table tr:hover td{
-  background:rgba(99,102,241,0.05);
-}
-
-/* Dark mode - Holding stock icon */
-body.dark-mode .holding-stock-icon{
-  background:linear-gradient(135deg,#4f46e5,#7c3aed);
-  box-shadow:0 4px 12px rgba(99,102,241,0.3);
-}
-body.dark-mode .holding-stock-name{color:#f1f5f9}
-body.dark-mode .holding-stock-sym{color:#94a3b8}
-body.dark-mode .text-profit{color:#34d399}
-body.dark-mode .text-loss{color:#f87171}
-
-/* Dark mode - Action buttons */
-body.dark-mode .btn-edit{
-  background:rgba(99,102,241,0.15);
-  color:#a5b4fc;
-  border-color:transparent;
-}
-body.dark-mode .btn-edit:hover:not(:disabled){
-  background:rgba(99,102,241,0.25);
-  border-color:rgba(99,102,241,0.3);
-  box-shadow:0 4px 12px rgba(99,102,241,0.2);
-}
-body.dark-mode .btn-delete{
-  background:rgba(239,68,68,0.12);
-  color:#f87171;
-  border-color:transparent;
-}
-body.dark-mode .btn-delete:hover:not(:disabled){
-  background:rgba(239,68,68,0.2);
-  border-color:rgba(239,68,68,0.3);
-  box-shadow:0 4px 12px rgba(239,68,68,0.2);
-}
-
-/* Dark mode - Empty holdings */
-body.dark-mode .empty-holdings{color:#94a3b8}
-body.dark-mode .empty-holdings h3{color:#f1f5f9}
-
-/* Dark mode - Chat sidebar */
-body.dark-mode .chat-sidebar{
-  background:linear-gradient(180deg,rgba(30,41,59,0.85) 0%,rgba(15,23,42,0.9) 100%);
-  border-color:rgba(51,65,85,0.5);
-  box-shadow:0 4px 24px rgba(0,0,0,0.2),0 1px 0 rgba(51,65,85,0.3) inset;
-}
-
-/* Dark mode - Chat search */
-body.dark-mode .chat-search-section{border-bottom-color:#334155}
-body.dark-mode .search-input-group input{
-  background:#0f172a;
-  border-color:#334155;
-  color:#f1f5f9;
-}
-body.dark-mode .search-input-group input:focus{
-  border-color:#818cf8;
-  box-shadow:0 0 0 4px rgba(99,102,241,0.1);
-}
-body.dark-mode .search-input-group input::placeholder{color:#64748b}
-
-/* Dark mode - Chat nav tabs */
-body.dark-mode .chat-nav-tabs{border-bottom-color:#334155}
-body.dark-mode .chat-nav-tab{color:#94a3b8}
-body.dark-mode .chat-nav-tab:hover{
-  background:rgba(99,102,241,0.05);
-  color:#818cf8;
-}
-body.dark-mode .chat-nav-tab.active{
-  color:#818cf8;
-  border-bottom-color:#818cf8;
-  background:rgba(99,102,241,0.08);
-}
-
-/* Dark mode - Chat list items */
-body.dark-mode .chat-list-item:hover{
-  background:linear-gradient(135deg,rgba(99,102,241,0.06),rgba(139,92,246,0.04));
-  border-color:rgba(99,102,241,0.15);
-  box-shadow:0 2px 12px rgba(0,0,0,0.15);
-}
-body.dark-mode .chat-list-item.selected{
-  background:linear-gradient(135deg,rgba(99,102,241,0.12),rgba(139,92,246,0.08));
-  border-color:rgba(99,102,241,0.25);
-}
-body.dark-mode .chat-item-name{color:#f1f5f9}
-body.dark-mode .chat-item-preview{color:#94a3b8}
-
-/* Dark mode - Chat main box */
-body.dark-mode .chat-main-box{
-  background:linear-gradient(180deg,rgba(30,41,59,0.85) 0%,rgba(15,23,42,0.9) 100%);
-  border-color:rgba(51,65,85,0.5);
-}
-body.dark-mode .chat-main-header{
-  background:linear-gradient(135deg,rgba(15,23,42,0.8),rgba(30,41,59,0.8));
-  border-bottom-color:#334155;
-}
-body.dark-mode .chat-partner-details h3{color:#f1f5f9}
-body.dark-mode .chat-partner-details .partner-status.online{color:#34d399}
-body.dark-mode .chat-partner-details .partner-status.offline{color:#f87171}
-
-/* Dark mode - Chat messages area */
-body.dark-mode .chat-messages-area{
-  background:linear-gradient(180deg,rgba(15,23,42,0.3),rgba(11,17,32,0.5));
-}
-
-/* Dark mode - Chat message bubbles */
-body.dark-mode .chat-message.outgoing{
-  background:linear-gradient(135deg,#4338ca 0%,#6d28d9 60%,#7c3aed 100%);
-  box-shadow:0 4px 18px rgba(99,102,241,0.25),0 1px 0 rgba(255,255,255,0.06) inset;
-}
-body.dark-mode .chat-message.incoming{
-  background:linear-gradient(135deg,#1e293b 0%,#0f172a 100%);
-  color:#e2e8f0;
-  border-color:rgba(51,65,85,0.6);
-  box-shadow:0 2px 12px rgba(0,0,0,0.15),0 1px 0 rgba(51,65,85,0.3) inset;
-}
-
-/* Dark mode - Chat date separator */
-body.dark-mode .chat-date-separator::before,
-body.dark-mode .chat-date-separator::after{
-  background:#334155;
-}
-body.dark-mode .chat-date-separator span{
-  background:#1e293b;
-  color:#94a3b8;
-}
-
-/* Dark mode - Chat input */
-body.dark-mode .chat-input-section{
-  background:rgba(15,23,42,0.8);
-  border-top-color:#334155;
-}
-body.dark-mode .chat-input-section input{
-  background:#0f172a;
-  border-color:#334155;
-  color:#f1f5f9;
-}
-body.dark-mode .chat-input-section input:focus{
-  border-color:#818cf8;
-  box-shadow:0 0 0 4px rgba(99,102,241,0.1),0 2px 12px rgba(99,102,241,0.08);
-}
-body.dark-mode .chat-input-section input::placeholder{color:#64748b}
-
-/* Dark mode - Chat search results */
-body.dark-mode .search-result-card{
-  background:#0f172a;
-  border-color:#334155;
-}
-body.dark-mode .search-result-name{color:#f1f5f9}
-body.dark-mode .search-result-code{color:#94a3b8}
-body.dark-mode .search-error{
-  background:rgba(239,68,68,0.12);
-  color:#f87171;
-}
-
-/* Dark mode - Chat placeholders */
-body.dark-mode .chat-placeholder{color:#64748b}
-body.dark-mode .empty-list-msg{color:#64748b}
-
-/* Dark mode - Online indicator */
-body.dark-mode .online-indicator{border-color:#1e293b}
-body.dark-mode .online-indicator.offline{
-  background:#ef4444;
-  box-shadow:0 0 0 2px rgba(239,68,68,0.2);
-}
-
-/* Dark mode - Modals */
-body.dark-mode .modal-backdrop{
-  background:rgba(0,0,0,0.7);
-}
-body.dark-mode .modal-container{
-  background:linear-gradient(160deg,#1e293b 0%,#0f172a 100%);
-  border:1px solid rgba(51,65,85,0.6);
-  box-shadow:0 28px 70px rgba(0,0,0,0.5),0 0 40px rgba(99,102,241,0.08),0 1px 0 rgba(51,65,85,0.4) inset;
-}
-body.dark-mode .modal-container h3{color:#f1f5f9}
-body.dark-mode .modal-info-box{
-  background:linear-gradient(135deg,#0f172a,rgba(99,102,241,0.05));
-  border-color:rgba(99,102,241,0.1);
-}
-body.dark-mode .modal-info-box p{color:#94a3b8}
-body.dark-mode .modal-info-box span{color:#f1f5f9}
-body.dark-mode .modal-container label{color:#94a3b8}
-body.dark-mode .modal-container input{
-  background:#0f172a;
-  border-color:#334155;
-  color:#f1f5f9;
-}
-body.dark-mode .modal-container input:focus{
-  border-color:#818cf8;
-  box-shadow:0 0 0 3px rgba(99,102,241,0.1);
-}
-body.dark-mode .modal-container input::placeholder{color:#64748b}
-body.dark-mode .modal-secondary{
-  background:#334155;
-  color:#94a3b8;
-}
-body.dark-mode .modal-secondary:hover:not(:disabled){
-  background:#475569;
-}
-body.dark-mode .modal-danger{
-  background:rgba(239,68,68,0.15);
-  color:#f87171;
-}
-body.dark-mode .modal-danger:hover:not(:disabled){
-  background:rgba(239,68,68,0.25);
-}
-
-/* Dark mode - Toast notifications */
-body.dark-mode .toast{
-  background:rgba(30,41,59,0.95);
-  box-shadow:0 16px 48px rgba(0,0,0,0.4),0 0 0 1px rgba(51,65,85,0.5) inset;
-}
-body.dark-mode .toast-title{color:#f1f5f9}
-body.dark-mode .toast-message{color:#94a3b8}
-body.dark-mode .toast-close{
-  background:rgba(255,255,255,0.05);
-  color:#64748b;
-}
-body.dark-mode .toast-close:hover{
-  background:rgba(255,255,255,0.1);
-  color:#94a3b8;
-}
-body.dark-mode .toast-success{
-  border-left-color:#34d399;
-  background:linear-gradient(135deg,rgba(16,185,129,0.1) 0%,rgba(30,41,59,0.95) 100%);
-}
-body.dark-mode .toast-error{
-  border-left-color:#f87171;
-  background:linear-gradient(135deg,rgba(239,68,68,0.1) 0%,rgba(30,41,59,0.95) 100%);
-}
-body.dark-mode .toast-warning{
-  border-left-color:#fbbf24;
-  background:linear-gradient(135deg,rgba(245,158,11,0.1) 0%,rgba(30,41,59,0.95) 100%);
-}
-body.dark-mode .toast-info{
-  border-left-color:#60a5fa;
-  background:linear-gradient(135deg,rgba(59,130,246,0.1) 0%,rgba(30,41,59,0.95) 100%);
-}
-body.dark-mode .toast-success .toast-icon{background:rgba(16,185,129,0.2);color:#34d399}
-body.dark-mode .toast-error .toast-icon{background:rgba(239,68,68,0.2);color:#f87171}
-body.dark-mode .toast-warning .toast-icon{background:rgba(245,158,11,0.2);color:#fbbf24}
-body.dark-mode .toast-info .toast-icon{background:rgba(59,130,246,0.2);color:#60a5fa}
-
-/* Dark mode - Settings panel */
-body.dark-mode .settings-container{color:#f1f5f9}
-body.dark-mode .settings-section-title{
-  color:#64748b;
-  border-bottom-color:#334155;
-}
-body.dark-mode .settings-row{border-bottom-color:#1e293b}
-body.dark-mode .settings-row-label{color:#e2e8f0}
-body.dark-mode .settings-row-sublabel{color:#64748b}
-body.dark-mode .settings-row-icon{background:#0f172a}
-body.dark-mode .settings-value{color:#94a3b8}
-body.dark-mode .settings-value.copyable{
-  color:#818cf8;
-  background:rgba(99,102,241,0.1);
-}
-body.dark-mode .settings-value.copyable:hover{
-  background:rgba(99,102,241,0.2);
-}
-
-body.dark-mode .settings-input{
-  background:#0f172a;
-  border-color:#334155;
-  color:#f1f5f9;
-}
-body.dark-mode .settings-input:focus{
-  border-color:#818cf8;
-  box-shadow:0 0 0 3px rgba(99,102,241,0.1);
-}
-body.dark-mode .settings-input::placeholder{color:#64748b}
-
-body.dark-mode .settings-select{
-  background:#0f172a;
-  border-color:#334155;
-  color:#f1f5f9;
-}
-body.dark-mode .settings-select:focus{
-  border-color:#818cf8;
-}
-
-body.dark-mode .settings-toggle-slider{background:#475569}
-body.dark-mode .settings-toggle input:checked + .settings-toggle-slider{
-  background:#818cf8;
-}
-
-body.dark-mode .settings-stat-box{
-  background:#0f172a;
-}
-body.dark-mode .settings-stat-num{color:#818cf8}
-body.dark-mode .settings-stat-label{color:#64748b}
-
-body.dark-mode .settings-btn-secondary{
-  background:#334155;
-  color:#94a3b8;
-}
-body.dark-mode .settings-btn-secondary:hover{
-  background:#475569;
-}
-body.dark-mode .settings-btn-danger{
-  background:rgba(239,68,68,0.12);
-  color:#f87171;
-}
-body.dark-mode .settings-btn-danger:hover{
-  background:rgba(239,68,68,0.2);
-}
-body.dark-mode .settings-btn-warning{
-  background:rgba(245,158,11,0.12);
-  color:#fbbf24;
-}
-body.dark-mode .settings-btn-warning:hover{
-  background:rgba(245,158,11,0.2);
-}
-
-body.dark-mode .settings-version{color:#64748b}
-body.dark-mode .settings-version strong{color:#818cf8}
-
-/* Dark mode - Settings modal container */
-body.dark-mode #settingsModal .modal-container{
-  background:linear-gradient(160deg,#1e293b 0%,#0f172a 100%);
-  border-color:rgba(51,65,85,0.6);
-}
-
-/* Dark mode - Settings profile header */
-body.dark-mode .settings-profile-header{
-  background:linear-gradient(135deg,#1e1b4b 0%,#312e81 50%,#4c1d95 100%);
-  box-shadow:0 8px 30px rgba(30,27,75,0.5),inset 0 1px 0 rgba(255,255,255,0.05);
-}
-body.dark-mode .settings-avatar{
-  background:rgba(255,255,255,0.1);
-  border-color:rgba(255,255,255,0.2);
-}
-
-/* Dark mode - Copied tooltip */
-body.dark-mode .copied-tooltip{
-  background:rgba(99,102,241,0.9);
-  color:#fff;
-}
-
-/* Dark mode - Holdings live badge */
-body.dark-mode .holdings-live-badge{
-  background:rgba(30,41,59,0.8);
-  border-color:#334155;
-}
-
-/* Dark mode - Mutual funds */
-body.dark-mode .mf-coming-soon{
-  background:linear-gradient(135deg,rgba(30,41,59,0.7) 0%,rgba(15,23,42,0.8) 100%);
-  border-color:rgba(51,65,85,0.5);
-}
-body.dark-mode .mf-coming-soon h3{color:#f1f5f9}
-body.dark-mode .mf-coming-soon p{color:#94a3b8}
-
-/* Dark mode - Auth tabs (login page) */
-body.dark-mode .auth-tabs{background:#1e293b}
-body.dark-mode .auth-tab{color:#94a3b8}
-body.dark-mode .auth-tab:hover{color:#818cf8}
-body.dark-mode .auth-tab.active{
-  background:#0f172a;
-  color:#818cf8;
-  box-shadow:0 2px 8px rgba(0,0,0,0.2);
-}
-
-/* Dark mode - Body smooth transition */
-body{
-  transition:background-color 0.4s ease,color 0.4s ease;
-}
-body *{
-  transition:background-color 0.3s ease,border-color 0.3s ease,color 0.2s ease,box-shadow 0.3s ease;
-}
-/* Exclude animations from transition override */
-body .stock-card,
-body .chat-message,
-body .toast,
-body .modal-container,
-body .refresh-button,
-body .add-stock-btn,
-body .send-msg-btn,
-body .btn-edit,
-body .btn-delete,
-body .settings-icon,
-body .brand-icon,
-body .nav-search input{
-  transition:all 0.3s cubic-bezier(0.16,1,0.3,1);
-}
 /* ✨ NEW ANIMATIONS */
 @keyframes fadeInUp {
   from { opacity: 0; transform: translateY(20px); }
@@ -1337,6 +733,39 @@ body{
   border-color:rgba(79,70,229,0.25);
 }
 .stock-card:hover::before{opacity:1}
+  
+/* ================= 3D TILT EFFECT ================= */
+.stock-card{
+  transform-style:preserve-3d;
+  perspective:800px;
+}
+.stock-card .stock-header,
+.stock-card .price-display,
+.stock-card .add-stock-btn{
+  transform:translateZ(20px);
+}
+
+/* Index cards 3D tilt */
+.index-card{
+  transform-style:preserve-3d;
+  perspective:600px;
+}
+.index-card .index-card-name,
+.index-card .index-card-price,
+.index-card .index-card-change{
+  transform:translateZ(15px);
+}
+
+/* Stat cards 3D tilt */
+.stat-card{
+  transform-style:preserve-3d;
+  perspective:600px;
+}
+.stat-card .stat-label,
+.stat-card .stat-value,
+.stat-card .stat-subtitle{
+  transform:translateZ(20px);
+}
 .stock-card.price-up{animation:priceUpFlash 0.8s ease}
 .stock-card.price-down{animation:priceDownFlash 0.8s ease}
 @keyframes priceUpFlash{
@@ -2728,21 +2157,7 @@ body{
       <!-- App Preferences Section -->
       <div class="settings-section">
         <div class="settings-section-title">⚙️ App Preferences</div>
-        <div class="settings-row">
-          <div class="settings-row-left">
-            <div class="settings-row-icon">🌙</div>
-            <div>
-              <div class="settings-row-label">Dark Mode</div>
-              <div class="settings-row-sublabel">Premium dark theme for low-light usage</div>
-            </div>
-          </div>
-          <div class="settings-row-right">
-            <label class="settings-toggle">
-              <input type="checkbox" id="settingsDarkMode" onchange="toggleDarkMode()">
-              <span class="settings-toggle-slider"></span>
-            </label>
-          </div>
-        </div>
+
         <div class="settings-row">
           <div class="settings-row-left">
             <div class="settings-row-icon">🏠</div>
@@ -5602,13 +5017,7 @@ function renderIndicesBar() {
               '</div>';
         }
 
-                // Add hover shine effect
-        card.onmouseenter = function() {
-            this.style.transform = "translateY(-4px) scale(1.02)";
-        };
-        card.onmouseleave = function() {
-            this.style.transform = "";
-        };
+              // Hover handled by 3D tilt system
 
         container.appendChild(card);
     }
@@ -5635,7 +5044,93 @@ function renderIndicesLoadingState() {
     container.appendChild(card);
   }
 }
+/* ================= 3D TILT HOVER EFFECT ================= */
+function init3DTilt() {
+  // Apply to stock cards, index cards, and stat cards
+  document.addEventListener("mousemove", function(e) {
+    var cards = document.querySelectorAll(".stock-card, .index-card, .stat-card");
+    
+    cards.forEach(function(card) {
+      var rect = card.getBoundingClientRect();
+      var cardCenterX = rect.left + rect.width / 2;
+      var cardCenterY = rect.top + rect.height / 2;
+      
+      // Check if mouse is near the card (within card bounds + small margin)
+      var isHovering = (
+        e.clientX >= rect.left &&
+        e.clientX <= rect.right &&
+        e.clientY >= rect.top &&
+        e.clientY <= rect.bottom
+      );
+      
+      if (isHovering) {
+        // Calculate rotation based on mouse position relative to card center
+        var mouseX = e.clientX - cardCenterX;
+        var mouseY = e.clientY - cardCenterY;
+        
+        // Max rotation in degrees (subtle = premium feel)
+        var maxRotate = 8;
+        
+        var rotateY = (mouseX / (rect.width / 2)) * maxRotate;
+        var rotateX = -(mouseY / (rect.height / 2)) * maxRotate;
+        
+        // Clamp values
+        rotateX = Math.max(-maxRotate, Math.min(maxRotate, rotateX));
+        rotateY = Math.max(-maxRotate, Math.min(maxRotate, rotateY));
+        
+        // Calculate shine position
+        var shineX = ((e.clientX - rect.left) / rect.width) * 100;
+        var shineY = ((e.clientY - rect.top) / rect.height) * 100;
+        
+        card.style.transform = "perspective(800px) rotateX(" + rotateX + "deg) rotateY(" + rotateY + "deg) translateY(-8px) scale(1.02)";
+        
+        // Add dynamic shine/glare effect
+        card.style.background = card.dataset.originalBg || "";
+        
+        // Store the shine overlay
+        if (!card.querySelector(".tilt-shine")) {
+          var shineDiv = document.createElement("div");
+          shineDiv.className = "tilt-shine";
+          shineDiv.style.cssText = "position:absolute;top:0;left:0;right:0;bottom:0;border-radius:inherit;pointer-events:none;z-index:2;transition:opacity 0.2s;";
+          card.appendChild(shineDiv);
+        }
+        
+        var shine = card.querySelector(".tilt-shine");
+        if (shine) {
+          shine.style.background = "radial-gradient(circle at " + shineX + "% " + shineY + "%, rgba(255,255,255,0.12) 0%, transparent 60%)";
+          shine.style.opacity = "1";
+        }
+        
+      } else {
+        // Reset when not hovering
+        // Only reset if card was previously tilted
+        if (card.style.transform && card.style.transform.indexOf("rotateX") !== -1) {
+          card.style.transform = "";
+          
+          var shine = card.querySelector(".tilt-shine");
+          if (shine) {
+            shine.style.opacity = "0";
+          }
+        }
+      }
+    });
+  });
+  
+  // Reset all cards when mouse leaves the document
+  document.addEventListener("mouseleave", function() {
+    var cards = document.querySelectorAll(".stock-card, .index-card, .stat-card");
+    cards.forEach(function(card) {
+      card.style.transform = "";
+      var shine = card.querySelector(".tilt-shine");
+      if (shine) shine.style.opacity = "0";
+    });
+  });
+}
 
+// Disable 3D tilt on touch devices (phones/tablets) for better performance
+function isTouchDevice() {
+  return ("ontouchstart" in window) || (navigator.maxTouchPoints > 0);
+}
 /* ================= GLOBAL VARIABLES ================= */
 let activeUser = null;
 let userHoldings = [];
@@ -5658,8 +5153,11 @@ let currentUserPresenceRef = null;
 /* ================= INITIALIZATION ================= */
 document.addEventListener("DOMContentLoaded", function() {
   // Initialize toast manager
-  ToastManager.init();
-  
+  ToastManager.init();  
+  // Initialize 3D tilt effect (desktop only)
+  if (!isTouchDevice()) {
+    init3DTilt();
+  } 
   // Load cached prices
   const savedPrices = localStorage.getItem("stockPricesCache");
   if (savedPrices) {
@@ -6823,11 +6321,21 @@ function displayStocks(stockList, showAll) {
         card.className = "stock-card";
         card.dataset.symbol = stock.sym;
 
-             // ✨ ANIMATED GLASS CARD
+        // ✨ ANIMATED GLASS CARD
         card.style.cssText = `
+            background: var(--glass-bg);
+            backdrop-filter: var(--glass-blur);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-lg);
+            padding: 24px;
+            box-shadow: var(--shadow-sm);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
             animation: fadeInUp 0.5s ease-out ${index * 0.05}s forwards;
             opacity: 0;
         `;
+
         // Shine layer
         var shine = document.createElement("div");
         shine.style.cssText = `
@@ -6869,14 +6377,12 @@ function displayStocks(stockList, showAll) {
           '<div class="price-display">' + priceHTML + '</div>' +
           '<button class="add-stock-btn" onclick="showAddStockModal(\'' + stock.sym + '\')">➕ Add to Holdings</button>';
 
-              // Hover effects
+               // Shine sweep effect (works alongside 3D tilt)
         card.onmouseenter = function() {
-            this.style.transform = "translateY(-8px) scale(1.015)";
             shine.style.left = "150%";
             shine.style.transition = "0.7s";
         };
         card.onmouseleave = function() {
-            this.style.transform = "";
             shine.style.left = "-100%";
         };
 
@@ -6885,7 +6391,7 @@ function displayStocks(stockList, showAll) {
 
     if (!showAll && stockList.length > 25) {
         var moreMsg = document.createElement("div");
-        moreMsg.style.cssText = "grid-column:1/-1;text-align:center;padding:40px 20px;color:var(--text-secondary);font-size:15px;background:var(--bg-card-solid);border-radius:18px;border:1px solid var(--border-light);";
+        moreMsg.style.cssText = "grid-column:1/-1;text-align:center;padding:40px 20px;color:#64748b;font-size:15px;background:#fff;border-radius:18px;border:1px solid #e2e8f0;";
         moreMsg.innerHTML = '🔍 <strong>' + (stockList.length - 25) + '+ more stocks available</strong><br><span style="font-size:13px;margin-top:8px;display:block">Use the search bar above to find any stock or ETF</span>';
         container.appendChild(moreMsg);
     }
@@ -7805,50 +7311,7 @@ var userPreferences = {
   refreshInterval: 15,
   toastEnabled: true
 };
-/* ================= DARK MODE SYSTEM ================= */
-function toggleDarkMode() {
-  var isEnabled = document.getElementById("settingsDarkMode").checked;
-  
-  if (isEnabled) {
-    document.body.classList.add("dark-mode");
-    localStorage.setItem("finzotalk_darkmode", "true");
-    ToastManager.info("Dark Mode", "Premium dark theme enabled 🌙");
-  } else {
-    document.body.classList.remove("dark-mode");
-    localStorage.setItem("finzotalk_darkmode", "false");
-    ToastManager.info("Light Mode", "Switched to light theme ☀️");
-  }
-  
-  // Re-render stocks to update inline styles
-  var searchVal = document.getElementById("stockSearchInput");
-  if (searchVal && searchVal.value.trim().length >= 2) {
-    var query = searchVal.value.toLowerCase().trim();
-    var matches = STOCK_DATA.filter(function(s) {
-      return s.name.toLowerCase().indexOf(query) !== -1 || s.sym.toLowerCase().indexOf(query) !== -1;
-    });
-    displayStocks(matches, true);
-  } else {
-    displayStocks(STOCK_DATA, false);
-  }
-}
 
-function loadDarkModePreference() {
-  var saved = localStorage.getItem("finzotalk_darkmode");
-  if (saved === "true") {
-    document.body.classList.add("dark-mode");
-    var toggle = document.getElementById("settingsDarkMode");
-    if (toggle) toggle.checked = true;
-  }
-}
-
-// Load dark mode on page load (before Firebase auth)
-(function() {
-  var saved = localStorage.getItem("finzotalk_darkmode");
-  if (saved === "true") {
-    document.body.classList.add("dark-mode");
-  }
-})();
-  
 // Load preferences from localStorage
 function loadUserPreferences() {
   try {
@@ -7932,11 +7395,7 @@ function showSettings() {
   }).catch(function(error) {
     console.error("Settings load error:", error);
   });
-  // Set dark mode toggle state
-  var darkModeToggle = document.getElementById("settingsDarkMode");
-  if (darkModeToggle) {
-    darkModeToggle.checked = document.body.classList.contains("dark-mode");
-  }
+
   // Set preference controls
   document.getElementById("settingsDefaultTab").value = userPreferences.defaultTab;
   document.getElementById("settingsAutoRefresh").checked = userPreferences.autoRefresh;
@@ -8269,6 +7728,8 @@ showSettings = function() {
 </script>
 </body>
 </html>
+
+
 
 
 
