@@ -2779,135 +2779,6 @@ body.dark-mode .stock-buy-btn:hover{
 .stock-chart-container:active{
   opacity:0.7;
 }
-  
- /* ================= DAILY CHANGE BADGE ================= */
-.stock-daily-change{
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  padding:10px 14px;
-  border-radius:var(--radius-sm);
-  margin-bottom:10px;
-  font-size:13px;
-  font-weight:600;
-  gap:8px;
-  transition:var(--transition-smooth);
-  position:relative;
-  overflow:hidden;
-}
-.stock-daily-change::before{
-  content:"";
-  position:absolute;
-  left:0;top:0;bottom:0;
-  width:3px;
-  border-radius:3px 0 0 3px;
-}
-.stock-daily-change.day-profit{
-  background:linear-gradient(135deg,rgba(16,185,129,0.08),rgba(16,185,129,0.03));
-  border:1px solid rgba(16,185,129,0.15);
-}
-.stock-daily-change.day-profit::before{
-  background:linear-gradient(180deg,#10b981,#059669);
-}
-.stock-daily-change.day-loss{
-  background:linear-gradient(135deg,rgba(239,68,68,0.08),rgba(239,68,68,0.03));
-  border:1px solid rgba(239,68,68,0.15);
-}
-.stock-daily-change.day-loss::before{
-  background:linear-gradient(180deg,#ef4444,#dc2626);
-}
-.stock-daily-change.day-neutral{
-  background:linear-gradient(135deg,rgba(148,163,184,0.08),rgba(148,163,184,0.03));
-  border:1px solid rgba(148,163,184,0.15);
-}
-.stock-daily-change.day-neutral::before{
-  background:#94a3b8;
-}
-.daily-change-label{
-  font-size:11px;
-  font-weight:600;
-  text-transform:uppercase;
-  letter-spacing:0.5px;
-  color:var(--text-muted);
-  display:flex;
-  align-items:center;
-  gap:4px;
-}
-.daily-change-label .day-dot{
-  width:6px;height:6px;
-  border-radius:50%;
-  display:inline-block;
-}
-.day-profit .daily-change-label .day-dot{
-  background:#10b981;
-  box-shadow:0 0 6px rgba(16,185,129,0.4);
-  animation:livePulse 2s infinite;
-}
-.day-loss .daily-change-label .day-dot{
-  background:#ef4444;
-  box-shadow:0 0 6px rgba(239,68,68,0.4);
-  animation:livePulse 2s infinite;
-}
-.day-neutral .daily-change-label .day-dot{
-  background:#94a3b8;
-}
-.daily-change-values{
-  display:flex;
-  align-items:center;
-  gap:8px;
-}
-.daily-change-rupee{
-  font-size:13px;
-  font-weight:700;
-}
-.daily-change-percent{
-  font-size:11px;
-  font-weight:700;
-  padding:3px 8px;
-  border-radius:6px;
-}
-.day-profit .daily-change-rupee{color:#059669}
-.day-profit .daily-change-percent{background:rgba(16,185,129,0.12);color:#065f46}
-.day-loss .daily-change-rupee{color:#dc2626}
-.day-loss .daily-change-percent{background:rgba(239,68,68,0.12);color:#991b1b}
-.day-neutral .daily-change-rupee{color:#64748b}
-.day-neutral .daily-change-percent{background:rgba(148,163,184,0.12);color:#64748b}
-.stock-market-tag{
-  font-size:9px;font-weight:700;text-transform:uppercase;
-  letter-spacing:0.8px;padding:2px 7px;border-radius:4px;margin-left:auto;
-}
-.stock-market-tag.market-open{background:rgba(16,185,129,0.1);color:#059669}
-.stock-market-tag.market-closed{background:rgba(148,163,184,0.1);color:#94a3b8}
-
-/* Dark mode daily change */
-body.dark-mode .stock-daily-change.day-profit{
-  background:linear-gradient(135deg,rgba(52,211,153,0.1),rgba(52,211,153,0.03));
-  border-color:rgba(52,211,153,0.2);
-}
-body.dark-mode .stock-daily-change.day-loss{
-  background:linear-gradient(135deg,rgba(248,113,113,0.1),rgba(248,113,113,0.03));
-  border-color:rgba(248,113,113,0.2);
-}
-body.dark-mode .stock-daily-change.day-neutral{
-  background:linear-gradient(135deg,rgba(100,116,139,0.1),rgba(100,116,139,0.03));
-  border-color:rgba(100,116,139,0.2);
-}
-body.dark-mode .daily-change-label{color:#64748b}
-body.dark-mode .day-profit .daily-change-rupee{color:#34d399}
-body.dark-mode .day-profit .daily-change-percent{background:rgba(52,211,153,0.15);color:#34d399}
-body.dark-mode .day-loss .daily-change-rupee{color:#f87171}
-body.dark-mode .day-loss .daily-change-percent{background:rgba(248,113,113,0.15);color:#f87171}
-body.dark-mode .day-profit .daily-change-label .day-dot{background:#34d399;box-shadow:0 0 6px rgba(52,211,153,0.4)}
-body.dark-mode .day-loss .daily-change-label .day-dot{background:#f87171;box-shadow:0 0 6px rgba(248,113,113,0.4)}
-body.dark-mode .stock-market-tag.market-open{background:rgba(52,211,153,0.1);color:#34d399}
-body.dark-mode .stock-market-tag.market-closed{background:rgba(100,116,139,0.1);color:#64748b}
-
-/* Hover fetch loading text */
-.hover-fetch-loading{
-  font-size:12px;
-  color:var(--primary);
-  animation:pulse 1.5s infinite;
-}
   /* ================= MINI PRICE CHART ================= */
 .stock-chart-container{
   position:relative;
@@ -3856,10 +3727,9 @@ body.dark-mode .chart-loading{
       </div>
       <button class="chart-modal-close" onclick="closeChartModal()">✕</button>
     </div>
-      <div class="chart-modal-price-row">
+    <div class="chart-modal-price-row">
       <span class="chart-modal-current-price" id="chartModalPrice">₹0.00</span>
       <span class="chart-modal-change" id="chartModalChange">0.00%</span>
-      <button class="stock-buy-btn" id="chartModalBuyBtn" style="margin-left:auto;padding:10px 28px;font-size:15px" onclick="closeChartModal();if(activeChartSymbol)showAddStockModal(activeChartSymbol);">Buy</button>
     </div>
     <div class="chart-timeframe-tabs" id="chartTimeframeTabs">
       <div class="chart-timeframe-tab active" data-range="1d" onclick="changeChartTimeframe('1d',this)">1D</div>
@@ -6618,145 +6488,6 @@ function refreshVisibleMiniCharts() {
     }, idx * 300);
   });
 }
-  /* ================= MARKET INFO HELPER ================= */
-function getMarketInfo() {
-  var now = new Date();
-  var utc = now.getTime() + (now.getTimezoneOffset() * 60000);
-  var ist = new Date(utc + (5.5 * 3600000));
-  var day = ist.getDay();
-  var hours = ist.getHours();
-  var minutes = ist.getMinutes();
-  var totalMinutes = hours * 60 + minutes;
-  var isWeekday = (day >= 1 && day <= 5);
-  var isMarketHours = (totalMinutes >= 555 && totalMinutes <= 930);
-  var isPreMarket = (totalMinutes >= 540 && totalMinutes < 555);
-  var isOpen = isWeekday && isMarketHours;
-  var isPreOpen = isWeekday && isPreMarket;
-  return {
-    isOpen: isOpen, isPreOpen: isPreOpen, isWeekday: isWeekday,
-    isMarketHours: isMarketHours, day: day, hours: hours,
-    minutes: minutes, totalMinutes: totalMinutes,
-    label: isOpen ? "LIVE" : (isPreOpen ? "PRE-MKT" : "CLOSED")
-  };
-}
-
-/* ================= DAILY CHANGE BADGE BUILDER ================= */
-function buildDailyChangeBadge(currentPrice, priceChange, changePercent) {
-  var market = getMarketInfo();
-  var statusTag = market.isOpen ?
-    '<span class="stock-market-tag market-open">● LIVE</span>' :
-    '<span class="stock-market-tag market-closed">CLOSED</span>';
-
-  if (!currentPrice || currentPrice <= 0) {
-    return '<div class="stock-daily-change day-neutral">' +
-      '<div class="daily-change-label"><span class="day-dot"></span> Today ' + statusTag + '</div>' +
-      '<div class="daily-change-values">' +
-        '<span class="daily-change-rupee" style="font-size:11px;color:var(--text-muted)">Hover 3s to load</span>' +
-      '</div>' +
-    '</div>';
-  }
-
-  if (priceChange === undefined || priceChange === null || isNaN(priceChange)) priceChange = 0;
-  if (changePercent === undefined || changePercent === null || isNaN(changePercent)) changePercent = 0;
-
-  var isUp = priceChange > 0;
-  var isNeutralVal = (priceChange === 0);
-  var stateClass = isNeutralVal ? "day-neutral" : (isUp ? "day-profit" : "day-loss");
-  var arrow = isNeutralVal ? "—" : (isUp ? "▲" : "▼");
-  var sign = isUp ? "+" : "";
-
-  var dayLabel = "Today";
-  if (!market.isWeekday) {
-    dayLabel = "Last Trading Day";
-  } else if (!market.isOpen && !market.isPreOpen && market.totalMinutes < 555) {
-    dayLabel = "Prev Close";
-  }
-
-  return '<div class="stock-daily-change ' + stateClass + '">' +
-    '<div class="daily-change-label"><span class="day-dot"></span> ' + dayLabel + statusTag + '</div>' +
-    '<div class="daily-change-values">' +
-      '<span class="daily-change-rupee">' + sign + '₹' + Math.abs(priceChange).toFixed(2) + '</span>' +
-      '<span class="daily-change-percent">' + arrow + ' ' + Math.abs(changePercent).toFixed(2) + '%</span>' +
-    '</div>' +
-  '</div>';
-}
-
-/* ================= UPDATE SINGLE CARD PRICE (for hover fetch) ================= */
-function updateSingleCardPrice(symbol, priceData) {
-  var card = document.querySelector('[data-symbol="' + symbol + '"]');
-  if (!card || !priceData || !priceData.price) return;
-
-  var currentPrice = priceData.price;
-  var priceChange = priceData.change || 0;
-  var changePercent = priceData.changePercent || 0;
-  var isPositive = priceChange >= 0;
-
-  // Update price display
-  var priceDisplay = card.querySelector(".price-display");
-  if (priceDisplay) {
-    priceDisplay.innerHTML =
-      '<div>' +
-        '<div class="current-price">₹' + currentPrice.toFixed(2) + '</div>' +
-      '</div>' +
-      '<div style="display:flex;align-items:center;gap:10px">' +
-        '<div class="price-change">' +
-          '<div class="change-value ' + (isPositive ? 'positive' : 'negative') + '">' + (isPositive ? '+' : '') + '₹' + priceChange.toFixed(2) + '</div>' +
-          '<div class="change-badge ' + (isPositive ? 'positive' : 'negative') + '">' + (isPositive ? '▲' : '▼') + ' ' + Math.abs(changePercent).toFixed(2) + '%</div>' +
-        '</div>' +
-        '<button class="stock-buy-btn" onclick="event.stopPropagation();showAddStockModal(\'' + symbol + '\')" title="Buy / Add to Holdings">Buy</button>' +
-      '</div>';
-  }
-
-  // Update daily change badge
-  var existingBadge = card.querySelector(".stock-daily-change");
-  if (existingBadge) {
-    var newBadgeHTML = buildDailyChangeBadge(currentPrice, priceChange, changePercent);
-    var tempDiv = document.createElement("div");
-    tempDiv.innerHTML = newBadgeHTML;
-    if (tempDiv.firstChild) {
-      existingBadge.parentNode.replaceChild(tempDiv.firstChild, existingBadge);
-    }
-  }
-
-  // Flash animation
-  card.classList.remove("price-up", "price-down");
-  void card.offsetWidth;
-  card.classList.add(isPositive ? "price-up" : "price-down");
-
-  // Load mini chart if not loaded
-  var chartContainer = document.getElementById("minichart_" + symbol);
-  if (chartContainer && !chartContainer.querySelector("canvas")) {
-    for (var i = 0; i < STOCK_DATA.length; i++) {
-      if (STOCK_DATA[i].sym === symbol) {
-        loadMiniChart(symbol, STOCK_DATA[i].yahoo, chartContainer);
-        break;
-      }
-    }
-  }
-
-  // Save to cache
-  pricesData[symbol] = priceData;
-  try { localStorage.setItem("stockPricesCache", JSON.stringify(pricesData)); } catch(e) {}
-}
-
-/* ================= MARKET AUTO REFRESH ================= */
-var marketAutoRefreshTimer = null;
-
-function startMarketAutoRefresh() {
-  if (marketAutoRefreshTimer) {
-    clearInterval(marketAutoRefreshTimer);
-    marketAutoRefreshTimer = null;
-  }
-  marketAutoRefreshTimer = setInterval(function() {
-    var market = getMarketInfo();
-    if (market.isOpen && !isFetchingData && document.visibilityState === "visible") {
-      if (userHoldings.length > 0) {
-        console.log("[MARKET] Auto-refreshing prices (market open)");
-        fetchLatestPrices();
-      }
-    }
-  }, 12000);
-}
   /* ================= CHART SYSTEM ================= */
 var chartDataCache = {};
 var activeChartSymbol = null;
@@ -7193,36 +6924,14 @@ function openChartModal(symbol) {
     if (tab.dataset.range === "1d") tab.classList.add("active");
   });
   
-   // Update buy button text
-  var buyBtn = document.getElementById("chartModalBuyBtn");
-  if (buyBtn) buyBtn.textContent = "Buy " + symbol;
-
   document.getElementById("chartModal").style.display = "flex";
   
   // Setup hover
   setupChartHover();
   
-  // If no price, fetch it
-  if (!priceData || !priceData.price || priceData.price <= 0) {
-    fetchStockPrice(stock, "manual").then(function(freshData) {
-      if (freshData && freshData.price > 0) {
-        var fp = freshData.price;
-        var fc = freshData.change || 0;
-        var fcp = freshData.changePercent || 0;
-        var fPos = fc >= 0;
-
-        document.getElementById("chartModalPrice").textContent = "₹" + fp.toFixed(2);
-        var chgEl = document.getElementById("chartModalChange");
-        chgEl.textContent = (fPos ? "+" : "") + fc.toFixed(2) + " (" + (fPos ? "+" : "") + fcp.toFixed(2) + "%)";
-        chgEl.className = "chart-modal-change " + (fPos ? "positive" : "negative");
-
-        updateSingleCardPrice(symbol, freshData);
-      }
-    });
-  }
-  
   // Load chart
   loadChartForModal(stock.yahoo, "1d", priceData);
+}
 
 function closeChartModal() {
   document.getElementById("chartModal").style.display = "none";
@@ -7853,10 +7562,6 @@ auth.onAuthStateChanged(async function(user) {
     fetchLatestPrices();
   }, 1500);
   
-  // Start market hours auto-refresh (every 12 seconds during market)
-  if (typeof startMarketAutoRefresh === "function") {
-    startMarketAutoRefresh();
-  }
   // Start market hours auto-refresh (every 12 seconds)
   startMarketAutoRefresh();
 });
@@ -8349,11 +8054,7 @@ async function fetchStockPrice(stock, reason) {
   var cached = pricesData[stock.sym];
   if (cached && cached.price > 0 && cached.fetchedAt) {
     var age = Date.now() - cached.fetchedAt;
-    var maxAge;
-    if (reason === "search") maxAge = 120000;
-    else if (reason === "hover") maxAge = 60000;
-    else if (reason === "manual") maxAge = 5000;
-    else maxAge = 30000;
+    var maxAge = (reason === "search") ? 120000 : 30000; // 2min for search, 30s for holdings
     if (age < maxAge) {
       return cached;
     }
@@ -8736,52 +8437,15 @@ function displayStocks(stockList, showAll) {
             '</div>' +
           '</div>';
 
-                    // Shine sweep + 3 second hover auto-fetch
+               // Shine sweep effect (works alongside 3D tilt)
         card.onmouseenter = function() {
             shine.style.left = "150%";
             shine.style.transition = "0.7s";
-
-            // Auto-fetch price after 3 seconds hover if not loaded
-            var cardSym = this.dataset.symbol;
-            var self = this;
-            self._hoverTimer = setTimeout(function() {
-              var existingPrice = getStockPrice(cardSym);
-              if (existingPrice > 0) return; // Already have price
-
-              // Find stock data
-              var stockObj = null;
-              for (var s = 0; s < STOCK_DATA.length; s++) {
-                if (STOCK_DATA[s].sym === cardSym) {
-                  stockObj = STOCK_DATA[s];
-                  break;
-                }
-              }
-              if (!stockObj) return;
-
-              // Show fetching indicator
-              var priceEl = self.querySelector(".current-price");
-              if (priceEl) {
-                priceEl.innerHTML = '<span class="hover-fetch-loading">⏳ Fetching price...</span>';
-              }
-
-              fetchStockPrice(stockObj, "hover").then(function(data) {
-                if (data && data.price > 0) {
-                  updateSingleCardPrice(cardSym, data);
-                } else {
-                  if (priceEl) priceEl.innerHTML = '<span style="color:var(--text-muted)">₹ --</span>';
-                }
-              }).catch(function() {
-                if (priceEl) priceEl.innerHTML = '<span style="color:var(--text-muted)">₹ --</span>';
-              });
-            }, 3000);
         };
         card.onmouseleave = function() {
             shine.style.left = "-100%";
-            if (this._hoverTimer) {
-              clearTimeout(this._hoverTimer);
-              this._hoverTimer = null;
-            }
         };
+
         container.appendChild(card);
     });
     // Load mini charts for visible stocks (first 15 only for performance)
@@ -10183,5 +9847,3 @@ showSettings = function() {
 </script>
 </body>
 </html>
-
-
