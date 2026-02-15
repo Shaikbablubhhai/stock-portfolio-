@@ -2550,6 +2550,178 @@ body.dark-mode #registerForm input:focus{
   background:#fff;
   color:#1e293b;
 }
+  /* ================= DAILY CHANGE BADGE ON STOCK CARD ================= */
+.stock-daily-change{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:10px 14px;
+  border-radius:var(--radius-sm);
+  margin-bottom:10px;
+  font-size:13px;
+  font-weight:600;
+  gap:8px;
+  transition:var(--transition-smooth);
+  position:relative;
+  overflow:hidden;
+}
+.stock-daily-change::before{
+  content:"";
+  position:absolute;
+  left:0;top:0;bottom:0;
+  width:3px;
+  border-radius:3px 0 0 3px;
+}
+.stock-daily-change.day-profit{
+  background:linear-gradient(135deg,rgba(16,185,129,0.08),rgba(16,185,129,0.03));
+  border:1px solid rgba(16,185,129,0.15);
+}
+.stock-daily-change.day-profit::before{
+  background:linear-gradient(180deg,#10b981,#059669);
+}
+.stock-daily-change.day-loss{
+  background:linear-gradient(135deg,rgba(239,68,68,0.08),rgba(239,68,68,0.03));
+  border:1px solid rgba(239,68,68,0.15);
+}
+.stock-daily-change.day-loss::before{
+  background:linear-gradient(180deg,#ef4444,#dc2626);
+}
+.stock-daily-change.day-neutral{
+  background:linear-gradient(135deg,rgba(148,163,184,0.08),rgba(148,163,184,0.03));
+  border:1px solid rgba(148,163,184,0.15);
+}
+.stock-daily-change.day-neutral::before{
+  background:#94a3b8;
+}
+
+.daily-change-label{
+  font-size:11px;
+  font-weight:600;
+  text-transform:uppercase;
+  letter-spacing:0.5px;
+  color:var(--text-muted);
+  display:flex;
+  align-items:center;
+  gap:4px;
+}
+.daily-change-label .day-dot{
+  width:6px;height:6px;
+  border-radius:50%;
+  display:inline-block;
+}
+.day-profit .daily-change-label .day-dot{
+  background:#10b981;
+  box-shadow:0 0 6px rgba(16,185,129,0.4);
+  animation:livePulse 2s infinite;
+}
+.day-loss .daily-change-label .day-dot{
+  background:#ef4444;
+  box-shadow:0 0 6px rgba(239,68,68,0.4);
+  animation:livePulse 2s infinite;
+}
+.day-neutral .daily-change-label .day-dot{
+  background:#94a3b8;
+}
+
+.daily-change-values{
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+.daily-change-rupee{
+  font-size:13px;
+  font-weight:700;
+}
+.daily-change-percent{
+  font-size:11px;
+  font-weight:700;
+  padding:3px 8px;
+  border-radius:6px;
+}
+
+.day-profit .daily-change-rupee{color:#059669}
+.day-profit .daily-change-percent{
+  background:rgba(16,185,129,0.12);
+  color:#065f46;
+}
+.day-loss .daily-change-rupee{color:#dc2626}
+.day-loss .daily-change-percent{
+  background:rgba(239,68,68,0.12);
+  color:#991b1b;
+}
+.day-neutral .daily-change-rupee{color:#64748b}
+.day-neutral .daily-change-percent{
+  background:rgba(148,163,184,0.12);
+  color:#64748b;
+}
+
+/* Price flash animation on update */
+.daily-change-rupee.flash-green{
+  animation:priceFlashGreen 1s ease;
+}
+.daily-change-rupee.flash-red{
+  animation:priceFlashRed 1s ease;
+}
+
+/* Market status indicator on card */
+.stock-market-tag{
+  font-size:9px;
+  font-weight:700;
+  text-transform:uppercase;
+  letter-spacing:0.8px;
+  padding:2px 7px;
+  border-radius:4px;
+  margin-left:auto;
+}
+.stock-market-tag.market-open{
+  background:rgba(16,185,129,0.1);
+  color:#059669;
+}
+.stock-market-tag.market-closed{
+  background:rgba(148,163,184,0.1);
+  color:#94a3b8;
+}
+
+/* Dark mode daily change */
+body.dark-mode .stock-daily-change.day-profit{
+  background:linear-gradient(135deg,rgba(52,211,153,0.1),rgba(52,211,153,0.03));
+  border-color:rgba(52,211,153,0.2);
+}
+body.dark-mode .stock-daily-change.day-loss{
+  background:linear-gradient(135deg,rgba(248,113,113,0.1),rgba(248,113,113,0.03));
+  border-color:rgba(248,113,113,0.2);
+}
+body.dark-mode .stock-daily-change.day-neutral{
+  background:linear-gradient(135deg,rgba(100,116,139,0.1),rgba(100,116,139,0.03));
+  border-color:rgba(100,116,139,0.2);
+}
+body.dark-mode .daily-change-label{color:#64748b}
+body.dark-mode .day-profit .daily-change-rupee{color:#34d399}
+body.dark-mode .day-profit .daily-change-percent{
+  background:rgba(52,211,153,0.15);color:#34d399;
+}
+body.dark-mode .day-loss .daily-change-rupee{color:#f87171}
+body.dark-mode .day-loss .daily-change-percent{
+  background:rgba(248,113,113,0.15);color:#f87171;
+}
+body.dark-mode .day-neutral .daily-change-rupee{color:#94a3b8}
+body.dark-mode .day-neutral .daily-change-percent{
+  background:rgba(100,116,139,0.15);color:#94a3b8;
+}
+body.dark-mode .day-profit .daily-change-label .day-dot{
+  background:#34d399;
+  box-shadow:0 0 6px rgba(52,211,153,0.4);
+}
+body.dark-mode .day-loss .daily-change-label .day-dot{
+  background:#f87171;
+  box-shadow:0 0 6px rgba(248,113,113,0.4);
+}
+body.dark-mode .stock-market-tag.market-open{
+  background:rgba(52,211,153,0.1);color:#34d399;
+}
+body.dark-mode .stock-market-tag.market-closed{
+  background:rgba(100,116,139,0.1);color:#64748b;
+}
   /* ================= STOCK BUY BUTTON (in price row) ================= */
 .stock-buy-btn{
   padding:8px 20px;
@@ -6183,6 +6355,139 @@ function renderIndicesLoadingState() {
     container.appendChild(card);
   }
 }
+  /* ================= DAILY CHANGE BADGE BUILDER ================= */
+function buildDailyChangeBadge(currentPrice, priceChange, changePercent) {
+  if (!currentPrice || currentPrice <= 0) {
+    return '<div class="stock-daily-change day-neutral">' +
+      '<div class="daily-change-label"><span class="day-dot"></span> Today</div>' +
+      '<div class="daily-change-values">' +
+        '<span class="daily-change-rupee">--</span>' +
+        '<span class="daily-change-percent">--%</span>' +
+      '</div>' +
+    '</div>';
+  }
+
+  var market = getMarketInfo();
+  var isUp = priceChange > 0;
+  var isDown = priceChange < 0;
+  var isNeutral = priceChange === 0;
+
+  var stateClass = isNeutral ? "day-neutral" : (isUp ? "day-profit" : "day-loss");
+  var arrow = isNeutral ? "—" : (isUp ? "▲" : "▼");
+  var sign = isUp ? "+" : "";
+
+  var dayLabel = "Today";
+  if (!market.isWeekday) {
+    dayLabel = "Last Trading Day";
+  } else if (!market.isOpen && !market.isPreOpen && market.totalMinutes < 555) {
+    dayLabel = "Prev Close";
+  }
+
+  var marketTag = "";
+  if (market.isOpen) {
+    marketTag = '<span class="stock-market-tag market-open">● LIVE</span>';
+  } else {
+    marketTag = '<span class="stock-market-tag market-closed">CLOSED</span>';
+  }
+
+  return '<div class="stock-daily-change ' + stateClass + '">' +
+    '<div class="daily-change-label"><span class="day-dot"></span> ' + dayLabel + marketTag + '</div>' +
+    '<div class="daily-change-values">' +
+      '<span class="daily-change-rupee" id="daychange_' + (currentPrice).toFixed(0) + '_' + Math.random().toString(36).substr(2,4) + '">' + sign + '₹' + Math.abs(priceChange).toFixed(2) + '</span>' +
+      '<span class="daily-change-percent">' + arrow + ' ' + Math.abs(changePercent).toFixed(2) + '%</span>' +
+    '</div>' +
+  '</div>';
+}
+  /* ================= MARKET HOURS HELPER ================= */
+function getMarketInfo() {
+  var now = new Date();
+  var utc = now.getTime() + (now.getTimezoneOffset() * 60000);
+  var ist = new Date(utc + (5.5 * 3600000));
+  var day = ist.getDay();
+  var hours = ist.getHours();
+  var minutes = ist.getMinutes();
+  var totalMinutes = hours * 60 + minutes;
+
+  var isWeekday = (day >= 1 && day <= 5);
+  var isMarketHours = (totalMinutes >= 555 && totalMinutes <= 930); // 9:15 AM to 3:30 PM
+  var isPreMarket = (totalMinutes >= 540 && totalMinutes < 555); // 9:00 to 9:15
+  var isOpen = isWeekday && isMarketHours;
+  var isPreOpen = isWeekday && isPreMarket;
+
+  return {
+    isOpen: isOpen,
+    isPreOpen: isPreOpen,
+    isWeekday: isWeekday,
+    isMarketHours: isMarketHours,
+    day: day,
+    hours: hours,
+    minutes: minutes,
+    totalMinutes: totalMinutes,
+    label: isOpen ? "LIVE" : (isPreOpen ? "PRE-MKT" : "CLOSED")
+  };
+}
+
+// Auto refresh stock prices during market hours
+var marketAutoRefreshTimer = null;
+
+function startMarketAutoRefresh() {
+  // Clear existing timer
+  if (marketAutoRefreshTimer) {
+    clearInterval(marketAutoRefreshTimer);
+    marketAutoRefreshTimer = null;
+  }
+
+  // Check every 10 seconds
+  marketAutoRefreshTimer = setInterval(function() {
+    var market = getMarketInfo();
+
+    if (market.isOpen && !isFetchingData && document.visibilityState === "visible") {
+      // During market hours - refresh holdings prices
+      if (userHoldings.length > 0) {
+        console.log("[MARKET] Auto-refreshing prices (market open)");
+        fetchLatestPrices();
+      }
+
+      // Also refresh visible stock cards mini charts every 60s
+      var now = Date.now();
+      var lastChartRefresh = parseInt(localStorage.getItem("lastMiniChartRefresh") || "0");
+      if (now - lastChartRefresh > 60000) {
+        refreshVisibleMiniCharts();
+        localStorage.setItem("lastMiniChartRefresh", now.toString());
+      }
+    }
+  }, 12000); // Every 12 seconds during market hours
+}
+
+function refreshVisibleMiniCharts() {
+  var searchVal = document.getElementById("stockSearchInput").value.toLowerCase().trim();
+  var stockList;
+
+  if (searchVal.length >= 2) {
+    stockList = STOCK_DATA.filter(function(s) {
+      return s.name.toLowerCase().indexOf(searchVal) !== -1 || s.sym.toLowerCase().indexOf(searchVal) !== -1;
+    });
+  } else {
+    stockList = STOCK_DATA.slice(0, 25);
+  }
+
+  // Only refresh first 10 visible charts
+  var toRefresh = stockList.slice(0, 10);
+  toRefresh.forEach(function(stock, idx) {
+    // Clear chart cache for 1d to force refetch
+    var cacheKey = stock.yahoo + "_1d";
+    if (chartDataCache[cacheKey]) {
+      chartDataCache[cacheKey].fetchedAt = 0;
+    }
+
+    setTimeout(function() {
+      var container = document.getElementById("minichart_" + stock.sym);
+      if (container) {
+        loadMiniChart(stock.sym, stock.yahoo, container);
+      }
+    }, idx * 300);
+  });
+}
   /* ================= CHART SYSTEM ================= */
 var chartDataCache = {};
 var activeChartSymbol = null;
@@ -7256,6 +7561,9 @@ auth.onAuthStateChanged(async function(user) {
   setTimeout(function() {
     fetchLatestPrices();
   }, 1500);
+  
+  // Start market hours auto-refresh (every 12 seconds)
+  startMarketAutoRefresh();
 });
 function performLogout() {
   if (confirm("Are you sure you want to logout?")) {
@@ -8106,9 +8414,10 @@ function displayStocks(stockList, showAll) {
               '<div class="stock-symbol">' + stock.sym + '</div>' +
             '</div>' +
           '</div>' +
-                            '<div class="stock-chart-container" id="minichart_' + stock.sym + '" onclick="openChartModal(\'' + stock.sym + '\')" title="Click chart to expand">' +
+                '<div class="stock-chart-container" id="minichart_' + stock.sym + '" onclick="openChartModal(\'' + stock.sym + '\')" title="Click chart to expand">' +
             '<div class="chart-loading"></div>' +
           '</div>' +
+          buildDailyChangeBadge(currentPrice, priceChange, changePercent) +
           '<div class="price-display">' +
             '<div>' +
               (currentPrice > 0 ?
@@ -8518,8 +8827,8 @@ function displayHoldings() {
         <td>${investedStr}</td>
         <td>${(r.currentPrice > 0) ? formatRupee(r.currentPrice) : "--"}</td>
         <td><strong>${currentValueStr}</strong></td>
-        <td class="${isDayPositive ? "text-profit" : "text-loss"}">
-          ${(r.currentPrice > 0) ? (isDayPositive ? "+" : "") + r.dayPercent.toFixed(2) + "%" : "--"}
+                <td class="${isDayPositive ? "text-profit" : "text-loss"}">
+          ${(r.currentPrice > 0) ? '<div>' + (isDayPositive ? "+" : "") + r.dayPercent.toFixed(2) + '%</div><small style="opacity:0.7">' + (isDayPositive ? "+" : "-") + "₹" + Math.abs(r.currentPrice * r.dayPercent / 100 * r.qty).toFixed(2) + '</small>' : "--"}
         </td>
         <td class="${isPft ? "text-profit" : "text-loss"}">
           ${pnlStr}<br>
@@ -9538,6 +9847,7 @@ showSettings = function() {
 </script>
 </body>
 </html>
+
 
 
 
