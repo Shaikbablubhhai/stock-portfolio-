@@ -2452,6 +2452,17 @@ body.dark-mode .tilt-shine{
 }
 
 body.dark-mode .msg-status.msg-seen{color:#818cf8}
+body.dark-mode .chat-message.incoming .msg-status.msg-seen{color:#818cf8}
+  
+/* Dark mode - Chart button on stock card */
+body.dark-mode .add-stock-btn[title="View Chart"]{
+  background:linear-gradient(135deg,#1e293b,#334155) !important;
+  border:1px solid #475569;
+}
+body.dark-mode .add-stock-btn[title="View Chart"]:hover{
+  background:linear-gradient(135deg,#334155,#475569) !important;
+  box-shadow:0 4px 15px rgba(99,102,241,0.2);
+}
   
 /* ================= DARK MODE - LOGIN PAGE FIX ================= */
 /* Login page should ALWAYS look light/original regardless of dark mode */
@@ -2547,7 +2558,313 @@ body.dark-mode #registerForm input:focus{
   background:#fff;
   color:#1e293b;
 }
-body.dark-mode .chat-message.incoming .msg-status.msg-seen{color:#818cf8}
+  /* ================= MINI PRICE CHART ================= */
+.stock-chart-container{
+  position:relative;
+  width:100%;
+  height:60px;
+  margin-bottom:14px;
+  border-radius:var(--radius-sm);
+  overflow:hidden;
+  cursor:pointer;
+  transition:var(--transition-smooth);
+}
+.stock-chart-container:hover{
+  height:80px;
+}
+.stock-chart-canvas{
+  width:100%;
+  height:100%;
+  display:block;
+}
+.chart-tooltip{
+  position:absolute;
+  top:-30px;
+  left:50%;
+  transform:translateX(-50%);
+  background:rgba(15,23,42,0.9);
+  color:#fff;
+  padding:4px 10px;
+  border-radius:6px;
+  font-size:11px;
+  font-weight:600;
+  pointer-events:none;
+  opacity:0;
+  transition:opacity 0.2s;
+  white-space:nowrap;
+  z-index:5;
+}
+.stock-chart-container:hover .chart-tooltip{
+  opacity:1;
+}
+.chart-time-labels{
+  display:flex;
+  justify-content:space-between;
+  padding:2px 4px 0;
+  font-size:9px;
+  color:var(--text-muted);
+  letter-spacing:0.3px;
+}
+.chart-loading{
+  width:100%;
+  height:60px;
+  border-radius:var(--radius-sm);
+  background:linear-gradient(90deg,var(--border-lighter) 25%,var(--border-light) 50%,var(--border-lighter) 75%);
+  background-size:200% 100%;
+  animation:shimmer 1.5s infinite;
+  margin-bottom:14px;
+}
+
+/* Chart expand modal */
+.chart-modal-backdrop{
+  position:fixed;inset:0;
+  background:rgba(15,23,42,0.75);
+  backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+  display:none;align-items:center;justify-content:center;
+  z-index:350;
+}
+.chart-modal-container{
+  background:var(--bg-card-solid);
+  border-radius:var(--radius-xl);
+  padding:28px;
+  width:700px;
+  max-width:95%;
+  max-height:90vh;
+  overflow-y:auto;
+  box-shadow:0 28px 70px rgba(0,0,0,0.3);
+  animation:modalAppear 0.35s cubic-bezier(0.16,1,0.3,1);
+  border:1px solid var(--glass-border);
+}
+.chart-modal-header{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  margin-bottom:20px;
+}
+.chart-modal-title{
+  display:flex;
+  align-items:center;
+  gap:12px;
+}
+.chart-modal-title h3{
+  font-size:20px;
+  font-weight:700;
+  color:var(--text-primary);
+  margin:0;
+}
+.chart-modal-title .chart-modal-sym{
+  font-size:12px;
+  color:var(--text-secondary);
+  background:var(--border-lighter);
+  padding:4px 10px;
+  border-radius:6px;
+  font-weight:600;
+}
+.chart-modal-close{
+  width:36px;height:36px;
+  border:none;
+  background:var(--border-lighter);
+  border-radius:var(--radius-sm);
+  cursor:pointer;
+  font-size:18px;
+  color:var(--text-secondary);
+  display:flex;align-items:center;justify-content:center;
+  transition:var(--transition-fast);
+}
+.chart-modal-close:hover{
+  background:var(--border-light);
+  color:var(--text-primary);
+}
+.chart-modal-price-row{
+  display:flex;
+  align-items:baseline;
+  gap:14px;
+  margin-bottom:20px;
+  flex-wrap:wrap;
+}
+.chart-modal-current-price{
+  font-size:32px;
+  font-weight:800;
+  color:var(--text-primary);
+  letter-spacing:-0.5px;
+}
+.chart-modal-change{
+  font-size:15px;
+  font-weight:600;
+  padding:6px 14px;
+  border-radius:8px;
+}
+.chart-modal-change.positive{
+  background:var(--success-light);
+  color:#065f46;
+}
+.chart-modal-change.negative{
+  background:var(--danger-light);
+  color:#991b1b;
+}
+.chart-modal-canvas-wrap{
+  position:relative;
+  width:100%;
+  height:250px;
+  margin-bottom:16px;
+  border-radius:var(--radius-md);
+  overflow:hidden;
+  background:var(--border-lighter);
+}
+.chart-modal-canvas{
+  width:100%;
+  height:100%;
+  display:block;
+}
+.chart-timeframe-tabs{
+  display:flex;
+  gap:6px;
+  margin-bottom:16px;
+  flex-wrap:wrap;
+}
+.chart-timeframe-tab{
+  padding:8px 16px;
+  border:1px solid var(--border-light);
+  border-radius:var(--radius-sm);
+  background:var(--bg-card-solid);
+  color:var(--text-secondary);
+  font-size:13px;
+  font-weight:600;
+  cursor:pointer;
+  transition:var(--transition-fast);
+}
+.chart-timeframe-tab:hover{
+  border-color:var(--primary);
+  color:var(--primary);
+}
+.chart-timeframe-tab.active{
+  background:linear-gradient(135deg,var(--primary),var(--accent));
+  color:#fff;
+  border-color:transparent;
+}
+.chart-modal-stats{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:12px;
+}
+.chart-stat-item{
+  text-align:center;
+  padding:12px;
+  background:var(--border-lighter);
+  border-radius:var(--radius-sm);
+}
+.chart-stat-label{
+  font-size:10px;
+  font-weight:700;
+  text-transform:uppercase;
+  letter-spacing:0.8px;
+  color:var(--text-muted);
+  margin-bottom:4px;
+}
+.chart-stat-value{
+  font-size:15px;
+  font-weight:700;
+  color:var(--text-primary);
+}
+
+/* Chart hover crosshair */
+.chart-crosshair-line{
+  position:absolute;
+  top:0;bottom:0;
+  width:1px;
+  background:var(--text-muted);
+  opacity:0;
+  pointer-events:none;
+  transition:opacity 0.15s;
+}
+.chart-crosshair-dot{
+  position:absolute;
+  width:8px;height:8px;
+  border-radius:50%;
+  background:var(--primary);
+  border:2px solid #fff;
+  box-shadow:0 0 8px rgba(79,70,229,0.4);
+  pointer-events:none;
+  opacity:0;
+  transition:opacity 0.15s;
+  transform:translate(-50%,-50%);
+}
+.chart-hover-price{
+  position:absolute;
+  top:4px;right:4px;
+  background:rgba(15,23,42,0.85);
+  color:#fff;
+  padding:4px 8px;
+  border-radius:4px;
+  font-size:11px;
+  font-weight:600;
+  opacity:0;
+  pointer-events:none;
+  transition:opacity 0.15s;
+}
+
+/* Dark mode chart overrides */
+body.dark-mode .chart-modal-container{
+  background:linear-gradient(160deg,#1e293b 0%,#0f172a 100%);
+  border-color:rgba(51,65,85,0.6);
+}
+body.dark-mode .chart-modal-title h3{color:#f1f5f9}
+body.dark-mode .chart-modal-title .chart-modal-sym{
+  background:rgba(99,102,241,0.1);
+  color:#a5b4fc;
+}
+body.dark-mode .chart-modal-current-price{color:#f1f5f9}
+body.dark-mode .chart-modal-change.positive{
+  background:rgba(16,185,129,0.15);color:#34d399;
+}
+body.dark-mode .chart-modal-change.negative{
+  background:rgba(239,68,68,0.15);color:#f87171;
+}
+body.dark-mode .chart-modal-canvas-wrap{background:#0f172a}
+body.dark-mode .chart-timeframe-tab{
+  background:#0f172a;
+  border-color:#334155;
+  color:#94a3b8;
+}
+body.dark-mode .chart-timeframe-tab:hover{
+  border-color:#818cf8;
+  color:#818cf8;
+}
+body.dark-mode .chart-timeframe-tab.active{
+  background:linear-gradient(135deg,#4f46e5,#7c3aed);
+  color:#fff;
+  border-color:transparent;
+}
+body.dark-mode .chart-stat-item{background:#0f172a}
+body.dark-mode .chart-stat-label{color:#64748b}
+body.dark-mode .chart-stat-value{color:#f1f5f9}
+body.dark-mode .chart-modal-close{
+  background:#334155;
+  color:#94a3b8;
+}
+body.dark-mode .chart-modal-close:hover{
+  background:#475569;
+  color:#f1f5f9;
+}
+body.dark-mode .chart-tooltip{
+  background:rgba(99,102,241,0.9);
+}
+body.dark-mode .chart-hover-price{
+  background:rgba(99,102,241,0.9);
+}
+body.dark-mode .chart-loading{
+  background:linear-gradient(90deg,#1e293b 25%,#334155 50%,#1e293b 75%);
+  background-size:200% 100%;
+  animation:shimmer 1.5s infinite;
+}
+
+/* Responsive chart */
+@media(max-width:680px){
+  .chart-modal-container{padding:20px}
+  .chart-modal-canvas-wrap{height:180px}
+  .chart-modal-stats{grid-template-columns:repeat(2,1fr)}
+  .chart-modal-current-price{font-size:26px}
+}
   /* ================= APP LOADING SCREEN ================= */
 @keyframes loadingBar{
   0%{transform:translateX(-100%)}
@@ -3152,7 +3469,39 @@ body.dark-mode .chat-message.incoming .msg-status.msg-seen{color:#818cf8}
     </div>
   </div>
 </div>
-
+<!-- ================= CHART MODAL ================= -->
+<div class="chart-modal-backdrop" id="chartModal" onclick="if(event.target===this)closeChartModal()">
+  <div class="chart-modal-container">
+    <div class="chart-modal-header">
+      <div class="chart-modal-title">
+        <h3 id="chartModalName">Stock</h3>
+        <span class="chart-modal-sym" id="chartModalSym">SYM</span>
+      </div>
+      <button class="chart-modal-close" onclick="closeChartModal()">✕</button>
+    </div>
+    <div class="chart-modal-price-row">
+      <span class="chart-modal-current-price" id="chartModalPrice">₹0.00</span>
+      <span class="chart-modal-change" id="chartModalChange">0.00%</span>
+    </div>
+    <div class="chart-timeframe-tabs" id="chartTimeframeTabs">
+      <div class="chart-timeframe-tab active" data-range="1d" onclick="changeChartTimeframe('1d',this)">1D</div>
+      <div class="chart-timeframe-tab" data-range="5d" onclick="changeChartTimeframe('5d',this)">5D</div>
+      <div class="chart-timeframe-tab" data-range="1mo" onclick="changeChartTimeframe('1mo',this)">1M</div>
+      <div class="chart-timeframe-tab" data-range="3mo" onclick="changeChartTimeframe('3mo',this)">3M</div>
+      <div class="chart-timeframe-tab" data-range="6mo" onclick="changeChartTimeframe('6mo',this)">6M</div>
+      <div class="chart-timeframe-tab" data-range="1y" onclick="changeChartTimeframe('1y',this)">1Y</div>
+      <div class="chart-timeframe-tab" data-range="5y" onclick="changeChartTimeframe('5y',this)">5Y</div>
+    </div>
+    <div class="chart-modal-canvas-wrap" id="chartModalCanvasWrap">
+      <canvas class="chart-modal-canvas" id="chartModalCanvas"></canvas>
+      <div class="chart-crosshair-line" id="chartCrosshairLine"></div>
+      <div class="chart-crosshair-dot" id="chartCrosshairDot"></div>
+      <div class="chart-hover-price" id="chartHoverPrice"></div>
+    </div>
+    <div class="chart-time-labels" id="chartModalTimeLabels"></div>
+    <div class="chart-modal-stats" id="chartModalStats"></div>
+  </div>
+</div>
 <!-- ================= DELETE CONFIRMATION MODAL ================= -->
 <div class="modal-backdrop" id="deleteConfirmModal">
   <div class="modal-container">
@@ -5758,6 +6107,575 @@ function renderIndicesLoadingState() {
     container.appendChild(card);
   }
 }
+  /* ================= CHART SYSTEM ================= */
+var chartDataCache = {};
+var activeChartSymbol = null;
+var activeChartRange = "1d";
+var chartAnimationFrame = null;
+
+// Fetch chart data from Yahoo Finance
+async function fetchChartData(yahooSymbol, range) {
+  var cacheKey = yahooSymbol + "_" + range;
+  
+  // Check cache (5 min for 1d, 30 min for others)
+  if (chartDataCache[cacheKey]) {
+    var cacheAge = Date.now() - chartDataCache[cacheKey].fetchedAt;
+    var maxAge = (range === "1d") ? 300000 : 1800000;
+    if (cacheAge < maxAge) {
+      return chartDataCache[cacheKey].data;
+    }
+  }
+  
+  var intervalMap = {
+    "1d": "5m",
+    "5d": "15m",
+    "1mo": "1d",
+    "3mo": "1d",
+    "6mo": "1wk",
+    "1y": "1wk",
+    "5y": "1mo"
+  };
+  
+  var interval = intervalMap[range] || "1d";
+  var apiUrl = "https://query1.finance.yahoo.com/v8/finance/chart/" + encodeURIComponent(yahooSymbol) + "?interval=" + interval + "&range=" + range;
+  
+  var proxies = [
+    "https://api.allorigins.win/raw?url=",
+    "https://corsproxy.io/?",
+    "https://api.codetabs.com/v1/proxy?quest="
+  ];
+  
+  for (var p = 0; p < proxies.length; p++) {
+    try {
+      var fullUrl = proxies[p] + encodeURIComponent(apiUrl);
+      var controller = new AbortController();
+      var timeoutId = setTimeout(function() { controller.abort(); }, 10000);
+      
+      var response = await fetch(fullUrl, { signal: controller.signal });
+      clearTimeout(timeoutId);
+      
+      if (!response.ok) continue;
+      
+      var text = await response.text();
+      if (!text || text.charAt(0) !== "{") continue;
+      
+      var data = JSON.parse(text);
+      
+      if (data && data.chart && data.chart.result && data.chart.result[0]) {
+        var result = data.chart.result[0];
+        var timestamps = result.timestamp || [];
+        var closePrices = (result.indicators && result.indicators.quote && result.indicators.quote[0]) ? result.indicators.quote[0].close : [];
+        var highPrices = (result.indicators && result.indicators.quote && result.indicators.quote[0]) ? result.indicators.quote[0].high : [];
+        var lowPrices = (result.indicators && result.indicators.quote && result.indicators.quote[0]) ? result.indicators.quote[0].low : [];
+        var openPrices = (result.indicators && result.indicators.quote && result.indicators.quote[0]) ? result.indicators.quote[0].open : [];
+        var volumes = (result.indicators && result.indicators.quote && result.indicators.quote[0]) ? result.indicators.quote[0].volume : [];
+        
+        var meta = result.meta || {};
+        var previousClose = meta.previousClose || meta.chartPreviousClose || 0;
+        
+        // Clean data - remove nulls
+        var cleanData = [];
+        for (var i = 0; i < timestamps.length; i++) {
+          if (closePrices[i] !== null && closePrices[i] !== undefined && !isNaN(closePrices[i])) {
+            cleanData.push({
+              time: timestamps[i] * 1000,
+              close: closePrices[i],
+              high: (highPrices && highPrices[i]) ? highPrices[i] : closePrices[i],
+              low: (lowPrices && lowPrices[i]) ? lowPrices[i] : closePrices[i],
+              open: (openPrices && openPrices[i]) ? openPrices[i] : closePrices[i],
+              volume: (volumes && volumes[i]) ? volumes[i] : 0
+            });
+          }
+        }
+        
+        if (cleanData.length > 0) {
+          var chartResult = {
+            points: cleanData,
+            previousClose: previousClose,
+            symbol: yahooSymbol,
+            range: range
+          };
+          
+          chartDataCache[cacheKey] = {
+            data: chartResult,
+            fetchedAt: Date.now()
+          };
+          
+          console.log("[CHART] ✓ " + yahooSymbol + " " + range + " = " + cleanData.length + " points via proxy " + (p + 1));
+          return chartResult;
+        }
+      }
+    } catch (error) {
+      if (error.name === "AbortError") {
+        console.log("[CHART] Proxy " + (p + 1) + " timed out for " + yahooSymbol);
+      }
+    }
+  }
+  
+  console.log("[CHART] ✗ Failed to fetch " + yahooSymbol + " " + range);
+  return null;
+}
+
+// Draw mini chart on stock card
+function drawMiniChart(canvas, chartData, isPositive) {
+  if (!canvas || !chartData || !chartData.points || chartData.points.length < 2) return;
+  
+  var ctx = canvas.getContext("2d");
+  var width = canvas.parentElement.clientWidth;
+  var height = canvas.parentElement.clientHeight;
+  
+  canvas.width = width * 2;
+  canvas.height = height * 2;
+  canvas.style.width = width + "px";
+  canvas.style.height = height + "px";
+  ctx.scale(2, 2);
+  
+  var points = chartData.points;
+  var prices = points.map(function(p) { return p.close; });
+  
+  var minPrice = Math.min.apply(null, prices);
+  var maxPrice = Math.max.apply(null, prices);
+  var priceRange = maxPrice - minPrice;
+  if (priceRange === 0) priceRange = 1;
+  
+  var padding = 4;
+  var chartWidth = width - padding * 2;
+  var chartHeight = height - padding * 2;
+  
+  // Line color
+  var lineColor = isPositive ? "#10b981" : "#ef4444";
+  var isDark = document.body.classList.contains("dark-mode");
+  if (isDark) {
+    lineColor = isPositive ? "#34d399" : "#f87171";
+  }
+  
+  // Draw gradient fill
+  var gradient = ctx.createLinearGradient(0, padding, 0, height);
+  if (isPositive) {
+    gradient.addColorStop(0, isDark ? "rgba(52,211,153,0.2)" : "rgba(16,185,129,0.15)");
+    gradient.addColorStop(1, isDark ? "rgba(52,211,153,0)" : "rgba(16,185,129,0)");
+  } else {
+    gradient.addColorStop(0, isDark ? "rgba(248,113,113,0.2)" : "rgba(239,68,68,0.12)");
+    gradient.addColorStop(1, isDark ? "rgba(248,113,113,0)" : "rgba(239,68,68,0)");
+  }
+  
+  // Build path
+  ctx.beginPath();
+  for (var i = 0; i < prices.length; i++) {
+    var x = padding + (i / (prices.length - 1)) * chartWidth;
+    var y = padding + (1 - (prices[i] - minPrice) / priceRange) * chartHeight;
+    if (i === 0) ctx.moveTo(x, y);
+    else ctx.lineTo(x, y);
+  }
+  
+  // Fill area
+  var lastX = padding + chartWidth;
+  var lastY = padding + (1 - (prices[prices.length - 1] - minPrice) / priceRange) * chartHeight;
+  ctx.lineTo(lastX, height);
+  ctx.lineTo(padding, height);
+  ctx.closePath();
+  ctx.fillStyle = gradient;
+  ctx.fill();
+  
+  // Draw line
+  ctx.beginPath();
+  for (var j = 0; j < prices.length; j++) {
+    var lx = padding + (j / (prices.length - 1)) * chartWidth;
+    var ly = padding + (1 - (prices[j] - minPrice) / priceRange) * chartHeight;
+    if (j === 0) ctx.moveTo(lx, ly);
+    else ctx.lineTo(lx, ly);
+  }
+  ctx.strokeStyle = lineColor;
+  ctx.lineWidth = 1.5;
+  ctx.lineJoin = "round";
+  ctx.lineCap = "round";
+  ctx.stroke();
+  
+  // Draw end dot
+  ctx.beginPath();
+  ctx.arc(lastX, lastY, 2.5, 0, Math.PI * 2);
+  ctx.fillStyle = lineColor;
+  ctx.fill();
+  ctx.strokeStyle = isDark ? "#0f172a" : "#fff";
+  ctx.lineWidth = 1;
+  ctx.stroke();
+}
+
+// Draw large chart in modal
+function drawLargeChart(canvas, chartData, previousClose) {
+  if (!canvas || !chartData || !chartData.points || chartData.points.length < 2) return;
+  
+  var ctx = canvas.getContext("2d");
+  var wrap = canvas.parentElement;
+  var width = wrap.clientWidth;
+  var height = wrap.clientHeight;
+  
+  canvas.width = width * 2;
+  canvas.height = height * 2;
+  canvas.style.width = width + "px";
+  canvas.style.height = height + "px";
+  ctx.scale(2, 2);
+  
+  var points = chartData.points;
+  var prices = points.map(function(p) { return p.close; });
+  
+  var minPrice = Math.min.apply(null, prices);
+  var maxPrice = Math.max.apply(null, prices);
+  
+  // Include previousClose in range
+  if (previousClose > 0) {
+    minPrice = Math.min(minPrice, previousClose);
+    maxPrice = Math.max(maxPrice, previousClose);
+  }
+  
+  var priceRange = maxPrice - minPrice;
+  if (priceRange === 0) priceRange = 1;
+  
+  // Add 5% padding to price range
+  var rangePadding = priceRange * 0.05;
+  minPrice -= rangePadding;
+  maxPrice += rangePadding;
+  priceRange = maxPrice - minPrice;
+  
+  var padding = { top: 10, right: 10, bottom: 10, left: 10 };
+  var chartWidth = width - padding.left - padding.right;
+  var chartHeight = height - padding.top - padding.bottom;
+  
+  var isDark = document.body.classList.contains("dark-mode");
+  var lastPrice = prices[prices.length - 1];
+  var firstPrice = previousClose > 0 ? previousClose : prices[0];
+  var isPositive = lastPrice >= firstPrice;
+  
+  var lineColor = isPositive ? (isDark ? "#34d399" : "#10b981") : (isDark ? "#f87171" : "#ef4444");
+  
+  // Draw grid lines
+  ctx.strokeStyle = isDark ? "rgba(51,65,85,0.3)" : "rgba(226,232,240,0.6)";
+  ctx.lineWidth = 0.5;
+  var gridLines = 5;
+  for (var g = 0; g <= gridLines; g++) {
+    var gy = padding.top + (g / gridLines) * chartHeight;
+    ctx.beginPath();
+    ctx.moveTo(padding.left, gy);
+    ctx.lineTo(width - padding.right, gy);
+    ctx.stroke();
+    
+    // Price labels
+    var gridPrice = maxPrice - (g / gridLines) * priceRange;
+    ctx.fillStyle = isDark ? "#64748b" : "#94a3b8";
+    ctx.font = "10px Inter, sans-serif";
+    ctx.textAlign = "right";
+    ctx.fillText("₹" + gridPrice.toFixed(2), width - padding.right - 2, gy - 3);
+  }
+  
+  // Draw previous close line
+  if (previousClose > 0) {
+    var prevY = padding.top + (1 - (previousClose - minPrice) / priceRange) * chartHeight;
+    ctx.strokeStyle = isDark ? "rgba(148,163,184,0.3)" : "rgba(148,163,184,0.4)";
+    ctx.lineWidth = 1;
+    ctx.setLineDash([4, 4]);
+    ctx.beginPath();
+    ctx.moveTo(padding.left, prevY);
+    ctx.lineTo(width - padding.right, prevY);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    
+    ctx.fillStyle = isDark ? "#64748b" : "#94a3b8";
+    ctx.font = "9px Inter, sans-serif";
+    ctx.textAlign = "left";
+    ctx.fillText("Prev: ₹" + previousClose.toFixed(2), padding.left + 2, prevY - 4);
+  }
+  
+  // Draw gradient fill
+  var gradient = ctx.createLinearGradient(0, padding.top, 0, height - padding.bottom);
+  if (isPositive) {
+    gradient.addColorStop(0, isDark ? "rgba(52,211,153,0.25)" : "rgba(16,185,129,0.18)");
+    gradient.addColorStop(0.7, isDark ? "rgba(52,211,153,0.05)" : "rgba(16,185,129,0.03)");
+    gradient.addColorStop(1, "transparent");
+  } else {
+    gradient.addColorStop(0, isDark ? "rgba(248,113,113,0.25)" : "rgba(239,68,68,0.15)");
+    gradient.addColorStop(0.7, isDark ? "rgba(248,113,113,0.05)" : "rgba(239,68,68,0.03)");
+    gradient.addColorStop(1, "transparent");
+  }
+  
+  // Fill area path
+  ctx.beginPath();
+  for (var i = 0; i < prices.length; i++) {
+    var x = padding.left + (i / (prices.length - 1)) * chartWidth;
+    var y = padding.top + (1 - (prices[i] - minPrice) / priceRange) * chartHeight;
+    if (i === 0) ctx.moveTo(x, y);
+    else ctx.lineTo(x, y);
+  }
+  ctx.lineTo(padding.left + chartWidth, height - padding.bottom);
+  ctx.lineTo(padding.left, height - padding.bottom);
+  ctx.closePath();
+  ctx.fillStyle = gradient;
+  ctx.fill();
+  
+  // Draw main line
+  ctx.beginPath();
+  for (var j = 0; j < prices.length; j++) {
+    var lx = padding.left + (j / (prices.length - 1)) * chartWidth;
+    var ly = padding.top + (1 - (prices[j] - minPrice) / priceRange) * chartHeight;
+    if (j === 0) ctx.moveTo(lx, ly);
+    else ctx.lineTo(lx, ly);
+  }
+  ctx.strokeStyle = lineColor;
+  ctx.lineWidth = 2;
+  ctx.lineJoin = "round";
+  ctx.lineCap = "round";
+  ctx.stroke();
+  
+  // Draw end dot with glow
+  var endX = padding.left + chartWidth;
+  var endY = padding.top + (1 - (prices[prices.length - 1] - minPrice) / priceRange) * chartHeight;
+  
+  // Glow
+  ctx.beginPath();
+  ctx.arc(endX, endY, 6, 0, Math.PI * 2);
+  ctx.fillStyle = isPositive ? (isDark ? "rgba(52,211,153,0.2)" : "rgba(16,185,129,0.2)") : (isDark ? "rgba(248,113,113,0.2)" : "rgba(239,68,68,0.2)");
+  ctx.fill();
+  
+  // Dot
+  ctx.beginPath();
+  ctx.arc(endX, endY, 3.5, 0, Math.PI * 2);
+  ctx.fillStyle = lineColor;
+  ctx.fill();
+  ctx.strokeStyle = isDark ? "#0f172a" : "#fff";
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+  
+  // Store chart meta for hover
+  canvas.dataset.chartMeta = JSON.stringify({
+    prices: prices,
+    times: points.map(function(p) { return p.time; }),
+    minPrice: minPrice,
+    maxPrice: maxPrice,
+    priceRange: priceRange,
+    paddingLeft: padding.left,
+    paddingTop: padding.top,
+    chartWidth: chartWidth,
+    chartHeight: chartHeight
+  });
+}
+
+// Setup modal chart hover interaction
+function setupChartHover() {
+  var canvas = document.getElementById("chartModalCanvas");
+  var wrap = document.getElementById("chartModalCanvasWrap");
+  var crosshairLine = document.getElementById("chartCrosshairLine");
+  var crosshairDot = document.getElementById("chartCrosshairDot");
+  var hoverPrice = document.getElementById("chartHoverPrice");
+  
+  if (!canvas || !wrap) return;
+  
+  wrap.addEventListener("mousemove", function(e) {
+    if (!canvas.dataset.chartMeta) return;
+    
+    var meta = JSON.parse(canvas.dataset.chartMeta);
+    var rect = wrap.getBoundingClientRect();
+    var mouseX = e.clientX - rect.left;
+    var mouseY = e.clientY - rect.top;
+    
+    // Find closest data point
+    var dataIndex = Math.round(((mouseX - meta.paddingLeft) / meta.chartWidth) * (meta.prices.length - 1));
+    dataIndex = Math.max(0, Math.min(meta.prices.length - 1, dataIndex));
+    
+    var price = meta.prices[dataIndex];
+    var time = meta.times[dataIndex];
+    
+    var pointX = meta.paddingLeft + (dataIndex / (meta.prices.length - 1)) * meta.chartWidth;
+    var pointY = meta.paddingTop + (1 - (price - meta.minPrice) / meta.priceRange) * meta.chartHeight;
+    
+    crosshairLine.style.left = pointX + "px";
+    crosshairLine.style.opacity = "0.5";
+    
+    crosshairDot.style.left = pointX + "px";
+    crosshairDot.style.top = pointY + "px";
+    crosshairDot.style.opacity = "1";
+    
+    var timeStr = new Date(time).toLocaleString("en-IN", {
+      day: "numeric", month: "short",
+      hour: "2-digit", minute: "2-digit"
+    });
+    
+    hoverPrice.innerHTML = "₹" + price.toFixed(2) + " <span style='opacity:0.7;font-size:9px'>" + timeStr + "</span>";
+    hoverPrice.style.opacity = "1";
+  });
+  
+  wrap.addEventListener("mouseleave", function() {
+    crosshairLine.style.opacity = "0";
+    crosshairDot.style.opacity = "0";
+    hoverPrice.style.opacity = "0";
+  });
+}
+
+// Open chart modal
+function openChartModal(symbol) {
+  var stock = null;
+  for (var i = 0; i < STOCK_DATA.length; i++) {
+    if (STOCK_DATA[i].sym === symbol) {
+      stock = STOCK_DATA[i];
+      break;
+    }
+  }
+  if (!stock) return;
+  
+  activeChartSymbol = symbol;
+  activeChartRange = "1d";
+  
+  var priceData = getStockData(symbol);
+  var currentPrice = priceData ? priceData.price : 0;
+  var change = priceData ? priceData.change : 0;
+  var changePercent = priceData ? priceData.changePercent : 0;
+  var isPositive = change >= 0;
+  
+  document.getElementById("chartModalName").textContent = stock.name;
+  document.getElementById("chartModalSym").textContent = symbol;
+  document.getElementById("chartModalPrice").textContent = currentPrice > 0 ? "₹" + currentPrice.toFixed(2) : "₹ --";
+  
+  var changeEl = document.getElementById("chartModalChange");
+  changeEl.textContent = (isPositive ? "+" : "") + change.toFixed(2) + " (" + (isPositive ? "+" : "") + changePercent.toFixed(2) + "%)";
+  changeEl.className = "chart-modal-change " + (isPositive ? "positive" : "negative");
+  
+  // Reset timeframe tabs
+  document.querySelectorAll(".chart-timeframe-tab").forEach(function(tab) {
+    tab.classList.remove("active");
+    if (tab.dataset.range === "1d") tab.classList.add("active");
+  });
+  
+  document.getElementById("chartModal").style.display = "flex";
+  
+  // Setup hover
+  setupChartHover();
+  
+  // Load chart
+  loadChartForModal(stock.yahoo, "1d", priceData);
+}
+
+function closeChartModal() {
+  document.getElementById("chartModal").style.display = "none";
+  activeChartSymbol = null;
+}
+
+function changeChartTimeframe(range, tabEl) {
+  if (!activeChartSymbol) return;
+  
+  activeChartRange = range;
+  
+  document.querySelectorAll(".chart-timeframe-tab").forEach(function(t) { t.classList.remove("active"); });
+  tabEl.classList.add("active");
+  
+  var stock = null;
+  for (var i = 0; i < STOCK_DATA.length; i++) {
+    if (STOCK_DATA[i].sym === activeChartSymbol) {
+      stock = STOCK_DATA[i];
+      break;
+    }
+  }
+  if (!stock) return;
+  
+  var priceData = getStockData(activeChartSymbol);
+  loadChartForModal(stock.yahoo, range, priceData);
+}
+
+async function loadChartForModal(yahooSymbol, range, priceData) {
+  var canvasWrap = document.getElementById("chartModalCanvasWrap");
+  var canvas = document.getElementById("chartModalCanvas");
+  var statsDiv = document.getElementById("chartModalStats");
+  var labelsDiv = document.getElementById("chartModalTimeLabels");
+  
+  // Show loading
+  canvasWrap.style.opacity = "0.5";
+  statsDiv.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-muted)">Loading chart data...</div>';
+  
+  var chartData = await fetchChartData(yahooSymbol, range);
+  
+  canvasWrap.style.opacity = "1";
+  
+  if (!chartData || !chartData.points || chartData.points.length < 2) {
+    var ctx = canvas.getContext("2d");
+    canvas.width = canvasWrap.clientWidth * 2;
+    canvas.height = canvasWrap.clientHeight * 2;
+    canvas.style.width = canvasWrap.clientWidth + "px";
+    canvas.style.height = canvasWrap.clientHeight + "px";
+    ctx.scale(2, 2);
+    ctx.fillStyle = document.body.classList.contains("dark-mode") ? "#64748b" : "#94a3b8";
+    ctx.font = "14px Inter, sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillText("Chart data unavailable", canvasWrap.clientWidth / 2, canvasWrap.clientHeight / 2);
+    
+    statsDiv.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-muted)">No data available for this timeframe</div>';
+    labelsDiv.innerHTML = "";
+    return;
+  }
+  
+  var previousClose = chartData.previousClose || 0;
+  drawLargeChart(canvas, chartData, previousClose);
+  
+  // Time labels
+  var points = chartData.points;
+  var firstTime = new Date(points[0].time);
+  var lastTime = new Date(points[points.length - 1].time);
+  
+  var timeFormat = {};
+  if (range === "1d" || range === "5d") {
+    timeFormat = { hour: "2-digit", minute: "2-digit" };
+  } else if (range === "1mo" || range === "3mo") {
+    timeFormat = { day: "numeric", month: "short" };
+  } else {
+    timeFormat = { month: "short", year: "2-digit" };
+  }
+  
+  labelsDiv.innerHTML = "<span>" + firstTime.toLocaleString("en-IN", timeFormat) + "</span><span>" + lastTime.toLocaleString("en-IN", timeFormat) + "</span>";
+  
+  // Stats
+  var prices = points.map(function(p) { return p.close; });
+  var highs = points.map(function(p) { return p.high; });
+  var lows = points.map(function(p) { return p.low; });
+  var volumes = points.map(function(p) { return p.volume; });
+  
+  var high = Math.max.apply(null, highs);
+  var low = Math.min.apply(null, lows);
+  var open = points[0].open;
+  var totalVol = 0;
+  for (var v = 0; v < volumes.length; v++) totalVol += (volumes[v] || 0);
+  
+  var volStr = "";
+  if (totalVol >= 10000000) volStr = (totalVol / 10000000).toFixed(2) + " Cr";
+  else if (totalVol >= 100000) volStr = (totalVol / 100000).toFixed(2) + " L";
+  else if (totalVol >= 1000) volStr = (totalVol / 1000).toFixed(1) + " K";
+  else volStr = totalVol.toString();
+  
+  statsDiv.innerHTML =
+    '<div class="chart-stat-item"><div class="chart-stat-label">Open</div><div class="chart-stat-value">₹' + open.toFixed(2) + '</div></div>' +
+    '<div class="chart-stat-item"><div class="chart-stat-label">High</div><div class="chart-stat-value" style="color:var(--success)">₹' + high.toFixed(2) + '</div></div>' +
+    '<div class="chart-stat-item"><div class="chart-stat-label">Low</div><div class="chart-stat-value" style="color:var(--danger)">₹' + low.toFixed(2) + '</div></div>' +
+    '<div class="chart-stat-item"><div class="chart-stat-label">Volume</div><div class="chart-stat-value">' + volStr + '</div></div>';
+}
+
+// Fetch and draw mini chart for a stock card
+async function loadMiniChart(symbol, yahooSymbol, container) {
+  var chartData = await fetchChartData(yahooSymbol, "1d");
+  
+  if (!chartData || !chartData.points || chartData.points.length < 2) {
+    container.innerHTML = "";
+    return;
+  }
+  
+  var prices = chartData.points.map(function(p) { return p.close; });
+  var firstPrice = chartData.previousClose > 0 ? chartData.previousClose : prices[0];
+  var lastPrice = prices[prices.length - 1];
+  var isPositive = lastPrice >= firstPrice;
+  
+  container.innerHTML =
+    '<canvas class="stock-chart-canvas"></canvas>' +
+    '<div class="chart-tooltip">' + (isPositive ? "▲" : "▼") + " " + Math.abs(((lastPrice - firstPrice) / firstPrice) * 100).toFixed(2) + "% today</div>";
+  
+  var canvas = container.querySelector("canvas");
+  if (canvas) {
+    drawMiniChart(canvas, chartData, isPositive);
+  }
+}
 /* ================= 3D TILT HOVER EFFECT ================= */
 function init3DTilt() {
   // Apply to stock cards, index cards, and stat cards
@@ -7112,8 +8030,14 @@ function displayStocks(stockList, showAll) {
               '<div class="stock-symbol">' + stock.sym + '</div>' +
             '</div>' +
           '</div>' +
+                  '<div class="stock-chart-container" id="minichart_' + stock.sym + '" onclick="openChartModal(\'' + stock.sym + '\')">' +
+            '<div class="chart-loading"></div>' +
+          '</div>' +
           '<div class="price-display">' + priceHTML + '</div>' +
-          '<button class="add-stock-btn" onclick="showAddStockModal(\'' + stock.sym + '\')">➕ Add to Holdings</button>';
+          '<div style="display:flex;gap:10px">' +
+            '<button class="add-stock-btn" style="flex:1" onclick="event.stopPropagation();showAddStockModal(\'' + stock.sym + '\')">➕ Add to Holdings</button>' +
+            '<button class="add-stock-btn" style="flex:0 0 auto;padding:14px 18px;background:linear-gradient(135deg,#0f172a,#1e293b);font-size:16px" onclick="event.stopPropagation();openChartModal(\'' + stock.sym + '\')" title="View Chart">📊</button>' +
+          '</div>';
 
                // Shine sweep effect (works alongside 3D tilt)
         card.onmouseenter = function() {
@@ -7126,7 +8050,18 @@ function displayStocks(stockList, showAll) {
 
         container.appendChild(card);
     });
-
+    // Load mini charts for visible stocks (first 15 only for performance)
+    var chartsToLoad = displayList.slice(0, 15);
+    setTimeout(function() {
+      chartsToLoad.forEach(function(stock, idx) {
+        setTimeout(function() {
+          var container = document.getElementById("minichart_" + stock.sym);
+          if (container) {
+            loadMiniChart(stock.sym, stock.yahoo, container);
+          }
+        }, idx * 200);
+      });
+    }, 500);
     if (!showAll && stockList.length > 25) {
         var moreMsg = document.createElement("div");
         moreMsg.style.cssText = "grid-column:1/-1;text-align:center;padding:40px 20px;color:#64748b;font-size:15px;background:#fff;border-radius:18px;border:1px solid #e2e8f0;";
@@ -8514,6 +9449,7 @@ showSettings = function() {
 </script>
 </body>
 </html>
+
 
 
 
