@@ -3014,18 +3014,7 @@ body.dark-mode .stock-chart-container::after{
   font-weight:700;
   color:var(--text-primary);
 }
-/* Chart modal buy button */
-.chart-modal-buy-btn{
-  margin-left:auto;
-  padding:10px 28px !important;
-  font-size:15px !important;
-  border-radius:var(--radius-sm) !important;
-  box-shadow:0 4px 15px rgba(16,185,129,0.3) !important;
-}
-.chart-modal-buy-btn:hover{
-  transform:translateY(-2px) scale(1.06) !important;
-  box-shadow:0 8px 25px rgba(16,185,129,0.45),0 0 15px rgba(16,185,129,0.2) !important;
-}
+
 /* Chart hover crosshair */
 .chart-crosshair-line{
   position:absolute;
@@ -3738,10 +3727,9 @@ body.dark-mode .chart-loading{
       </div>
       <button class="chart-modal-close" onclick="closeChartModal()">✕</button>
     </div>
-      <div class="chart-modal-price-row">
+    <div class="chart-modal-price-row">
       <span class="chart-modal-current-price" id="chartModalPrice">₹0.00</span>
       <span class="chart-modal-change" id="chartModalChange">0.00%</span>
-      <button class="stock-buy-btn chart-modal-buy-btn" id="chartModalBuyBtn" onclick="chartModalBuy()">Buy</button>
     </div>
     <div class="chart-timeframe-tabs" id="chartTimeframeTabs">
       <div class="chart-timeframe-tab active" data-range="1d" onclick="changeChartTimeframe('1d',this)">1D</div>
@@ -6367,94 +6355,16 @@ function renderIndicesLoadingState() {
     container.appendChild(card);
   }
 }
-  /* ================= UPDATE SINGLE STOCK CARD PRICE ================= */
-function updateSingleCardPrice(symbol, priceData) {
-  var card = document.querySelector('[data-symbol="' + symbol + '"]');
-  if (!card || !priceData || !priceData.price) return;
-
-  var currentPrice = priceData.price;
-  var priceChange = priceData.change || 0;
-  var changePercent = priceData.changePercent || 0;
-  var isPositive = priceChange >= 0;
-
-  // Update price display
-  var priceDisplay = card.querySelector(".price-display");
-  if (priceDisplay) {
-    priceDisplay.innerHTML =
-      '<div>' +
-        '<div class="current-price">₹' + currentPrice.toFixed(2) + '</div>' +
-      '</div>' +
-      '<div style="display:flex;align-items:center;gap:10px">' +
-        '<div class="price-change">' +
-          '<div class="change-value ' + (isPositive ? 'positive' : 'negative') + '">' + (isPositive ? '+' : '') + '₹' + priceChange.toFixed(2) + '</div>' +
-          '<div class="change-badge ' + (isPositive ? 'positive' : 'negative') + '">' + (isPositive ? '▲' : '▼') + ' ' + Math.abs(changePercent).toFixed(2) + '%</div>' +
-        '</div>' +
-        '<button class="stock-buy-btn" onclick="event.stopPropagation();showAddStockModal(\'' + symbol + '\')" title="Buy / Add to Holdings">Buy</button>' +
-      '</div>';
-  }
-
-  // Update daily change badge
-  var existingBadge = card.querySelector(".stock-daily-change");
-  if (existingBadge) {
-    var newBadgeHTML = buildDailyChangeBadge(currentPrice, priceChange, changePercent);
-    var tempDiv = document.createElement("div");
-    tempDiv.innerHTML = newBadgeHTML;
-    var newBadge = tempDiv.firstChild;
-    existingBadge.parentNode.replaceChild(newBadge, existingBadge);
-  }
-
-  // Flash animation
-  card.classList.remove("price-up", "price-down");
-  void card.offsetWidth;
-  card.classList.add(isPositive ? "price-up" : "price-down");
-
-  // Also load mini chart if not loaded
-  var chartContainer = document.getElementById("minichart_" + symbol);
-  if (chartContainer) {
-    var hasChart = chartContainer.querySelector("canvas");
-    if (!hasChart) {
-      var stockObj = null;
-      for (var i = 0; i < STOCK_DATA.length; i++) {
-        if (STOCK_DATA[i].sym === symbol) {
-          stockObj = STOCK_DATA[i];
-          break;
-        }
-      }
-      if (stockObj) {
-        loadMiniChart(symbol, stockObj.yahoo, chartContainer);
-      }
-    }
-  }
-
-  // Save to cache
-  pricesData[symbol] = priceData;
-  try {
-    localStorage.setItem("stockPricesCache", JSON.stringify(pricesData));
-  } catch(e) {}
-}
   /* ================= DAILY CHANGE BADGE BUILDER ================= */
 function buildDailyChangeBadge(currentPrice, priceChange, changePercent) {
-  // Handle missing or zero price
   if (!currentPrice || currentPrice <= 0) {
-    var marketInfo = getMarketInfo();
-    var statusTag = marketInfo.isOpen ?
-      '<span class="stock-market-tag market-open">● LIVE</span>' :
-      '<span class="stock-market-tag market-closed">CLOSED</span>';
-
     return '<div class="stock-daily-change day-neutral">' +
-      '<div class="daily-change-label"><span class="day-dot"></span> Today ' + statusTag + '</div>' +
+      '<div class="daily-change-label"><span class="day-dot"></span> Today</div>' +
       '<div class="daily-change-values">' +
-        '<span class="daily-change-rupee" style="font-size:11px;color:var(--text-muted)">Hover 3s to load</span>' +
+        '<span class="daily-change-rupee">--</span>' +
+        '<span class="daily-change-percent">--%</span>' +
       '</div>' +
     '</div>';
-  }
-
-  // Handle case where change data is missing but price exists
-  if (priceChange === undefined || priceChange === null || isNaN(priceChange)) {
-    priceChange = 0;
-  }
-  if (changePercent === undefined || changePercent === null || isNaN(changePercent)) {
-    changePercent = 0;
   }
 
   var market = getMarketInfo();
@@ -7002,12 +6912,6 @@ function openChartModal(symbol) {
   
   document.getElementById("chartModalName").textContent = stock.name;
   document.getElementById("chartModalSym").textContent = symbol;
-    
-  // Update buy button
-  var buyBtn = document.getElementById("chartModalBuyBtn");
-  if (buyBtn) {
-    buyBtn.textContent = "Buy " + symbol;
-  }
   document.getElementById("chartModalPrice").textContent = currentPrice > 0 ? "₹" + currentPrice.toFixed(2) : "₹ --";
   
   var changeEl = document.getElementById("chartModalChange");
@@ -7025,35 +6929,10 @@ function openChartModal(symbol) {
   // Setup hover
   setupChartHover();
   
-  // If no price data, fetch it now
-  if (!priceData || !priceData.price || priceData.price <= 0) {
-    fetchStockPrice(stock, "manual").then(function(freshData) {
-      if (freshData && freshData.price > 0) {
-        var freshPrice = freshData.price;
-        var freshChange = freshData.change || 0;
-        var freshPercent = freshData.changePercent || 0;
-        var freshPositive = freshChange >= 0;
-
-        document.getElementById("chartModalPrice").textContent = "₹" + freshPrice.toFixed(2);
-
-        var chgEl = document.getElementById("chartModalChange");
-        chgEl.textContent = (freshPositive ? "+" : "") + freshChange.toFixed(2) + " (" + (freshPositive ? "+" : "") + freshPercent.toFixed(2) + "%)";
-        chgEl.className = "chart-modal-change " + (freshPositive ? "positive" : "negative");
-
-        // Also update the card behind
-        updateSingleCardPrice(symbol, freshData);
-      }
-    });
-  }
-  
   // Load chart
   loadChartForModal(stock.yahoo, "1d", priceData);
-// Buy from chart modal
-function chartModalBuy() {
-  if (!activeChartSymbol) return;
-  closeChartModal();
-  showAddStockModal(activeChartSymbol);
 }
+
 function closeChartModal() {
   document.getElementById("chartModal").style.display = "none";
   activeChartSymbol = null;
@@ -8175,11 +8054,7 @@ async function fetchStockPrice(stock, reason) {
   var cached = pricesData[stock.sym];
   if (cached && cached.price > 0 && cached.fetchedAt) {
     var age = Date.now() - cached.fetchedAt;
-    var maxAge;
-    if (reason === "search") maxAge = 120000;       // 2 min for search
-    else if (reason === "hover") maxAge = 60000;     // 1 min for hover
-    else if (reason === "manual") maxAge = 5000;     // 5 sec for manual
-    else maxAge = 30000;                             // 30 sec for holdings
+    var maxAge = (reason === "search") ? 120000 : 30000; // 2min for search, 30s for holdings
     if (age < maxAge) {
       return cached;
     }
@@ -8562,51 +8437,13 @@ function displayStocks(stockList, showAll) {
             '</div>' +
           '</div>';
 
-                     // Shine sweep effect (works alongside 3D tilt)
+               // Shine sweep effect (works alongside 3D tilt)
         card.onmouseenter = function() {
             shine.style.left = "150%";
             shine.style.transition = "0.7s";
-            
-            // Auto-fetch price after 3 seconds hover
-            var cardSym = this.dataset.symbol;
-            var self = this;
-            self._hoverTimer = setTimeout(function() {
-              var existingPrice = getStockPrice(cardSym);
-              if (!existingPrice || existingPrice <= 0) {
-                // Find stock data
-                var stockObj = null;
-                for (var s = 0; s < STOCK_DATA.length; s++) {
-                  if (STOCK_DATA[s].sym === cardSym) {
-                    stockObj = STOCK_DATA[s];
-                    break;
-                  }
-                }
-                if (stockObj) {
-                  // Show loading indicator on card
-                  var priceEl = self.querySelector(".current-price");
-                  if (priceEl && priceEl.textContent.indexOf("--") !== -1) {
-                    priceEl.innerHTML = '<span style="font-size:14px;color:var(--primary)">⏳ Fetching...</span>';
-                  }
-                  
-                  fetchStockPrice(stockObj, "hover").then(function(data) {
-                    if (data && data.price > 0) {
-                      // Update the card directly without full re-render
-                      updateSingleCardPrice(cardSym, data);
-                    } else {
-                      if (priceEl) priceEl.innerHTML = '₹ --';
-                    }
-                  });
-                }
-              }
-            }, 3000);
         };
         card.onmouseleave = function() {
             shine.style.left = "-100%";
-            // Clear hover timer
-            if (this._hoverTimer) {
-              clearTimeout(this._hoverTimer);
-              this._hoverTimer = null;
-            }
         };
 
         container.appendChild(card);
@@ -8990,11 +8827,8 @@ function displayHoldings() {
         <td>${investedStr}</td>
         <td>${(r.currentPrice > 0) ? formatRupee(r.currentPrice) : "--"}</td>
         <td><strong>${currentValueStr}</strong></td>
-                       <td class="${isDayPositive ? "text-profit" : "text-loss"}">
-          ${(r.currentPrice > 0 && r.dayPercent !== 0) ?
-            '<div style="font-weight:700">' + (isDayPositive ? "+" : "") + r.dayPercent.toFixed(2) + '%</div>' +
-            '<small style="opacity:0.8;font-weight:600">' + (isDayPositive ? "+" : "") + "₹" + (r.currentPrice * Math.abs(r.dayPercent) / 100 * r.qty).toFixed(2) + '</small>'
-            : (r.currentPrice > 0 ? '<span style="color:var(--text-muted)">0.00%</span>' : "--")}
+                <td class="${isDayPositive ? "text-profit" : "text-loss"}">
+          ${(r.currentPrice > 0) ? '<div>' + (isDayPositive ? "+" : "") + r.dayPercent.toFixed(2) + '%</div><small style="opacity:0.7">' + (isDayPositive ? "+" : "-") + "₹" + Math.abs(r.currentPrice * r.dayPercent / 100 * r.qty).toFixed(2) + '</small>' : "--"}
         </td>
         <td class="${isPft ? "text-profit" : "text-loss"}">
           ${pnlStr}<br>
@@ -10013,27 +9847,4 @@ showSettings = function() {
 </script>
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
