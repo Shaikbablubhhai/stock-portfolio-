@@ -6971,7 +6971,7 @@ function openChatConversation(friendId, friendName) {
           }
         }
 
-        // ✨ NEW CHAT BUBBLE DESIGN
+             // ✨ FIXED CHAT BUBBLE DESIGN (NOW SHOWS MESSAGE TEXT)
         var msgEl = document.createElement("div");
         msgEl.className = "chat-message " + (isMine ? "outgoing" : "incoming");
         msgEl.style.cssText = `
@@ -7003,7 +7003,8 @@ function openChatConversation(friendId, friendName) {
             `;
         }
 
-        msgEl.innerHTML = msg.text + '<span class="msg-time">' + timeStr + statusHTML + '</span>';
+        // ✅ FIXED: Preserve message text and timestamp/status
+        msgEl.innerHTML = (msg.text || "") + '<span class="msg-time">' + timeStr + statusHTML + '</span>';
         messagesArea.appendChild(msgEl);
       });
       
@@ -7497,5 +7498,6 @@ showSettings = function() {
 </script>
 </body>
 </html>
+
 
 
