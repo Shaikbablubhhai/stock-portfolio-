@@ -2453,6 +2453,16 @@ body.dark-mode .tilt-shine{
 
 body.dark-mode .msg-status.msg-seen{color:#818cf8}
 body.dark-mode .chat-message.incoming .msg-status.msg-seen{color:#818cf8}
+  /* ================= APP LOADING SCREEN ================= */
+@keyframes loadingBar{
+  0%{transform:translateX(-100%)}
+  50%{transform:translateX(150%)}
+  100%{transform:translateX(400%)}
+}
+#appLoadingScreen{
+  user-select:none;
+  -webkit-user-select:none;
+}
 </style>
 </head>
 
@@ -2462,7 +2472,7 @@ body.dark-mode .chat-message.incoming .msg-status.msg-seen{color:#818cf8}
 <div class="toast-container" id="toastContainer"></div>
 
 <!-- ================= LOGIN PAGE ================= -->
-<div class="login-wrapper" id="loginWrapper">
+<!-- ================= LOADING SCREEN ================= --> <div id="appLoadingScreen" style="position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:#0b1120;flex-direction:column;gap:20px;transition:opacity 0.4s ease;">   <div style="width:60px;height:60px;border-radius:16px;background:linear-gradient(135deg,#4f46e5,#7c3aed);display:flex;align-items:center;justify-content:center;box-shadow:0 8px 30px rgba(79,70,229,0.4);animation:pulse 2s infinite;">     <img src="https://raw.githubusercontent.com/Shaikbablubhhai/stock-portfolio-/298bcdeecca6728ad4913c309204a571176164cb/Finzo%20Talk%20Logo.jpeg" style="width:100%;height:100%;object-fit:cover;border-radius:16px;" alt="Loading" onerror="this.style.display='none';this.parentElement.innerHTML='<span style=color:#fff;font-size:24px;font-weight:800>FT</span>'">   </div>   <div style="color:#818cf8;font-size:18px;font-weight:700;letter-spacing:0.5px;">FinzoTalk</div>   <div style="width:120px;height:3px;background:#1e293b;border-radius:3px;overflow:hidden;">     <div style="width:40%;height:100%;background:linear-gradient(90deg,#4f46e5,#7c3aed,#4f46e5);border-radius:3px;animation:loadingBar 1.2s ease-in-out infinite;"></div>   </div> </div>  <div class="login-wrapper" id="loginWrapper" style="display:none">
   <!-- Floating Icons -->
   <div class="floating-icons">
     <div class="floating-icon">📈</div>
@@ -6037,11 +6047,35 @@ function handleEmailLogin() {
 }
 
 auth.onAuthStateChanged(async function(user) {
-  if (!user) return;
+  // Hide loading screen
+  var loadingScreen = document.getElementById("appLoadingScreen");
+  
+  if (!user) {
+    // Not logged in - show login page, hide app
+    document.getElementById("loginWrapper").style.display = "flex";
+    document.getElementById("mainApp").style.display = "none";
+    
+    // Fade out loading screen
+    if (loadingScreen) {
+      loadingScreen.style.opacity = "0";
+      setTimeout(function() {
+        if (loadingScreen.parentElement) loadingScreen.style.display = "none";
+      }, 400);
+    }
+    return;
+  }
 
   activeUser = user;
-    document.getElementById("loginWrapper").style.display = "none";
+  document.getElementById("loginWrapper").style.display = "none";
   document.getElementById("mainApp").style.display = "block";
+  
+  // Fade out loading screen
+  if (loadingScreen) {
+    loadingScreen.style.opacity = "0";
+    setTimeout(function() {
+      if (loadingScreen.parentElement) loadingScreen.style.display = "none";
+    }, 400);
+  }
 
   // Create/verify user document
   try {
@@ -8385,6 +8419,7 @@ showSettings = function() {
 </script>
 </body>
 </html>
+
 
 
 
