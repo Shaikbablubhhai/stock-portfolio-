@@ -6881,7 +6881,7 @@ function openChatConversation(friendId, friendName) {
   
   document.getElementById("chatMainHeader").style.display = "flex";
   document.getElementById("chatPartnerName").textContent = friendName;
-      document.getElementById("chatPartnerAvatar").innerHTML = friendName.charAt(0).toUpperCase() + '<div class="online-indicator offline" id="chatPartnerOnlineIndicator"></div>';
+  document.getElementById("chatPartnerAvatar").innerHTML = friendName.charAt(0).toUpperCase() + '<div class="online-indicator offline" id="chatPartnerOnlineIndicator"></div>';
   
   // Immediately check friend's current online status
   rtdb.ref("/status/" + friendId).once("value").then(function(snapshot) {
@@ -6916,7 +6916,7 @@ function openChatConversation(friendId, friendName) {
       
       let lastDisplayedDate = "";
       
-      snapshot.forEach(function(doc) {
+      snapshot.forEach(function(doc, index) {
         const msg = doc.data();
         const isMine = msg.from === activeUser.uid;
         
@@ -6941,8 +6941,8 @@ function openChatConversation(friendId, friendName) {
           dateSeparator.innerHTML = '<span>' + dateLabelStr + '</span>';
           messagesArea.appendChild(dateSeparator);
         }
-        
-               // Only mark seen when user is ACTIVELY viewing this specific chat
+
+        // Only mark seen when user is ACTIVELY viewing this specific chat
         if (!isMine && !msg.seen && document.visibilityState === "visible" && activeChatWith === friendId) {
           doc.ref.update({seen: true}).catch(function(e) {});
         }
@@ -6956,28 +6956,53 @@ function openChatConversation(friendId, friendName) {
         var statusHTML = "";
         if (isMine) {
           if (!msg.timestamp) {
-            // Message not yet saved to server
             statusHTML = ' • <span class="msg-status msg-sending">🕐 Sending</span>';
           } else if (msg.seen) {
-            // Recipient has seen the message
             statusHTML = ' • <span class="msg-status msg-seen">✓✓ Seen</span>';
           } else if (msg.delivered) {
-            // Message delivered to recipient
             statusHTML = ' • <span class="msg-status msg-delivered">✓✓ Delivered</span>';
           } else {
-            // Check if friend was online after message was sent
             var msgTime = msg.timestamp.toDate().getTime();
             if (activeChatPartnerOnline || (activeChatPartnerLastSeen > 0 && activeChatPartnerLastSeen > msgTime)) {
               statusHTML = ' • <span class="msg-status msg-delivered">✓✓ Delivered</span>';
             } else {
-              // Message sent but not yet delivered
               statusHTML = ' • <span class="msg-status msg-sent">✓ Sent</span>';
             }
           }
         }
 
+        // ✨ NEW CHAT BUBBLE DESIGN
         var msgEl = document.createElement("div");
         msgEl.className = "chat-message " + (isMine ? "outgoing" : "incoming");
+        msgEl.style.cssText = `
+            max-width: 72%;
+            padding: 14px 18px;
+            border-radius: var(--radius-lg);
+            margin-bottom: 14px;
+            font-size: 15px;
+            line-height: 1.5;
+            animation: fadeInUp 0.3s ease-out ${index * 0.05}s forwards;
+            opacity: 0;
+            box-shadow: var(--shadow-sm);
+            transition: all 0.3s ease;
+        `;
+        if (isMine) {
+            msgEl.style.cssText += `
+                background: linear-gradient(135deg, var(--primary), var(--accent));
+                color: #fff;
+                margin-left: auto;
+                border-bottom-right-radius: 6px;
+                box-shadow: 0 4px 15px rgba(79,70,229,0.25);
+            `;
+        } else {
+            msgEl.style.cssText += `
+                background: var(--bg-card-solid);
+                color: var(--text-primary);
+                border: 1px solid var(--border-light);
+                border-bottom-left-radius: 6px;
+            `;
+        }
+
         msgEl.innerHTML = msg.text + '<span class="msg-time">' + timeStr + statusHTML + '</span>';
         messagesArea.appendChild(msgEl);
       });
@@ -7472,4 +7497,5 @@ showSettings = function() {
 </script>
 </body>
 </html>
+
 
