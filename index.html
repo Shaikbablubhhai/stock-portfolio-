@@ -2166,7 +2166,21 @@ body.dark-mode .stat-card:hover{
       <!-- App Preferences Section -->
       <div class="settings-section">
         <div class="settings-section-title">⚙️ App Preferences</div>
-
+        <div class="settings-row">
+          <div class="settings-row-left">
+            <div class="settings-row-icon">🌙</div>
+            <div>
+              <div class="settings-row-label">Dark Mode</div>
+              <div class="settings-row-sublabel">Premium dark theme for low-light usage</div>
+            </div>
+          </div>
+          <div class="settings-row-right">
+            <label class="settings-toggle">
+              <input type="checkbox" id="settingsDarkMode" onchange="toggleDarkMode()">
+              <span class="settings-toggle-slider"></span>
+            </label>
+          </div>
+        </div>
         <div class="settings-row">
           <div class="settings-row-left">
             <div class="settings-row-icon">🏠</div>
@@ -7313,6 +7327,49 @@ function sendChatMsg() {
     sendBtn.disabled = false;
   });
 }
+  /* ================= DARK MODE SYSTEM ================= */
+function toggleDarkMode() {
+  var isEnabled = document.getElementById("settingsDarkMode").checked;
+  
+  if (isEnabled) {
+    document.body.classList.add("dark-mode");
+    localStorage.setItem("finzotalk_darkmode", "true");
+    ToastManager.info("Dark Mode", "Premium dark theme enabled 🌙");
+  } else {
+    document.body.classList.remove("dark-mode");
+    localStorage.setItem("finzotalk_darkmode", "false");
+    ToastManager.info("Light Mode", "Switched to light theme ☀️");
+  }
+  
+  // Re-render stocks to update inline styles
+  var searchVal = document.getElementById("stockSearchInput");
+  if (searchVal && searchVal.value.trim().length >= 2) {
+    var query = searchVal.value.toLowerCase().trim();
+    var matches = STOCK_DATA.filter(function(s) {
+      return s.name.toLowerCase().indexOf(query) !== -1 || s.sym.toLowerCase().indexOf(query) !== -1;
+    });
+    displayStocks(matches, true);
+  } else {
+    displayStocks(STOCK_DATA, false);
+  }
+}
+
+function loadDarkModePreference() {
+  var saved = localStorage.getItem("finzotalk_darkmode");
+  if (saved === "true") {
+    document.body.classList.add("dark-mode");
+    var toggle = document.getElementById("settingsDarkMode");
+    if (toggle) toggle.checked = true;
+  }
+}
+
+// Load dark mode instantly on page load
+(function() {
+  var saved = localStorage.getItem("finzotalk_darkmode");
+  if (saved === "true") {
+    document.body.classList.add("dark-mode");
+  }
+})();
 /* ================= ENHANCED SETTINGS ================= */
 var userPreferences = {
   defaultTab: "stocks",
@@ -7406,6 +7463,11 @@ function showSettings() {
   });
 
   // Set preference controls
+    // Sync dark mode toggle
+  var darkModeToggle = document.getElementById("settingsDarkMode");
+  if (darkModeToggle) {
+    darkModeToggle.checked = document.body.classList.contains("dark-mode");
+  }
   document.getElementById("settingsDefaultTab").value = userPreferences.defaultTab;
   document.getElementById("settingsAutoRefresh").checked = userPreferences.autoRefresh;
   document.getElementById("settingsRefreshInterval").value = userPreferences.refreshInterval;
@@ -7737,6 +7799,7 @@ showSettings = function() {
 </script>
 </body>
 </html>
+
 
 
 
