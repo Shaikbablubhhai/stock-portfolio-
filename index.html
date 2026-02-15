@@ -2452,6 +2452,101 @@ body.dark-mode .tilt-shine{
 }
 
 body.dark-mode .msg-status.msg-seen{color:#818cf8}
+  
+/* ================= DARK MODE - LOGIN PAGE FIX ================= */
+/* Login page should ALWAYS look light/original regardless of dark mode */
+body.dark-mode .login-wrapper{
+  color:#1e293b;
+}
+body.dark-mode #loginPage{
+  background:rgba(255,255,255,0.95);
+  backdrop-filter:blur(30px);
+  -webkit-backdrop-filter:blur(30px);
+  border:1px solid rgba(255,255,255,0.25);
+  box-shadow:0 30px 70px rgba(0,0,0,0.35),0 0 50px rgba(79,70,229,0.12),inset 0 1px 0 rgba(255,255,255,0.6);
+  color:#1e293b;
+}
+body.dark-mode #loginPage h2{
+  background:linear-gradient(135deg,#4f46e5,#7c3aed,#a855f7);
+  -webkit-background-clip:text;
+  -webkit-text-fill-color:transparent;
+  background-clip:text;
+}
+body.dark-mode #loginPage .tagline{
+  color:#64748b;
+}
+body.dark-mode #loginPage input{
+  background:#fff;
+  border:2px solid #e2e8f0;
+  color:#1e293b;
+}
+body.dark-mode #loginPage input::placeholder{
+  color:#94a3b8;
+}
+body.dark-mode #loginPage input:focus{
+  border-color:#4f46e5;
+  box-shadow:0 0 0 4px rgba(79,70,229,0.1);
+  background:#fff;
+  color:#1e293b;
+}
+body.dark-mode .login-primary-btn{
+  background:linear-gradient(135deg,#4f46e5,#7c3aed);
+  color:#fff;
+}
+body.dark-mode .login-primary-btn:hover:not(:disabled){
+  box-shadow:0 8px 30px rgba(79,70,229,0.5);
+}
+body.dark-mode .login-google-btn{
+  background:#fff;
+  border:2px solid #e2e8f0 !important;
+  color:#1e293b;
+}
+body.dark-mode .login-google-btn:hover:not(:disabled){
+  background:#f8fafc;
+  border-color:#cbd5e1 !important;
+  box-shadow:0 4px 12px rgba(0,0,0,0.08);
+}
+body.dark-mode .auth-tabs{
+  background:#f1f5f9;
+}
+body.dark-mode .auth-tab{
+  color:#64748b;
+}
+body.dark-mode .auth-tab:hover{
+  color:#4f46e5;
+}
+body.dark-mode .auth-tab.active{
+  background:#fff;
+  color:#4f46e5;
+  box-shadow:0 2px 8px rgba(0,0,0,0.08);
+}
+body.dark-mode .auth-divider::before,
+body.dark-mode .auth-divider::after{
+  background:#e2e8f0;
+}
+body.dark-mode .auth-divider span{
+  color:#94a3b8;
+}
+body.dark-mode #loginError{
+  color:#dc2626;
+}
+body.dark-mode .login-logo img{
+  box-shadow:0 18px 40px rgba(0,0,0,0.18);
+}
+body.dark-mode #registerForm input{
+  background:#fff;
+  border:2px solid #e2e8f0;
+  color:#1e293b;
+}
+body.dark-mode #registerForm input::placeholder{
+  color:#94a3b8;
+}
+body.dark-mode #registerForm input:focus{
+  border-color:#4f46e5;
+  box-shadow:0 0 0 4px rgba(79,70,229,0.1);
+  background:#fff;
+  color:#1e293b;
+}
 body.dark-mode .chat-message.incoming .msg-status.msg-seen{color:#818cf8}
   /* ================= APP LOADING SCREEN ================= */
 @keyframes loadingBar{
@@ -8419,6 +8514,7 @@ showSettings = function() {
 </script>
 </body>
 </html>
+
 
 
 
