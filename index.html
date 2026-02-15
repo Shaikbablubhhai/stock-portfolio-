@@ -1858,6 +1858,15 @@ body{
   .toast-container{left:12px;right:12px;max-width:none}
   .main-content{padding:16px}
 }
+  /* Dark mode - 3D Tilt shine adjustment */
+body.dark-mode .tilt-shine{
+  opacity:0.7 !important;
+}
+body.dark-mode .stock-card:hover,
+body.dark-mode .index-card:hover,
+body.dark-mode .stat-card:hover{
+  box-shadow:0 20px 50px rgba(0,0,0,0.4),0 0 25px rgba(99,102,241,0.12);
+}
 </style>
 </head>
 
@@ -7728,6 +7737,7 @@ showSettings = function() {
 </script>
 </body>
 </html>
+
 
 
 
