@@ -6316,6 +6316,12 @@ function startIndicesAutoRefresh() {
     indicesTimestampTimer = null;
   }
 
+  // Prevent multiple initializations
+  if (window._indicesAutoStarted) {
+    console.log("[INDICES] Auto-refresh already running, restarting...");
+  }
+  window._indicesAutoStarted = true;
+
   function getIndicesInterval() {
     var market = getMarketInfo();
     return market.isOpen ? 10000 : 60000;
@@ -6353,10 +6359,12 @@ function startIndicesAutoRefresh() {
     updateIndicesTimestamp();
   }, 5000);
 }
- // Manual refresh — keep showing current numbers while fetching new ones
+// Manual refresh — keep showing current numbers while fetching new ones
 function refreshIndices() {
-  indicesLastFetchTime = 0;
-  // ✅ Do NOT call renderIndicesLoadingState() — keep existing numbers visible
+  indicesLastFetchTime = 0; // Reset cooldown so fetch is allowed
+  // Do NOT call renderIndicesLoadingState() — keep existing numbers visible
+  // Old data stays on screen while new data loads in background
+  console.log("[INDICES] Manual refresh triggered — old data stays visible");
   fetchAllIndices();
 }
 
@@ -6381,37 +6389,7 @@ function updateIndicesTimestamp() {
   el.textContent = "Updated " + text;
 }
 
-// Start indices auto-refresh (every 3 seconds during market, 30s otherwise)
-function startIndicesAutoRefresh() {
-  if (indicesAutoTimer) clearInterval(indicesAutoTimer);
-
-  function getIndicesInterval() {
-    var market = getMarketInfo();
-    return market.isOpen ? 3000 : 30000;
-  }
-
-  function scheduleNext() {
-    var interval = getIndicesInterval();
-    indicesAutoTimer = setTimeout(function() {
-      if (document.visibilityState === "visible") {
-        var stocksSection = document.getElementById("stocksSection");
-        if (stocksSection && stocksSection.style.display !== "none") {
-          fetchAllIndices();
-        }
-      }
-      updateIndicesTimestamp();
-      scheduleNext();
-    }, interval);
-  }
-
-  scheduleNext();
-
-  // Update timestamp display every 3 seconds
-  setInterval(function() {
-    updateIndicesTimestamp();
-  }, 3000);
-}
-
+/* DUPLICATE startIndicesAutoRefresh REMOVED — using the first definition above */
 /* ================= INDICES UI RENDERER ================= */
 function renderIndicesBar() {
     var container = document.getElementById("indicesBar");
@@ -6515,6 +6493,91 @@ function renderIndicesLoadingState() {
       '</div>';
     container.appendChild(card);
   }
+}
+
+  /* ================= FETCH ALL INDICES (CORE ENGINE) ================= */
+async function fetchAllIndices() {
+  // Prevent concurrent fetches
+  if (indicesFetching) {
+    console.log("[INDICES] Already fetching, skipping...");
+    return;
+  }
+
+  // Respect minimum interval between fetches
+  var timeSinceLast = Date.now() - indicesLastFetchTime;
+  if (indicesLastFetchTime > 0 && timeSinceLast < INDICES_CACHE_DURATION) {
+    console.log("[INDICES] Too soon (" + Math.floor(timeSinceLast / 1000) + "s), skipping...");
+    renderIndicesBar();
+    return;
+  }
+
+  indicesFetching = true;
+  console.log("[INDICES] Fetching " + MARKET_INDICES.length + " indices...");
+
+  var btn = document.getElementById("indicesRefreshBtn");
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = "⏳ Fetching...";
+  }
+
+  var successCount = 0;
+  var totalCount = MARKET_INDICES.length;
+
+  // Fetch all indices in parallel for speed
+  var fetchPromises = MARKET_INDICES.map(function(index) {
+    return (async function() {
+      try {
+        // Try Yahoo Finance first (no API key needed)
+        var result = await fetchSingleIndexPrice(index);
+
+        // If Yahoo failed, try TwelveData as backup
+        if (!result && isApiAvailable("twelve")) {
+          result = await fetchSingleIndexTwelveData(index);
+        }
+
+        if (result && result.price > 0) {
+          // Store the new data
+          indicesData[index.symbol] = result;
+          successCount++;
+
+          // INSTANT UPDATE: render this index card immediately as data arrives
+          renderIndicesBar();
+        }
+        // If fetch failed, old data stays in indicesData — nothing to do
+      } catch (err) {
+        console.log("[INDICES] Error fetching " + index.shortName + ": " + err.message);
+        // Old data remains — no action needed
+      }
+    })();
+  });
+
+  // Wait for all to complete (or fail)
+  try {
+    await Promise.allSettled(fetchPromises);
+  } catch (e) {
+    console.log("[INDICES] Batch error:", e.message);
+  }
+
+  // Update timestamp and cache
+  if (successCount > 0) {
+    indicesLastFetchTime = Date.now();
+    saveIndicesCache();
+    console.log("[INDICES] Updated " + successCount + "/" + totalCount + " indices");
+  } else {
+    console.log("[INDICES] No indices updated (using cached data)");
+  }
+
+  // Final render to ensure all cards are up to date
+  renderIndicesBar();
+  updateIndicesTimestamp();
+
+  // Re-enable button
+  if (btn) {
+    btn.disabled = false;
+    btn.innerHTML = "🔄 Refresh";
+  }
+
+  indicesFetching = false;
 }
   /* ================= DAILY CHANGE BADGE BUILDER ================= */
 function buildDailyChangeBadge(currentPrice, priceChange, changePercent) {
@@ -10223,4 +10286,5 @@ showSettings = function() {
 </script>
 </body>
 </html>
+
 
