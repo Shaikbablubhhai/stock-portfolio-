@@ -8492,6 +8492,19 @@ async function fetchStockPrice(stock, reason) {
 async function fetchLatestPrices() {
   if (isFetchingData) return;
 
+  // Smart check: should we even fetch?
+  var market = getMarketInfo();
+  var lastUpdate = parseInt(localStorage.getItem("lastPriceUpdate") || "0");
+  var timeSinceUpdate = Date.now() - lastUpdate;
+
+  // If market is closed and we updated recently (within 5 min), skip
+  if (!market.isOpen && !market.isPreOpen && timeSinceUpdate < 300000 && lastUpdate > 0) {
+    console.log("[HOLDINGS] Market closed, prices are fresh (" + Math.floor(timeSinceUpdate / 1000) + "s old). Skipping fetch.");
+    setRefreshStatus("Cached", false);
+    displayHoldings();
+    return;
+  }
+
   var holdingSyms = [];
   var symMap = {};
   for (var i = 0; i < userHoldings.length; i++) {
@@ -8632,24 +8645,38 @@ function triggerManualRefresh() {
     ToastManager.info("No Holdings", "Add stocks to your portfolio first!");
   }
 }
-  function refreshHoldingsData() {
-  if (userHoldings.length > 0) {
-    ToastManager.info("Refreshing", "Fetching live prices for " + userHoldings.length + " holdings...");
-
-    // Force clear cache for holdings to get fresh prices
-    for (var i = 0; i < userHoldings.length; i++) {
-      var sym = userHoldings[i].sym;
-      if (pricesData[sym]) {
-        pricesData[sym].fetchedAt = 0;
-      }
-    }
-
-    fetchLatestPrices();
-  } else {
+function refreshHoldingsData() {
+  if (userHoldings.length === 0) {
     ToastManager.info("No Holdings", "Add stocks first to see live prices");
+    return;
   }
+
+  var market = getMarketInfo();
+
+  // Force clear cache timestamps so fetch is allowed
+  for (var i = 0; i < userHoldings.length; i++) {
+    var sym = userHoldings[i].sym;
+    if (pricesData[sym]) {
+      pricesData[sym].fetchedAt = 0;
+    }
+  }
+
+  // Also reset the smart check in fetchLatestPrices
+  localStorage.setItem("lastPriceUpdate", "0");
+
+  if (market.isOpen) {
+    ToastManager.info("Refreshing", "Fetching live prices for " + userHoldings.length + " holdings...");
+  } else {
+    ToastManager.info("Refreshing", "Fetching latest closing prices for " + userHoldings.length + " holdings...");
+    // Reset post-market counter so manual refresh always works
+    postMarketFetchCount = 0;
+  }
+
+  fetchLatestPrices();
 }
 var autoRefreshInitialized = false;
+var postMarketFetchCount = 0; // Track fetches after market close
+var POST_MARKET_MAX_FETCHES = 3; // Only fetch 3 times after close
 
 function initAutoRefresh() {
   // Prevent multiple initializations
@@ -8658,40 +8685,130 @@ function initAutoRefresh() {
     autoRefreshTimer = null;
   }
 
-  function getRefreshInterval() {
-    var market = getMarketInfo();
-    return market.isOpen ? 12 : 60;
+  // Reset post-market counter when market opens
+  var market = getMarketInfo();
+  if (market.isOpen) {
+    postMarketFetchCount = 0;
   }
 
-  refreshCountdown = getRefreshInterval();
+  function getSmartRefreshInterval() {
+    var m = getMarketInfo();
+
+    if (m.isOpen) {
+      // Market open: refresh every 12 seconds
+      postMarketFetchCount = 0; // Reset counter
+      return 12;
+    }
+
+    if (m.isPreOpen) {
+      // Pre-market (9:00 - 9:15): refresh every 30 seconds
+      postMarketFetchCount = 0;
+      return 30;
+    }
+
+    if (m.isWeekday && m.totalMinutes > 930 && m.totalMinutes <= 960) {
+      // Post-market (3:30 PM - 4:00 PM): fetch a few times then stop
+      if (postMarketFetchCount < POST_MARKET_MAX_FETCHES) {
+        return 20; // Every 20s for first 3 fetches
+      }
+      return 9999; // Effectively stop
+    }
+
+    // Market closed (after 4 PM, before 9 AM, weekends)
+    return 9999; // Don't auto-fetch
+  }
+
+  function shouldFetchNow() {
+    var m = getMarketInfo();
+
+    // Always fetch during market hours
+    if (m.isOpen || m.isPreOpen) return true;
+
+    // Post-market: only if under limit
+    if (m.isWeekday && m.totalMinutes > 930 && m.totalMinutes <= 960) {
+      if (postMarketFetchCount < POST_MARKET_MAX_FETCHES) {
+        postMarketFetchCount++;
+        console.log("[REFRESH] Post-market fetch " + postMarketFetchCount + "/" + POST_MARKET_MAX_FETCHES);
+        return true;
+      }
+      console.log("[REFRESH] Post-market fetch limit reached. Showing last prices.");
+      return false;
+    }
+
+    // Closed hours — don't fetch
+    return false;
+  }
+
+  refreshCountdown = getSmartRefreshInterval();
   autoRefreshInitialized = true;
 
   autoRefreshTimer = setInterval(function() {
     refreshCountdown--;
     var countdownEl = document.getElementById("countdownDisplay");
-    if (countdownEl) countdownEl.textContent = refreshCountdown;
+    if (countdownEl) countdownEl.textContent = Math.max(0, refreshCountdown);
     refreshLastUpdateDisplay();
 
     if (refreshCountdown <= 0) {
-      refreshCountdown = getRefreshInterval();
+      refreshCountdown = getSmartRefreshInterval();
+
       if (!isFetchingData && document.visibilityState === "visible" && userHoldings.length > 0) {
-        fetchLatestPrices();
+        if (shouldFetchNow()) {
+          fetchLatestPrices();
+        } else {
+          // Not fetching — just show cached prices
+          setRefreshStatus("Cached", false);
+          displayHoldings();
+        }
       }
     }
   }, 1000);
 
-  console.log("[REFRESH] Auto-refresh initialized. Interval: " + getRefreshInterval() + "s");
+  var m = getMarketInfo();
+  console.log("[REFRESH] Smart auto-refresh initialized. Market: " + m.label + ", Interval: " + getSmartRefreshInterval() + "s");
 }
 function setRefreshStatus(text, isLoading) {
   var badge = document.getElementById("liveStatusBadge");
   var statusText = document.getElementById("liveStatusText");
-  
+  var market = getMarketInfo();
+
+  // Smart status text
+  if (!isLoading) {
+    if (text === "Cached" || text === "Ready") {
+      if (market.isOpen) {
+        text = "Live";
+      } else if (market.isPreOpen) {
+        text = "Pre-Market";
+      } else {
+        text = "Market Closed";
+      }
+    }
+  }
+
   statusText.textContent = text;
-  badge.classList.toggle("updating", isLoading);
-  
+
+  // Badge color based on market state
+  badge.classList.remove("updating", "error");
+  if (isLoading) {
+    badge.classList.add("updating");
+  } else if (!market.isOpen && !market.isPreOpen) {
+    // Show as neutral/closed state
+    badge.style.background = "var(--border-lighter)";
+    badge.style.color = "var(--text-secondary)";
+  } else {
+    badge.style.background = "";
+    badge.style.color = "";
+  }
+
   var btn = document.getElementById("mainRefreshBtn");
   btn.disabled = isLoading;
-  btn.innerHTML = isLoading ? '<div class="loading-spinner"></div> Updating...' : '🔄 Refresh Now';
+
+  if (isLoading) {
+    btn.innerHTML = '<div class="loading-spinner"></div> Updating...';
+  } else if (market.isOpen) {
+    btn.innerHTML = '🔄 Refresh Now';
+  } else {
+    btn.innerHTML = '🔄 Refresh Prices';
+  }
 
   // Show which API is being used
   var apiEl = document.getElementById("apiIndicator");
@@ -9151,6 +9268,8 @@ function displayHoldings() {
     return;
   }
 
+  var market = getMarketInfo();
+
   // Totals in integer paise to avoid cumulative float errors
   let totalInvestedPaise = 0;
   let totalCurrentValuePaise = 0;
@@ -9158,26 +9277,31 @@ function displayHoldings() {
 
   // Pre-calc for every holding
   const rows = userHoldings.map(function(h) {
-    const buyPrice = Math.round(parseNumber(h.buyPrice) * 100) / 100; // rupees
+    const buyPrice = Math.round(parseNumber(h.buyPrice) * 100) / 100;
     const qty = parseInt(parseNumber(h.qty), 10) || 0;
 
     const buyPaise = toPaise(buyPrice);
     const investedPaise = buyPaise * qty;
 
-    const currentPrice = getStockPrice(h.sym); // rupees
+    const currentPrice = getStockPrice(h.sym);
     const currentPaise = toPaise(currentPrice);
     const currentValuePaise = (currentPrice > 0) ? (currentPaise * qty) : investedPaise;
 
+    // Get API data for today's market change
     const priceData = getStockData(h.sym);
-    const dayChangePerShare = (priceData && typeof priceData.change === "number") ? priceData.change : 0; // rupees
+    const dayChangePerShare = (priceData && typeof priceData.change === "number") ? priceData.change : 0;
     const dayChangePerSharePaise = toPaise(dayChangePerShare);
     const dayChangePaise = dayChangePerSharePaise * qty;
+    const dayChangePercent = (priceData && typeof priceData.changePercent === "number") ? priceData.changePercent : 0;
+
+    // Overall P&L from buy price (what user really cares about)
+    const overallPnlPaise = currentValuePaise - investedPaise;
+    const overallPnlPercent = (investedPaise > 0) ? (overallPnlPaise / investedPaise) * 100 : 0;
 
     totalInvestedPaise += investedPaise;
     totalCurrentValuePaise += currentValuePaise;
     totalDayChangePaise += dayChangePaise;
 
-    // Return row data for rendering
     return {
       id: h.id,
       name: h.name || "Unknown",
@@ -9187,8 +9311,11 @@ function displayHoldings() {
       investedPaise: investedPaise,
       currentPrice: currentPrice,
       currentValuePaise: currentValuePaise,
-      pnlPaise: currentValuePaise - investedPaise,
-      dayPercent: (priceData && typeof priceData.changePercent === "number") ? priceData.changePercent : 0
+      overallPnlPaise: overallPnlPaise,
+      overallPnlPercent: overallPnlPercent,
+      dayChangePaise: dayChangePaise,
+      dayChangePercent: dayChangePercent,
+      dayChangePerShare: dayChangePerShare
     };
   });
 
@@ -9198,7 +9325,17 @@ function displayHoldings() {
   const isProfit = totalPnLPaise >= 0;
   const isDayUp = totalDayChangePaise >= 0;
 
-  // Stats cards (show with two decimals)
+  // Market status label for stat card
+  var dayLabel = "Today's Change";
+  if (!market.isWeekday) {
+    dayLabel = "Last Day Change";
+  } else if (!market.isOpen && !market.isPreOpen && market.totalMinutes < 555) {
+    dayLabel = "Prev Day Change";
+  }
+
+  var marketBadge = market.isOpen ? '<span style="font-size:10px;background:rgba(255,255,255,0.2);padding:2px 8px;border-radius:4px;margin-left:6px">● LIVE</span>' : '<span style="font-size:10px;background:rgba(255,255,255,0.15);padding:2px 8px;border-radius:4px;margin-left:6px">CACHED</span>';
+
+  // Stats cards
   statsContainer.innerHTML = `
     <div class="stat-card gradient-purple">
       <div class="stat-label">Total Invested</div>
@@ -9206,19 +9343,19 @@ function displayHoldings() {
       <div class="stat-subtitle">${userHoldings.length} stock${userHoldings.length > 1 ? "s" : ""}</div>
     </div>
     <div class="stat-card gradient-blue">
-      <div class="stat-label">Current Value</div>
+      <div class="stat-label">Current Value ${marketBadge}</div>
       <div class="stat-value">${formatRupeeFromPaise(totalCurrentValuePaise)}</div>
-      <div class="stat-subtitle">Live market value</div>
+      <div class="stat-subtitle">${market.isOpen ? "Live market value" : "Last market value"}</div>
     </div>
     <div class="stat-card ${isProfit ? "gradient-green" : "gradient-red"}">
-      <div class="stat-label">Total P&L</div>
+      <div class="stat-label">Overall P&L</div>
       <div class="stat-value">${totalPnLPaise >= 0 ? "+" : ""}${formatRupeeFromPaise(totalPnLPaise)}</div>
-      <div class="stat-subtitle">${totalPnLPaise >= 0 ? "+" : ""}${Math.abs(totalPnLPercent).toFixed(2)}%</div>
+      <div class="stat-subtitle">${totalPnLPaise >= 0 ? "+" : ""}${Math.abs(totalPnLPercent).toFixed(2)}% from buy price</div>
     </div>
     <div class="stat-card ${isDayUp ? "gradient-green" : "gradient-red"}">
-      <div class="stat-label">Today's Change</div>
+      <div class="stat-label">${dayLabel}</div>
       <div class="stat-value">${totalDayChangePaise >= 0 ? "+" : ""}${formatRupeeFromPaise(totalDayChangePaise)}</div>
-      <div class="stat-subtitle">Day performance</div>
+      <div class="stat-subtitle">${market.isOpen ? "Live day performance" : "Last trading day"}</div>
     </div>
   `;
 
@@ -9233,8 +9370,8 @@ function displayHoldings() {
           <th>Invested</th>
           <th>LTP</th>
           <th>Current Value</th>
-          <th>Day %</th>
-          <th>P&L</th>
+          <th>Day Change</th>
+          <th>Overall P&L</th>
           <th>Actions</th>
         </tr>
       </thead>
@@ -9244,11 +9381,21 @@ function displayHoldings() {
   rows.forEach(function(r, idx) {
     const investedStr = formatRupeeFromPaise(r.investedPaise);
     const currentValueStr = formatRupeeFromPaise(r.currentValuePaise);
-    const pnlStr = (r.pnlPaise >= 0 ? "+" : "") + formatRupeeFromPaise(r.pnlPaise);
-    const pnlPercent = (r.investedPaise > 0) ? ((r.pnlPaise / r.investedPaise) * 100) : 0;
 
-    const isPft = r.pnlPaise >= 0;
-    const isDayPositive = r.dayPercent >= 0;
+    // Overall P&L (buy price vs current)
+    const overallPnlStr = (r.overallPnlPaise >= 0 ? "+" : "") + formatRupeeFromPaise(r.overallPnlPaise);
+    const isOverallProfit = r.overallPnlPaise >= 0;
+
+    // Day change (previous close vs current)
+    const isDayPositive = r.dayChangePaise >= 0;
+    const dayChangeTotalStr = (r.dayChangePaise >= 0 ? "+" : "") + formatRupeeFromPaise(r.dayChangePaise);
+
+    // Day change display
+    var dayChangeHTML = "--";
+    if (r.currentPrice > 0) {
+      dayChangeHTML = '<div>' + (isDayPositive ? "+" : "") + r.dayChangePercent.toFixed(2) + '%</div>' +
+        '<small style="opacity:0.7">' + dayChangeTotalStr + '</small>';
+    }
 
     tableHTML += `
       <tr>
@@ -9264,14 +9411,14 @@ function displayHoldings() {
         <td>${formatRupee(r.buyPrice)}</td>
         <td>${r.qty}</td>
         <td>${investedStr}</td>
-        <td>${(r.currentPrice > 0) ? formatRupee(r.currentPrice) : "--"}</td>
+        <td>${(r.currentPrice > 0) ? formatRupee(r.currentPrice) : '<span style="color:var(--text-muted)">--</span>'}</td>
         <td><strong>${currentValueStr}</strong></td>
-                <td class="${isDayPositive ? "text-profit" : "text-loss"}">
-          ${(r.currentPrice > 0) ? '<div>' + (isDayPositive ? "+" : "") + r.dayPercent.toFixed(2) + '%</div><small style="opacity:0.7">' + (isDayPositive ? "+" : "-") + "₹" + Math.abs(r.currentPrice * r.dayPercent / 100 * r.qty).toFixed(2) + '</small>' : "--"}
+        <td class="${isDayPositive ? "text-profit" : "text-loss"}">
+          ${dayChangeHTML}
         </td>
-        <td class="${isPft ? "text-profit" : "text-loss"}">
-          ${pnlStr}<br>
-          <small>(${isPft ? "+" : ""}${pnlPercent.toFixed(2)}%)</small>
+        <td class="${isOverallProfit ? "text-profit" : "text-loss"}">
+          ${overallPnlStr}<br>
+          <small>(${isOverallProfit ? "+" : ""}${r.overallPnlPercent.toFixed(2)}%)</small>
         </td>
         <td>
           <div class="action-buttons">
