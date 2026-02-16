@@ -6304,13 +6304,17 @@ async function fetchSingleIndexTwelveData(index) {
 }
 // Start indices auto-refresh (10s during market, 60s otherwise)
 var indicesTimestampTimer = null;
-var liveUpdateTimer = null;
 
 function startIndicesAutoRefresh() {
-  // Clear any existing timers
-  if (indicesAutoTimer) { clearTimeout(indicesAutoTimer); indicesAutoTimer = null; }
-  if (indicesTimestampTimer) { clearInterval(indicesTimestampTimer); indicesTimestampTimer = null; }
-  if (liveUpdateTimer) { clearInterval(liveUpdateTimer); liveUpdateTimer = null; }
+  // Clear ALL existing timers to prevent stacking
+  if (indicesAutoTimer) {
+    clearTimeout(indicesAutoTimer);
+    indicesAutoTimer = null;
+  }
+  if (indicesTimestampTimer) {
+    clearInterval(indicesTimestampTimer);
+    indicesTimestampTimer = null;
+  }
 
   function getIndicesInterval() {
     var market = getMarketInfo();
@@ -6320,42 +6324,18 @@ function startIndicesAutoRefresh() {
   function scheduleNext() {
     var interval = getIndicesInterval();
     indicesAutoTimer = setTimeout(function() {
+      // Only fetch if not already fetching AND tab is visible
       if (!indicesFetching && document.visibilityState === "visible") {
         var stocksSection = document.getElementById("stocksSection");
         if (stocksSection && stocksSection.style.display !== "none") {
-          fetchAllIndices(false); // Background update
+          // ✅ Background fetch — existing numbers stay visible during fetch
+          fetchAllIndices();
         }
       }
       updateIndicesTimestamp();
       scheduleNext();
     }, interval);
   }
-
-  scheduleNext();
-
-  // Update timestamp display every 5 seconds
-  indicesTimestampTimer = setInterval(function() {
-    updateIndicesTimestamp();
-  }, 5000);
-  
-  // ✅ NEW: THE 1-SECOND LIVE LOOP
-  function startLiveLoop() {
-    liveUpdateTimer = setInterval(function() {
-      var market = getMarketInfo();
-      // Only run this loop during market hours
-      if (market.isOpen && document.visibilityState === "visible") {
-        // ✅ CRITICAL: Only fetch if we are NOT already fetching
-        if (!indicesFetching) {
-          // Pass 'false' so it doesn't reset the UI
-          fetchAllIndices(false); 
-        }
-      }
-    }, 1000); // Run every 1 second
-  }
-  
-  // Start the loop
-  startLiveLoop();
-}
 
   // ✅ First fetch immediately on start
   if (Object.keys(indicesData).length === 0) {
@@ -6373,27 +6353,11 @@ function startIndicesAutoRefresh() {
     updateIndicesTimestamp();
   }, 5000);
 }
-// Manual refresh (Glitch-proof)
+ // Manual refresh — keep showing current numbers while fetching new ones
 function refreshIndices() {
-  var btn = document.getElementById("indicesRefreshBtn");
-  
-  // ✅ Instantly disable button so you can't click twice
-  if (btn) {
-    btn.disabled = true;
-    btn.style.opacity = "0.5";
-    btn.innerHTML = "⟳";
-  }
-  
-  // ✅ Force fetch
   indicesLastFetchTime = 0;
-  fetchAllIndices(true).finally(() => {
-    // ✅ Re-enable button after fetch is 100% done
-    if (btn) {
-      btn.disabled = false;
-      btn.style.opacity = "1";
-      btn.innerHTML = "!
-    }
-  });
+  // ✅ Do NOT call renderIndicesLoadingState() — keep existing numbers visible
+  fetchAllIndices();
 }
 
 // Update indices timestamp display
@@ -10259,14 +10223,4 @@ showSettings = function() {
 </script>
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-
 
