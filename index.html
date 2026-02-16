@@ -4260,7 +4260,7 @@ let indicesData = {};
 let indicesFetching = false;
 let indicesLastFetchTime = 0;
 const INDICES_CACHE_KEY = "finzotalk_indices_cache";
-const INDICES_CACHE_DURATION = 3000; // 3 second cache during market hours
+const INDICES_CACHE_DURATION = 10000; // 10 second minimum between fetches
 let indicesAutoTimer = null;
 /* ================= 300+ INDIAN STOCKS LIST ================= */
 const STOCK_DATA = [
@@ -6302,19 +6302,30 @@ async function fetchSingleIndexTwelveData(index) {
   }
   return null;
 }
-// Start indices auto-refresh (every 3 seconds during market, 30s otherwise)
+// Start indices auto-refresh (10s during market, 60s otherwise)
+var indicesTimestampTimer = null;
+
 function startIndicesAutoRefresh() {
-  if (indicesAutoTimer) clearInterval(indicesAutoTimer);
+  // Clear any existing timers to prevent stacking
+  if (indicesAutoTimer) {
+    clearTimeout(indicesAutoTimer);
+    indicesAutoTimer = null;
+  }
+  if (indicesTimestampTimer) {
+    clearInterval(indicesTimestampTimer);
+    indicesTimestampTimer = null;
+  }
 
   function getIndicesInterval() {
     var market = getMarketInfo();
-    return market.isOpen ? 3000 : 30000;
+    return market.isOpen ? 10000 : 60000;
   }
 
   function scheduleNext() {
     var interval = getIndicesInterval();
     indicesAutoTimer = setTimeout(function() {
-      if (document.visibilityState === "visible") {
+      // Only fetch if not already fetching AND tab is visible
+      if (!indicesFetching && document.visibilityState === "visible") {
         var stocksSection = document.getElementById("stocksSection");
         if (stocksSection && stocksSection.style.display !== "none") {
           fetchAllIndices();
@@ -6327,10 +6338,10 @@ function startIndicesAutoRefresh() {
 
   scheduleNext();
 
-  // Update timestamp display every 3 seconds
-  setInterval(function() {
+  // Update timestamp display every 5 seconds (separate timer)
+  indicesTimestampTimer = setInterval(function() {
     updateIndicesTimestamp();
-  }, 3000);
+  }, 5000);
 }
 // Manual refresh
 function refreshIndices() {
@@ -6396,21 +6407,26 @@ function renderIndicesBar() {
     var container = document.getElementById("indicesBar");
     if (!container) return;
 
-    container.innerHTML = "";
-
+    // ✅ Instead of wiping innerHTML, update individual cards to prevent flicker
     for (var i = 0; i < MARKET_INDICES.length; i++) {
         var idx = MARKET_INDICES[i];
         var data = indicesData[idx.symbol];
 
-        var card = document.createElement("div");
-        card.className = "index-card";
-        card.dataset.indexSymbol = idx.symbol;
+        // Find existing card or create new one
+        var card = container.querySelector('[data-index-symbol="' + idx.symbol + '"]');
+        var isNewCard = false;
+
+        if (!card) {
+            card = document.createElement("div");
+            card.dataset.indexSymbol = idx.symbol;
+            isNewCard = true;
+        }
 
         if (data && data.price > 0) {
             var isUp = data.change >= 0;
             var isNeutral = data.change === 0;
 
-            card.className += isNeutral ? " idx-neutral" : (isUp ? " idx-up" : " idx-down");
+            card.className = "index-card" + (isNeutral ? " idx-neutral" : (isUp ? " idx-up" : " idx-down"));
 
             var priceStr = "";
             if (data.price >= 10000) {
@@ -6426,7 +6442,6 @@ function renderIndicesBar() {
                 percentStr = "— 0.00%";
             }
 
-            // ✨ NEW SHINING CARD DESIGN
             card.innerHTML =
               '<div class="index-card-name">' + idx.shortName + '</div>' +
               '<div class="index-card-price">' + priceStr + '</div>' +
@@ -6434,26 +6449,40 @@ function renderIndicesBar() {
                 '<span class="index-change-value ' + (isUp ? 'positive' : 'negative') + '">' + changeStr + '</span>' +
                 '<span class="index-change-percent ' + (isUp ? 'positive' : 'negative') + '">' + percentStr + '</span>' +
               '</div>' +
-              '<div style="position: absolute; top: 50%; right: -8px; width: 12px; height: 12px; background: ' + (isUp ? '#10b981' : '#ef4444') + '; border-radius: 50%; filter: blur(6px); transform: translateY(-50%);"></div>';
+              '<div style="position:absolute;top:50%;right:-8px;width:12px;height:12px;background:' + (isUp ? '#10b981' : '#ef4444') + ';border-radius:50%;filter:blur(6px);transform:translateY(-50%);"></div>';
 
         } else {
-            // Loading state
-            card.className += " idx-neutral";
+            // Still loading - show skeleton instead of spinner
+            card.className = "index-card idx-neutral";
             card.innerHTML =
               '<div class="index-card-name">' + idx.shortName + '</div>' +
-              '<div class="index-card-loading">' +
-                '<div class="idx-spinner"></div>' +
-                '<span>Loading...</span>' +
+              '<div style="margin-bottom:8px">' +
+                '<div style="height:22px;width:80%;border-radius:6px;background:linear-gradient(90deg,var(--border-lighter) 25%,var(--border-light) 50%,var(--border-lighter) 75%);background-size:200% 100%;animation:shimmer 1.5s infinite;"></div>' +
+              '</div>' +
+              '<div style="display:flex;gap:8px">' +
+                '<div style="height:14px;width:50px;border-radius:4px;background:linear-gradient(90deg,var(--border-lighter) 25%,var(--border-light) 50%,var(--border-lighter) 75%);background-size:200% 100%;animation:shimmer 1.5s infinite;"></div>' +
+                '<div style="height:14px;width:60px;border-radius:4px;background:linear-gradient(90deg,var(--border-lighter) 25%,var(--border-light) 50%,var(--border-lighter) 75%);background-size:200% 100%;animation:shimmer 1.5s infinite;"></div>' +
               '</div>';
         }
 
-              // Hover handled by 3D tilt system
-
-        container.appendChild(card);
+        if (isNewCard) {
+            container.appendChild(card);
+        }
     }
+
+    // Remove any extra cards that shouldn't be there
+    var existingCards = container.querySelectorAll(".index-card");
+    existingCards.forEach(function(existingCard) {
+        var sym = existingCard.dataset.indexSymbol;
+        var found = false;
+        for (var m = 0; m < MARKET_INDICES.length; m++) {
+            if (MARKET_INDICES[m].symbol === sym) { found = true; break; }
+        }
+        if (!found) existingCard.remove();
+    });
 }
 
-// Render initial loading state for indices
+// Render initial loading state for indices (skeleton loaders)
 function renderIndicesLoadingState() {
   var container = document.getElementById("indicesBar");
   if (!container) return;
@@ -6467,9 +6496,12 @@ function renderIndicesLoadingState() {
     card.dataset.indexSymbol = idx.symbol;
     card.innerHTML =
       '<div class="index-card-name">' + idx.shortName + '</div>' +
-      '<div class="index-card-loading">' +
-        '<div class="idx-spinner"></div>' +
-        '<span>Loading...</span>' +
+      '<div style="margin-bottom:8px">' +
+        '<div style="height:22px;width:80%;border-radius:6px;background:linear-gradient(90deg,var(--border-lighter) 25%,var(--border-light) 50%,var(--border-lighter) 75%);background-size:200% 100%;animation:shimmer 1.5s infinite;"></div>' +
+      '</div>' +
+      '<div style="display:flex;gap:8px">' +
+        '<div style="height:14px;width:50px;border-radius:4px;background:linear-gradient(90deg,var(--border-lighter) 25%,var(--border-light) 50%,var(--border-lighter) 75%);background-size:200% 100%;animation:shimmer 1.5s infinite;"></div>' +
+        '<div style="height:14px;width:60px;border-radius:4px;background:linear-gradient(90deg,var(--border-lighter) 25%,var(--border-light) 50%,var(--border-lighter) 75%);background-size:200% 100%;animation:shimmer 1.5s infinite;"></div>' +
       '</div>';
     container.appendChild(card);
   }
@@ -7147,6 +7179,7 @@ async function loadChartForModal(yahooSymbol, range, priceData) {
 }
 
 // Fetch and draw mini chart for a stock card
+// ALSO syncs chart price to display price (single source of truth)
 async function loadMiniChart(symbol, yahooSymbol, container) {
   var chartData = await fetchChartData(yahooSymbol, "1d");
   
@@ -7160,6 +7193,27 @@ async function loadMiniChart(symbol, yahooSymbol, container) {
   var lastPrice = prices[prices.length - 1];
   var isPositive = lastPrice >= firstPrice;
   
+  // ✅ SYNC: Push chart's latest price into pricesData so display matches chart
+  if (lastPrice > 0) {
+    var priceChange = lastPrice - firstPrice;
+    var changePercent = firstPrice > 0 ? (priceChange / firstPrice) * 100 : 0;
+    
+    var existingData = pricesData[symbol];
+    var oldPrice = existingData ? existingData.price : 0;
+    
+    pricesData[symbol] = {
+      price: lastPrice,
+      change: priceChange,
+      changePercent: changePercent,
+      prevClose: firstPrice,
+      fetchedAt: Date.now(),
+      source: (existingData && existingData.source) ? existingData.source : "Chart"
+    };
+    
+    // ✅ Update the card's display price immediately (no full re-render)
+    updateCardPriceDisplay(symbol, lastPrice, priceChange, changePercent, oldPrice);
+  }
+  
   container.innerHTML =
     '<canvas class="stock-chart-canvas"></canvas>' +
     '<div class="chart-tooltip">' + (isPositive ? "▲" : "▼") + " " + Math.abs(((lastPrice - firstPrice) / firstPrice) * 100).toFixed(2) + "% today</div>";
@@ -7167,6 +7221,60 @@ async function loadMiniChart(symbol, yahooSymbol, container) {
   var canvas = container.querySelector("canvas");
   if (canvas) {
     drawMiniChart(canvas, chartData, isPositive);
+  }
+}
+
+// ✅ NEW: Update a single card's price display without re-rendering entire grid
+function updateCardPriceDisplay(symbol, newPrice, priceChange, changePercent, oldPrice) {
+  var card = document.querySelector('[data-symbol="' + symbol + '"]');
+  if (!card) return;
+  
+  var isPositive = priceChange >= 0;
+  
+  // Update current price display
+  var priceEl = card.querySelector(".current-price");
+  if (priceEl && newPrice > 0) {
+    priceEl.textContent = "₹" + newPrice.toFixed(2);
+    priceEl.style.color = "";
+    priceEl.style.fontSize = "";
+  }
+  
+  // Update change value
+  var changeEl = card.querySelector(".change-value");
+  if (changeEl) {
+    changeEl.textContent = (isPositive ? "+" : "") + "₹" + Math.abs(priceChange).toFixed(2);
+    changeEl.className = "change-value " + (isPositive ? "positive" : "negative");
+  }
+  
+  // Update change badge
+  var badgeEl = card.querySelector(".change-badge");
+  if (badgeEl) {
+    badgeEl.textContent = (isPositive ? "▲" : "▼") + " " + Math.abs(changePercent).toFixed(2) + "%";
+    badgeEl.className = "change-badge " + (isPositive ? "positive" : "negative");
+  }
+  
+  // Update daily change section
+  var dailyEl = card.querySelector(".stock-daily-change");
+  if (dailyEl) {
+    var newDailyHTML = buildDailyChangeBadge(newPrice, priceChange, changePercent);
+    var tempDiv = document.createElement("div");
+    tempDiv.innerHTML = newDailyHTML;
+    var newDailyEl = tempDiv.firstChild;
+    if (newDailyEl) {
+      dailyEl.parentNode.replaceChild(newDailyEl, dailyEl);
+    }
+  }
+  
+  // Flash animation if price changed
+  if (oldPrice > 0 && newPrice > 0 && oldPrice !== newPrice) {
+    card.classList.remove("price-up", "price-down");
+    void card.offsetHeight; // force reflow
+    card.classList.add(newPrice > oldPrice ? "price-up" : "price-down");
+    
+    // Remove flash class after animation
+    setTimeout(function() {
+      card.classList.remove("price-up", "price-down");
+    }, 900);
   }
 }
 /* ================= 3D TILT HOVER EFFECT ================= */
@@ -8242,39 +8350,48 @@ async function fetchStockPrice(stock, reason) {
 
   // PRIORITY 1: Alpha Vantage (primary API)
   if (isApiAvailable("alpha")) {
-    var alphaResult = await fetchAlphaVantagePrice(stock.sym);
-    if (alphaResult && alphaResult.price > 0) {
-      alphaResult.fetchedAt = Date.now();
-      alphaResult.source = "Alpha";
-      lastUsedAPI = "Alpha";
-      apiCallCounts.alphaVantage++;
-      pricesData[stock.sym] = alphaResult;
-      return alphaResult;
+    try {
+      var alphaResult = await fetchAlphaVantagePrice(stock.sym);
+      if (alphaResult && alphaResult.price > 0) {
+        alphaResult.fetchedAt = Date.now();
+        alphaResult.source = "Alpha";
+        lastUsedAPI = "Alpha";
+        pricesData[stock.sym] = alphaResult;
+        return alphaResult;
+      }
+    } catch(e) {
+      console.log("[FETCH] Alpha failed for " + stock.sym);
     }
   }
 
   // PRIORITY 2: Twelve Data (secondary)
   if (isApiAvailable("twelve")) {
-    var twelveResult = await fetchTwelveDataPrice(stock.sym);
-    if (twelveResult && twelveResult.price > 0) {
-      twelveResult.fetchedAt = Date.now();
-      twelveResult.source = "Twelve";
-      lastUsedAPI = "Twelve";
-      apiCallCounts.twelveData++;
-      pricesData[stock.sym] = twelveResult;
-      return twelveResult;
+    try {
+      var twelveResult = await fetchTwelveDataPrice(stock.sym);
+      if (twelveResult && twelveResult.price > 0) {
+        twelveResult.fetchedAt = Date.now();
+        twelveResult.source = "Twelve";
+        lastUsedAPI = "Twelve";
+        pricesData[stock.sym] = twelveResult;
+        return twelveResult;
+      }
+    } catch(e) {
+      console.log("[FETCH] Twelve failed for " + stock.sym);
     }
   }
 
   // PRIORITY 3: Yahoo Finance (fallback, no key needed)
-  var yahooResult = await fetchYahooPrice(stock.yahoo);
-  if (yahooResult && yahooResult.price > 0) {
-    yahooResult.fetchedAt = Date.now();
-    yahooResult.source = "Yahoo";
-    lastUsedAPI = "Yahoo";
-    apiCallCounts.yahoo++;
-    pricesData[stock.sym] = yahooResult;
-    return yahooResult;
+  try {
+    var yahooResult = await fetchYahooPrice(stock.yahoo);
+    if (yahooResult && yahooResult.price > 0) {
+      yahooResult.fetchedAt = Date.now();
+      yahooResult.source = "Yahoo";
+      lastUsedAPI = "Yahoo";
+      pricesData[stock.sym] = yahooResult;
+      return yahooResult;
+    }
+  } catch(e) {
+    console.log("[FETCH] Yahoo failed for " + stock.sym);
   }
 
   // All failed - return stale cache if any
@@ -8332,13 +8449,25 @@ async function fetchLatestPrices() {
       });
     });
 
-    await Promise.allSettled(promises);
+    var batchResults = await Promise.allSettled(promises);
+    
+    // Check if any price actually changed before re-rendering
+    var hasChanges = false;
+    batchResults.forEach(function(r) {
+      if (r.status === "fulfilled" && r.value && r.value.data && r.value.data.price > 0) {
+        var sym = r.value.sym;
+        var oldPrice = prevPricesData[sym] ? prevPricesData[sym].price : 0;
+        var newPrice = r.value.data.price;
+        if (oldPrice !== newPrice) hasChanges = true;
+      }
+    });
 
-    // Update UI after each batch (no flicker, progressive update)
-    displayHoldings();
+    // Only re-render if prices actually changed (prevents flicker)
+    if (hasChanges) {
+      displayHoldings();
+    }
 
     if (b + batchSize < fetchList.length) {
-      // Stagger batches: longer delay to respect single-key limits
       await new Promise(function(r) { setTimeout(r, 800); });
     }
   }
@@ -8434,16 +8563,22 @@ function triggerManualRefresh() {
     ToastManager.info("No Holdings", "Add stocks first to see live prices");
   }
 }
-function initAutoRefresh() {
-  if (autoRefreshTimer) clearInterval(autoRefreshTimer);
+var autoRefreshInitialized = false;
 
-  // Dynamic interval: 12s during market, 60s when closed
+function initAutoRefresh() {
+  // Prevent multiple initializations
+  if (autoRefreshTimer) {
+    clearInterval(autoRefreshTimer);
+    autoRefreshTimer = null;
+  }
+
   function getRefreshInterval() {
     var market = getMarketInfo();
     return market.isOpen ? 12 : 60;
   }
 
   refreshCountdown = getRefreshInterval();
+  autoRefreshInitialized = true;
 
   autoRefreshTimer = setInterval(function() {
     refreshCountdown--;
@@ -8458,6 +8593,8 @@ function initAutoRefresh() {
       }
     }
   }, 1000);
+
+  console.log("[REFRESH] Auto-refresh initialized. Interval: " + getRefreshInterval() + "s");
 }
 function setRefreshStatus(text, isLoading) {
   var badge = document.getElementById("liveStatusBadge");
@@ -10063,5 +10200,6 @@ showSettings = function() {
 </script>
 </body>
 </html>
+
 
 
