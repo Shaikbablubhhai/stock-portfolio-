@@ -6353,22 +6353,6 @@ function startIndicesAutoRefresh() {
     updateIndicesTimestamp();
   }, 5000);
 }
-  // ✅ WRAPPER: Ensures indices always show numbers, never blank
-var originalFetchAllIndices = fetchAllIndices;
-fetchAllIndices = async function() {
-  // Step 1: Show whatever data we already have BEFORE fetching
-  if (Object.keys(indicesData).length > 0) {
-    renderIndicesBar();
-  }
-  
-  // Step 2: Run the original fetch
-  await originalFetchAllIndices();
-  
-  // Step 3: After fetch completes, render again to show new data
-  if (Object.keys(indicesData).length > 0) {
-    renderIndicesBar();
-  }
-};
 // Manual refresh — keep showing current numbers while fetching new ones
 function refreshIndices() {
   indicesLastFetchTime = 0;
@@ -10239,6 +10223,7 @@ showSettings = function() {
 </script>
 </body>
 </html>
+
 
 
 
