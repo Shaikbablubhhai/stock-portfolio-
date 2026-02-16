@@ -6306,7 +6306,7 @@ async function fetchSingleIndexTwelveData(index) {
 var indicesTimestampTimer = null;
 
 function startIndicesAutoRefresh() {
-  // Clear ALL existing timers to prevent stacking
+  // Clear any existing timers to prevent stacking
   if (indicesAutoTimer) {
     clearTimeout(indicesAutoTimer);
     indicesAutoTimer = null;
@@ -6328,7 +6328,6 @@ function startIndicesAutoRefresh() {
       if (!indicesFetching && document.visibilityState === "visible") {
         var stocksSection = document.getElementById("stocksSection");
         if (stocksSection && stocksSection.style.display !== "none") {
-          // ✅ Background fetch — existing numbers stay visible during fetch
           fetchAllIndices();
         }
       }
@@ -6337,42 +6336,17 @@ function startIndicesAutoRefresh() {
     }, interval);
   }
 
-  // ✅ First fetch immediately on start
-  if (Object.keys(indicesData).length === 0) {
-    // No data at all — fetch immediately
-    fetchAllIndices();
-  } else {
-    // Already have data — show it, then schedule background refresh
-    renderIndicesBar();
-  }
-
   scheduleNext();
 
-  // Update timestamp display every 5 seconds
+  // Update timestamp display every 5 seconds (separate timer)
   indicesTimestampTimer = setInterval(function() {
     updateIndicesTimestamp();
   }, 5000);
 }
-  // ✅ WRAPPER: Ensures indices always show numbers, never blank
-var originalFetchAllIndices = fetchAllIndices;
-fetchAllIndices = async function() {
-  // Step 1: Show whatever data we already have BEFORE fetching
-  if (Object.keys(indicesData).length > 0) {
-    renderIndicesBar();
-  }
-  
-  // Step 2: Run the original fetch
-  await originalFetchAllIndices();
-  
-  // Step 3: After fetch completes, render again to show new data
-  if (Object.keys(indicesData).length > 0) {
-    renderIndicesBar();
-  }
-};
-// Manual refresh — keep showing current numbers while fetching new ones
+// Manual refresh
 function refreshIndices() {
+  // Force clear cache to refetch
   indicesLastFetchTime = 0;
-  // ✅ Do NOT call renderIndicesLoadingState() — keep existing numbers visible
   fetchAllIndices();
 }
 
@@ -6433,6 +6407,7 @@ function renderIndicesBar() {
     var container = document.getElementById("indicesBar");
     if (!container) return;
 
+    // ✅ Instead of wiping innerHTML, update individual cards to prevent flicker
     for (var i = 0; i < MARKET_INDICES.length; i++) {
         var idx = MARKET_INDICES[i];
         var data = indicesData[idx.symbol];
@@ -6448,7 +6423,6 @@ function renderIndicesBar() {
         }
 
         if (data && data.price > 0) {
-            // ✅ We have data — ALWAYS show numbers
             var isUp = data.change >= 0;
             var isNeutral = data.change === 0;
 
@@ -6468,44 +6442,44 @@ function renderIndicesBar() {
                 percentStr = "— 0.00%";
             }
 
-            // Check if price actually changed from what's displayed
-            var currentDisplayedPrice = card.querySelector(".index-card-price");
-            var displayedText = currentDisplayedPrice ? currentDisplayedPrice.textContent : "";
-
-            // Only update DOM if price text is different (prevents unnecessary repaints)
-            if (displayedText !== priceStr || isNewCard) {
-                card.innerHTML =
-                  '<div class="index-card-name">' + idx.shortName + '</div>' +
-                  '<div class="index-card-price">' + priceStr + '</div>' +
-                  '<div class="index-card-change">' +
-                    '<span class="index-change-value ' + (isUp ? 'positive' : 'negative') + '">' + changeStr + '</span>' +
-                    '<span class="index-change-percent ' + (isUp ? 'positive' : 'negative') + '">' + percentStr + '</span>' +
-                  '</div>' +
-                  '<div style="position:absolute;top:50%;right:-8px;width:12px;height:12px;background:' + (isUp ? '#10b981' : '#ef4444') + ';border-radius:50%;filter:blur(6px);transform:translateY(-50%);"></div>';
-            }
+            card.innerHTML =
+              '<div class="index-card-name">' + idx.shortName + '</div>' +
+              '<div class="index-card-price">' + priceStr + '</div>' +
+              '<div class="index-card-change">' +
+                '<span class="index-change-value ' + (isUp ? 'positive' : 'negative') + '">' + changeStr + '</span>' +
+                '<span class="index-change-percent ' + (isUp ? 'positive' : 'negative') + '">' + percentStr + '</span>' +
+              '</div>' +
+              '<div style="position:absolute;top:50%;right:-8px;width:12px;height:12px;background:' + (isUp ? '#10b981' : '#ef4444') + ';border-radius:50%;filter:blur(6px);transform:translateY(-50%);"></div>';
 
         } else {
-            // No data yet — show skeleton ONLY if card doesn't already have numbers
-            var hasNumbers = card.querySelector(".index-card-price");
-            if (!hasNumbers) {
-                card.className = "index-card idx-neutral";
-                card.innerHTML =
-                  '<div class="index-card-name">' + idx.shortName + '</div>' +
-                  '<div style="margin-bottom:8px">' +
-                    '<div style="height:22px;width:80%;border-radius:6px;background:linear-gradient(90deg,var(--border-lighter) 25%,var(--border-light) 50%,var(--border-lighter) 75%);background-size:200% 100%;animation:shimmer 1.5s infinite;"></div>' +
-                  '</div>' +
-                  '<div style="display:flex;gap:8px">' +
-                    '<div style="height:14px;width:50px;border-radius:4px;background:linear-gradient(90deg,var(--border-lighter) 25%,var(--border-light) 50%,var(--border-lighter) 75%);background-size:200% 100%;animation:shimmer 1.5s infinite;"></div>' +
-                    '<div style="height:14px;width:60px;border-radius:4px;background:linear-gradient(90deg,var(--border-lighter) 25%,var(--border-light) 50%,var(--border-lighter) 75%);background-size:200% 100%;animation:shimmer 1.5s infinite;"></div>' +
-                  '</div>';
-            }
-            // ✅ If card already has numbers from previous fetch, DO NOTHING — keep showing old numbers
+            // Still loading - show skeleton instead of spinner
+            card.className = "index-card idx-neutral";
+            card.innerHTML =
+              '<div class="index-card-name">' + idx.shortName + '</div>' +
+              '<div style="margin-bottom:8px">' +
+                '<div style="height:22px;width:80%;border-radius:6px;background:linear-gradient(90deg,var(--border-lighter) 25%,var(--border-light) 50%,var(--border-lighter) 75%);background-size:200% 100%;animation:shimmer 1.5s infinite;"></div>' +
+              '</div>' +
+              '<div style="display:flex;gap:8px">' +
+                '<div style="height:14px;width:50px;border-radius:4px;background:linear-gradient(90deg,var(--border-lighter) 25%,var(--border-light) 50%,var(--border-lighter) 75%);background-size:200% 100%;animation:shimmer 1.5s infinite;"></div>' +
+                '<div style="height:14px;width:60px;border-radius:4px;background:linear-gradient(90deg,var(--border-lighter) 25%,var(--border-light) 50%,var(--border-lighter) 75%);background-size:200% 100%;animation:shimmer 1.5s infinite;"></div>' +
+              '</div>';
         }
 
         if (isNewCard) {
             container.appendChild(card);
         }
     }
+
+    // Remove any extra cards that shouldn't be there
+    var existingCards = container.querySelectorAll(".index-card");
+    existingCards.forEach(function(existingCard) {
+        var sym = existingCard.dataset.indexSymbol;
+        var found = false;
+        for (var m = 0; m < MARKET_INDICES.length; m++) {
+            if (MARKET_INDICES[m].symbol === sym) { found = true; break; }
+        }
+        if (!found) existingCard.remove();
+    });
 }
 
 // Render initial loading state for indices (skeleton loaders)
@@ -7829,46 +7803,33 @@ auth.onAuthStateChanged(async function(user) {
 
      // Auto refresh is started in boot sequence below
 
-  // ===== PROFESSIONAL BOOT SEQUENCE =====
-  // Order: 1) Show cached data → 2) Fetch fresh indices → 3) Holdings → 4) Auto-refresh
+   // ===== PROFESSIONAL BOOT SEQUENCE =====
+  // Order: 1) Indices → 2) Holdings → 3) Mini charts (cached only)
   
-  // Step 0: Load cache and show whatever we have INSTANTLY
-  var hasCachedIndices = loadIndicesCache();
+  // Step 0: Show skeleton states immediately
+  loadIndicesCache();
+  renderIndicesLoadingState();
   
-  if (hasCachedIndices && Object.keys(indicesData).length > 0) {
-    // ✅ We have cached indices — show numbers immediately (no skeleton)
-    console.log("[BOOT] Showing " + Object.keys(indicesData).length + " cached indices");
-    renderIndicesBar();
-  } else {
-    // No cache — show skeleton while we fetch
-    console.log("[BOOT] No cached indices — showing skeleton");
-    renderIndicesLoadingState();
-  }
-  
-  // Step 1: Fetch fresh indices in background (300ms delay for DOM to settle)
+  // Step 1: Fetch indices (Yahoo, no API key needed, fast)
   setTimeout(function() {
     fetchAllIndices();
+    startIndicesAutoRefresh();
   }, 300);
 
-  // Step 2: Start indices auto-refresh (will keep updating in background)
-  setTimeout(function() {
-    startIndicesAutoRefresh();
-  }, 500);
-
-  // Step 3: Fetch holdings prices
+  // Step 2: Fetch holdings prices (uses Alpha → Twelve → Yahoo chain)
   setTimeout(function() {
     if (userHoldings.length > 0) {
       fetchLatestPrices();
     }
   }, 1200);
   
-  // Step 4: Start auto-refresh system
+  // Step 3: Start auto-refresh system (handles both market/non-market timing)
   setTimeout(function() {
     initAutoRefresh();
     startMarketAutoRefresh();
   }, 2000);
 
-  console.log("[BOOT] Loading order: Cache → Indices → Holdings → Auto-refresh");
+  console.log("[BOOT] Loading order: Indices → Holdings → Auto-refresh");
 });
 function performLogout() {
   if (confirm("Are you sure you want to logout?")) {
@@ -10239,6 +10200,8 @@ showSettings = function() {
 </script>
 </body>
 </html>
+
+
 
 
 
