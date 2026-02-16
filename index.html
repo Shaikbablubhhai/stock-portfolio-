@@ -6353,19 +6353,7 @@ function startIndicesAutoRefresh() {
     updateIndicesTimestamp();
   }, 5000);
 }
-// ✅ WRAPPER: Forces render BEFORE and AFTER every fetch
-var originalFetchAllIndices = fetchAllIndices;
-fetchAllIndices = async function() {
-  // ✅ ALWAYS render first (shows cached numbers OR skeleton)
-  renderIndicesBar();
-  
-  // ✅ Then fetch (numbers stay visible during fetch)
-  await originalFetchAllIndices();
-  
-  // ✅ Render again (updates with new numbers)
-  renderIndicesBar();
-};
-  // Manual refresh — keep showing current numbers while fetching new ones
+ // Manual refresh — keep showing current numbers while fetching new ones
 function refreshIndices() {
   indicesLastFetchTime = 0;
   // ✅ Do NOT call renderIndicesLoadingState() — keep existing numbers visible
@@ -10235,6 +10223,7 @@ showSettings = function() {
 </script>
 </body>
 </html>
+
 
 
 
