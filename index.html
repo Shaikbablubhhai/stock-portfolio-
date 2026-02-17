@@ -4244,7 +4244,7 @@ let indicesData = {};
 let indicesFetching = false;
 let indicesLastFetchTime = 0;
 const INDICES_CACHE_KEY = "finzotalk_indices_cache";
-const INDICES_CACHE_DURATION = 10000; // 10 second minimum between fetches
+const INDICES_CACHE_DURATION = 8000; // 8 second minimum between fetches
 let indicesAutoTimer = null;
 /* ================= 300+ INDIAN STOCKS LIST ================= */
 const STOCK_DATA = [
@@ -6563,6 +6563,122 @@ async function fetchAllIndices() {
 
   indicesFetching = false;
 }
+/* ================= PRIORITY STOCK FETCHER ================= */
+// Fetches first 6 homepage stocks + all holdings stocks
+// Uses same "show old, update silently" pattern as indices
+var priorityFetchInProgress = false;
+var priorityFetchTimer = null;
+
+async function fetchPriorityStocks() {
+  if (priorityFetchInProgress) return;
+  priorityFetchInProgress = true;
+
+  // First 6 stocks from STOCK_DATA (homepage visible)
+  var priorityList = STOCK_DATA.slice(0, 6);
+
+  // Also add holding symbols not already in priority list
+  var prioritySyms = {};
+  priorityList.forEach(function(s) { prioritySyms[s.sym] = true; });
+
+  for (var h = 0; h < userHoldings.length; h++) {
+    var hSym = userHoldings[h].sym;
+    if (!prioritySyms[hSym]) {
+      for (var sd = 0; sd < STOCK_DATA.length; sd++) {
+        if (STOCK_DATA[sd].sym === hSym) {
+          priorityList.push(STOCK_DATA[sd]);
+          prioritySyms[hSym] = true;
+          break;
+        }
+      }
+    }
+  }
+
+  console.log("[PRIORITY] Fetching " + priorityList.length + " priority stocks...");
+  var successCount = 0;
+
+  // Fetch in small batches of 2 with minimal delay
+  var batchSize = 2;
+  for (var b = 0; b < priorityList.length; b += batchSize) {
+    var batch = priorityList.slice(b, b + batchSize);
+
+    var promises = batch.map(function(stock) {
+      // Force fetch by clearing fetchedAt
+      var existing = pricesData[stock.sym];
+      if (existing) {
+        existing.fetchedAt = 0;
+      }
+      return fetchStockPrice(stock, "priority").then(function(data) {
+        if (data && data.price > 0) {
+          successCount++;
+          // Silently update the card if visible
+          var oldPrice = (existing && existing.price) ? existing.price : 0;
+          updateCardPriceDisplay(stock.sym, data.price, data.change || 0, data.changePercent || 0, oldPrice);
+        }
+        return data;
+      }).catch(function() { return null; });
+    });
+
+    await Promise.allSettled(promises);
+
+    // Small delay between batches to avoid rate limits
+    if (b + batchSize < priorityList.length) {
+      await new Promise(function(r) { setTimeout(r, 500); });
+    }
+  }
+
+  // Save cache
+  try {
+    localStorage.setItem("stockPricesCache", JSON.stringify(pricesData));
+    localStorage.setItem("lastPriceUpdate", Date.now().toString());
+  } catch (e) {}
+
+  // Update holdings display if any holding prices changed
+  if (successCount > 0) {
+    displayHoldings();
+    refreshLastUpdateDisplay();
+
+    // Also update stock cards on homepage
+    var stocksSection = document.getElementById("stocksSection");
+    if (stocksSection && stocksSection.style.display !== "none") {
+      var searchVal = document.getElementById("stockSearchInput").value.toLowerCase().trim();
+      if (searchVal.length >= 2) {
+        var matches = STOCK_DATA.filter(function(s) {
+          return s.name.toLowerCase().indexOf(searchVal) !== -1 || s.sym.toLowerCase().indexOf(searchVal) !== -1;
+        });
+        displayStocks(matches, true);
+      } else {
+        displayStocks(STOCK_DATA, false);
+      }
+    }
+  }
+
+  console.log("[PRIORITY] Updated " + successCount + "/" + priorityList.length + " stocks");
+  priorityFetchInProgress = false;
+}
+
+// Start priority stock auto-refresh (runs alongside indices)
+function startPriorityStockRefresh() {
+  if (priorityFetchTimer) {
+    clearInterval(priorityFetchTimer);
+    priorityFetchTimer = null;
+  }
+
+  priorityFetchTimer = setInterval(function() {
+    var market = getMarketInfo();
+    if (document.visibilityState !== "visible") return;
+
+    if (market.isOpen) {
+      // During market hours: refresh every 15 seconds
+      fetchPriorityStocks();
+    } else if (market.isWeekday && market.totalMinutes > 930 && market.totalMinutes <= 960) {
+      // Post-market: fetch a few times
+      if (postMarketFetchCount < POST_MARKET_MAX_FETCHES) {
+        fetchPriorityStocks();
+      }
+    }
+    // Outside market hours: do nothing (timer still runs but skips)
+  }, 15000);
+}
   /* ================= DAILY CHANGE BADGE BUILDER ================= */
 function buildDailyChangeBadge(currentPrice, priceChange, changePercent) {
   if (!currentPrice || currentPrice <= 0) {
@@ -7876,20 +7992,31 @@ auth.onAuthStateChanged(async function(user) {
     startIndicesAutoRefresh();
   }, 500);
 
-  // Step 3: Fetch holdings prices
+  // Step 3: Fetch PRIORITY stocks (first 6 homepage stocks)   setTimeout(function() {     fetchPriorityStocks();   }, 800);    // Step 4: Fetch holdings prices
   setTimeout(function() {
     if (userHoldings.length > 0) {
       fetchLatestPrices();
     }
   }, 1200);
   
-  // Step 4: Start auto-refresh system
+  // Step 5: Start auto-refresh system
   setTimeout(function() {
     initAutoRefresh();
     startMarketAutoRefresh();
+    startPriorityStockRefresh();
   }, 2000);
 
   console.log("[BOOT] Loading order: Cache → Indices → Holdings → Auto-refresh");
+    // Step 6: Market status badge updater (every 30s)
+  setInterval(function() {
+    if (!isFetchingData) {
+      setRefreshStatus("auto", false);
+    }
+  }, 30000);
+  // Set initial status
+  setTimeout(function() {
+    setRefreshStatus("auto", false);
+  }, 3000);
 });
 function performLogout() {
   if (confirm("Are you sure you want to logout?")) {
@@ -8397,9 +8524,11 @@ async function fetchStockPrice(stock, reason) {
     if (reason === "search") {
       maxAge = 120000; // 2 min for search
     } else if (reason === "holdings" && market.isOpen) {
-      maxAge = 10000; // 10s for holdings during market
+      maxAge = 8000; // 8s for holdings during market
     } else if (reason === "holdings") {
-      maxAge = 60000; // 60s for holdings when closed
+      maxAge = 120000; // 2 min for holdings when closed
+    } else if (reason === "priority") {
+      maxAge = market.isOpen ? 12000 : 300000; // 12s live, 5min closed
     } else {
       maxAge = 30000; // 30s default
     }
@@ -8471,12 +8600,29 @@ async function fetchLatestPrices() {
   var lastUpdate = parseInt(localStorage.getItem("lastPriceUpdate") || "0");
   var timeSinceUpdate = Date.now() - lastUpdate;
 
-  // If market is closed and we updated recently (within 5 min), skip
-  if (!market.isOpen && !market.isPreOpen && timeSinceUpdate < 300000 && lastUpdate > 0) {
+  // During post-market window (3:30-4:00 PM), allow limited fetches
+  var isPostMarket = market.isWeekday && market.totalMinutes > 930 && market.totalMinutes <= 960;
+
+  // If market is closed (not post-market) and we updated recently, skip
+  if (!market.isOpen && !market.isPreOpen && !isPostMarket && timeSinceUpdate < 300000 && lastUpdate > 0) {
     console.log("[HOLDINGS] Market closed, prices are fresh (" + Math.floor(timeSinceUpdate / 1000) + "s old). Skipping fetch.");
-    setRefreshStatus("Cached", false);
+    setRefreshStatus("Market Closed", false);
     displayHoldings();
     return;
+  }
+
+  // If completely outside trading hours (not post-market), and have recent data, skip
+  if (!market.isOpen && !market.isPreOpen && !isPostMarket && lastUpdate > 0) {
+    var hoursSinceUpdate = timeSinceUpdate / 3600000;
+    // If last update was today, don't refetch until tomorrow's market opens
+    var lastUpdateDate = new Date(lastUpdate);
+    var now = new Date();
+    if (lastUpdateDate.toDateString() === now.toDateString() && hoursSinceUpdate < 18) {
+      console.log("[HOLDINGS] Market closed, have today's prices. Showing cached.");
+      setRefreshStatus("Market Closed", false);
+      displayHoldings();
+      return;
+    }
   }
 
   var holdingSyms = [];
@@ -8507,18 +8653,25 @@ async function fetchLatestPrices() {
 
   var successCount = 0;
 
-  // Batch size 3 to avoid API rate limits with single keys
-  var batchSize = 3;
+  // Batch size 2 for reliable fetching with single API keys
+  var batchSize = 2;
 
   for (var b = 0; b < fetchList.length; b += batchSize) {
     var batch = fetchList.slice(b, b + batchSize);
     var promises = batch.map(function(stock) {
+      // Force clear cache so each stock actually fetches fresh
+      if (pricesData[stock.sym]) {
+        pricesData[stock.sym].fetchedAt = 0;
+      }
       return fetchStockPrice(stock, "holdings").then(function(data) {
         if (data && data.price > 0) {
           pricesData[stock.sym] = data;
           successCount++;
         }
         return { sym: stock.sym, data: data };
+      }).catch(function(err) {
+        console.log("[HOLDINGS] Fetch failed for " + stock.sym + ": " + err.message);
+        return { sym: stock.sym, data: null };
       });
     });
 
@@ -8540,8 +8693,9 @@ async function fetchLatestPrices() {
       displayHoldings();
     }
 
+    // Delay between batches — longer to avoid rate limits with single keys
     if (b + batchSize < fetchList.length) {
-      await new Promise(function(r) { setTimeout(r, 800); });
+      await new Promise(function(r) { setTimeout(r, 1200); });
     }
   }
 
@@ -8747,11 +8901,13 @@ function setRefreshStatus(text, isLoading) {
 
   // Smart status text
   if (!isLoading) {
-    if (text === "Cached" || text === "Ready") {
+    if (text === "Cached" || text === "Ready" || text === "Live" || text === "auto" || text === "Market Closed") {
       if (market.isOpen) {
-        text = "Live";
+        text = "● Live";
       } else if (market.isPreOpen) {
         text = "Pre-Market";
+      } else if (market.isWeekday && market.totalMinutes > 930 && market.totalMinutes <= 960) {
+        text = "Post-Market";
       } else {
         text = "Market Closed";
       }
@@ -8762,26 +8918,35 @@ function setRefreshStatus(text, isLoading) {
 
   // Badge color based on market state
   badge.classList.remove("updating", "error");
+  badge.style.background = "";
+  badge.style.color = "";
+
   if (isLoading) {
     badge.classList.add("updating");
-  } else if (!market.isOpen && !market.isPreOpen) {
-    // Show as neutral/closed state
+  } else if (market.isOpen) {
+    // Green live badge
+    badge.style.background = "var(--success-light)";
+    badge.style.color = "#065f46";
+  } else if (market.isPreOpen) {
+    badge.style.background = "var(--warning-light)";
+    badge.style.color = "#92400e";
+  } else {
+    // Closed — grey/neutral
     badge.style.background = "var(--border-lighter)";
     badge.style.color = "var(--text-secondary)";
-  } else {
-    badge.style.background = "";
-    badge.style.color = "";
   }
 
   var btn = document.getElementById("mainRefreshBtn");
-  btn.disabled = isLoading;
+  if (btn) {
+    btn.disabled = isLoading;
 
-  if (isLoading) {
-    btn.innerHTML = '<div class="loading-spinner"></div> Updating...';
-  } else if (market.isOpen) {
-    btn.innerHTML = '🔄 Refresh Now';
-  } else {
-    btn.innerHTML = '🔄 Refresh Prices';
+    if (isLoading) {
+      btn.innerHTML = '<div class="loading-spinner"></div> Updating...';
+    } else if (market.isOpen) {
+      btn.innerHTML = '🔄 Refresh Now';
+    } else {
+      btn.innerHTML = '🔄 Refresh Prices';
+    }
   }
 
   // Show which API is being used
@@ -9626,39 +9791,111 @@ async function acceptFriendReq(requestId, fromUid) {
   }
   
   try {
-    const myDoc = await db.collection("users").doc(activeUser.uid).get();
-    const theirDoc = await db.collection("users").doc(fromUid).get();
+    // Fetch both user profiles first
+    var myDocPromise = db.collection("users").doc(activeUser.uid).get();
+    var theirDocPromise = db.collection("users").doc(fromUid).get();
+    
+    var results = await Promise.all([myDocPromise, theirDocPromise]);
+    var myDoc = results[0];
+    var theirDoc = results[1];
     
     if (!theirDoc.exists) {
-      ToastManager.error("Error", "User not found");
+      ToastManager.error("Error", "User not found. They may have deleted their account.");
+      if (acceptBtn) { acceptBtn.disabled = false; acceptBtn.textContent = "Accept"; }
       return;
     }
     
-    const myData = myDoc.data();
-    const theirData = theirDoc.data();
+    var myData = myDoc.exists ? myDoc.data() : {};
+    var theirData = theirDoc.data();
     
-    // Add to my friends
-    await db.collection("friends").doc(activeUser.uid).collection("list").doc(fromUid).set({
-      name: theirData.name || "User",
-      usercode: theirData.usercode || "",
-      addedAt: firebase.firestore.FieldValue.serverTimestamp()
-    });
+    var myName = myData.name || myData.firstName || activeUser.displayName || activeUser.email.split("@")[0] || "User";
+    var myCode = myData.usercode || "";
+    var theirName = theirData.name || theirData.firstName || "User";
+    var theirCode = theirData.usercode || "";
     
-    // Add to their friends
-    await db.collection("friends").doc(fromUid).collection("list").doc(activeUser.uid).set({
-      name: myData.name || "User",
-      usercode: myData.usercode || "",
-      addedAt: firebase.firestore.FieldValue.serverTimestamp()
-    });
+    // Step 1: Add to MY friends list (this should always succeed — writing to own data)
+    try {
+      await db.collection("friends").doc(activeUser.uid).collection("list").doc(fromUid).set({
+        name: theirName,
+        usercode: theirCode,
+        addedAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+      console.log("[FRIEND] Added " + theirName + " to my friends list");
+    } catch (e1) {
+      console.error("[FRIEND] Failed to write to my friends list:", e1);
+      ToastManager.error("Permission Error", "Cannot write to your friends list. Check Firestore rules for: friends/{uid}/list/{friendId}");
+      if (acceptBtn) { acceptBtn.disabled = false; acceptBtn.textContent = "Accept"; }
+      return;
+    }
     
-    // Delete request
-    await db.collection("requests").doc(requestId).delete();
+    // Step 2: Add to THEIR friends list (may fail if rules don't allow cross-user writes)
+    try {
+      await db.collection("friends").doc(fromUid).collection("list").doc(activeUser.uid).set({
+        name: myName,
+        usercode: myCode,
+        addedAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+      console.log("[FRIEND] Added myself to " + theirName + "'s friends list");
+    } catch (e2) {
+      console.error("[FRIEND] Failed to write to their friends list:", e2);
+      console.log("[FRIEND] This is likely a Firestore rules issue. Rule needed: allow write to friends/{anyUserId}/list/{document}");
+      
+      // Even if writing to their list fails, we still added them to ours
+      // They will see us when they accept/add us back
+      ToastManager.warning("Partial Success", "Added to your list, but could not update their list. They may need to add you back. Check Firestore rules.");
+    }
     
-    ToastManager.success("Friend Added!", `You are now friends with ${theirData.name || "User"}`);
+    // Step 3: Delete the friend request
+    try {
+      await db.collection("requests").doc(requestId).delete();
+      console.log("[FRIEND] Deleted request " + requestId);
+    } catch (e3) {
+      console.error("[FRIEND] Failed to delete request:", e3);
+      // Non-critical — request will just stay visible but friendship is established
+    }
+    
+    ToastManager.success("Friend Added!", "You are now friends with " + theirName);
     
   } catch (error) {
     console.error("Accept request error:", error);
-    ToastManager.error("Failed", error.message || "Could not accept friend request");
+    
+    var errorMsg = error.message || "Could not accept friend request";
+    
+    // Provide specific guidance for permission errors
+    if (error.code === "permission-denied" || errorMsg.indexOf("permission") !== -1 || errorMsg.indexOf("Permission") !== -1) {
+      errorMsg = "Firestore permission denied. Please update your Firestore Security Rules to allow authenticated users to write to the 'friends' and 'requests' collections. Go to Firebase Console → Firestore → Rules.";
+      
+      console.log("====================================");
+      console.log("FIRESTORE RULES FIX NEEDED:");
+      console.log("Go to Firebase Console → Firestore Database → Rules");
+      console.log("Replace rules with:");
+      console.log("");
+      console.log("rules_version = '2';");
+      console.log("service cloud.firestore {");
+      console.log("  match /databases/{database}/documents {");
+      console.log("    match /users/{userId} {");
+      console.log("      allow read: if request.auth != null;");
+      console.log("      allow write: if request.auth != null && request.auth.uid == userId;");
+      console.log("    }");
+      console.log("    match /holdings/{docId} {");
+      console.log("      allow read, write: if request.auth != null && resource == null || resource.data.userId == request.auth.uid;");
+      console.log("      allow create: if request.auth != null;");
+      console.log("    }");
+      console.log("    match /friends/{userId}/list/{friendId} {");
+      console.log("      allow read, write: if request.auth != null;");
+      console.log("    }");
+      console.log("    match /requests/{docId} {");
+      console.log("      allow read, write: if request.auth != null;");
+      console.log("    }");
+      console.log("    match /chats/{chatId}/messages/{msgId} {");
+      console.log("      allow read, write: if request.auth != null;");
+      console.log("    }");
+      console.log("  }");
+      console.log("}");
+      console.log("====================================");
+    }
+    
+    ToastManager.error("Failed", errorMsg);
     if (acceptBtn) {
       acceptBtn.disabled = false;
       acceptBtn.textContent = "Accept";
@@ -10406,6 +10643,7 @@ showSettings = function() {
 </script>
 </body>
 </html>
+
 
 
 
