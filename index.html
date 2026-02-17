@@ -4244,7 +4244,7 @@ let indicesData = {};
 let indicesFetching = false;
 let indicesLastFetchTime = 0;
 const INDICES_CACHE_KEY = "finzotalk_indices_cache";
-const INDICES_CACHE_DURATION = 8000; // 8 second minimum between fetches
+const INDICES_CACHE_DURATION = 1500; // 1.5 second minimum during market hours
 let indicesAutoTimer = null;
 /* ================= 300+ INDIAN STOCKS LIST ================= */
 const STOCK_DATA = [
@@ -10973,6 +10973,7 @@ showSettings = function() {
 </script>
 </body>
 </html>
+
 
 
 
