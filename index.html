@@ -6120,7 +6120,7 @@ async function fetchSingleIndexPrice(index) {
       var fullUrl = proxies[p] + encodeURIComponent(yahooUrl);
 
       var controller = new AbortController();
-      var timeoutId = setTimeout(function() { controller.abort(); }, 8000);
+      var timeoutId = setTimeout(function() { controller.abort(); }, 4000);
 
       var response = await fetch(fullUrl, { signal: controller.signal });
       clearTimeout(timeoutId);
@@ -6286,11 +6286,15 @@ async function fetchSingleIndexTwelveData(index) {
   }
   return null;
 }
-// Start indices auto-refresh (10s during market, 60s otherwise)
+// Start indices auto-refresh
+// Market open: every 2 seconds via Yahoo (no API key needed, unlimited)
+// Post-market: 2-4 fetches then stop completely
+// Closed/Weekend: no fetching at all
 var indicesTimestampTimer = null;
+var indicesPostMarketCount = 0;
+var INDICES_POST_MARKET_LIMIT = 4;
 
 function startIndicesAutoRefresh() {
-  // Clear ALL existing timers to prevent stacking
   if (indicesAutoTimer) {
     clearTimeout(indicesAutoTimer);
     indicesAutoTimer = null;
@@ -6300,48 +6304,70 @@ function startIndicesAutoRefresh() {
     indicesTimestampTimer = null;
   }
 
-  // Prevent multiple initializations
   if (window._indicesAutoStarted) {
-    console.log("[INDICES] Auto-refresh already running, restarting...");
+    console.log("[INDICES] Auto-refresh restarting...");
   }
   window._indicesAutoStarted = true;
 
-  function getIndicesInterval() {
-    var market = getMarketInfo();
-    return market.isOpen ? 10000 : 60000;
+  var mkt = getMarketInfo();
+  if (mkt.isOpen || mkt.isPreOpen) {
+    indicesPostMarketCount = 0;
   }
 
   function scheduleNext() {
-    var interval = getIndicesInterval();
+    var m = getMarketInfo();
+    var interval;
+
+    if (m.isOpen) {
+      interval = 2000;
+      indicesPostMarketCount = 0;
+    } else if (m.isPreOpen) {
+      interval = 5000;
+      indicesPostMarketCount = 0;
+    } else if (m.isWeekday && m.totalMinutes > 930 && m.totalMinutes <= 990) {
+      if (indicesPostMarketCount < INDICES_POST_MARKET_LIMIT) {
+        interval = 15000;
+      } else {
+        interval = 999999;
+      }
+    } else {
+      interval = 999999;
+    }
+
     indicesAutoTimer = setTimeout(function() {
-      // Only fetch if not already fetching AND tab is visible
-      if (!indicesFetching && document.visibilityState === "visible") {
-        var stocksSection = document.getElementById("stocksSection");
-        if (stocksSection && stocksSection.style.display !== "none") {
-          // ✅ Background fetch — existing numbers stay visible during fetch
-          fetchAllIndices();
+      var shouldFetch = false;
+      var mk = getMarketInfo();
+
+      if (mk.isOpen || mk.isPreOpen) {
+        shouldFetch = true;
+      } else if (mk.isWeekday && mk.totalMinutes > 930 && mk.totalMinutes <= 990) {
+        if (indicesPostMarketCount < INDICES_POST_MARKET_LIMIT) {
+          indicesPostMarketCount++;
+          console.log("[INDICES] Post-market fetch " + indicesPostMarketCount + "/" + INDICES_POST_MARKET_LIMIT);
+          shouldFetch = true;
         }
       }
+
+      if (shouldFetch && !indicesFetching && document.visibilityState === "visible") {
+        fetchAllIndices();
+      }
+
       updateIndicesTimestamp();
       scheduleNext();
     }, interval);
   }
 
-  // ✅ First fetch immediately on start
   if (Object.keys(indicesData).length === 0) {
-    // No data at all — fetch immediately
     fetchAllIndices();
   } else {
-    // Already have data — show it, then schedule background refresh
     renderIndicesBar();
   }
 
   scheduleNext();
 
-  // Update timestamp display every 5 seconds
   indicesTimestampTimer = setInterval(function() {
     updateIndicesTimestamp();
-  }, 5000);
+  }, 3000);
 }
 // Manual refresh — keep showing current numbers while fetching new ones
 function refreshIndices() {
@@ -6489,8 +6515,9 @@ async function fetchAllIndices() {
 
   // Respect minimum interval between fetches
   var timeSinceLast = Date.now() - indicesLastFetchTime;
-  if (indicesLastFetchTime > 0 && timeSinceLast < INDICES_CACHE_DURATION) {
-    console.log("[INDICES] Too soon (" + Math.floor(timeSinceLast / 1000) + "s), skipping...");
+  var mktNow = getMarketInfo();
+  var minGap = mktNow.isOpen ? 1500 : 10000;
+  if (indicesLastFetchTime > 0 && timeSinceLast < minGap) {
     renderIndicesBar();
     return;
   }
@@ -6507,30 +6534,26 @@ async function fetchAllIndices() {
   var successCount = 0;
   var totalCount = MARKET_INDICES.length;
 
-  // Fetch all indices in parallel for speed
+  // Fetch all indices in parallel — Yahoo ONLY (no API key, unlimited, fast)
+  // TwelveData saved for stock prices only
   var fetchPromises = MARKET_INDICES.map(function(index) {
     return (async function() {
       try {
-        // Try Yahoo Finance first (no API key needed)
         var result = await fetchSingleIndexPrice(index);
 
-        // If Yahoo failed, try TwelveData as backup
-        if (!result && isApiAvailable("twelve")) {
-          result = await fetchSingleIndexTwelveData(index);
-        }
-
         if (result && result.price > 0) {
-          // Store the new data
+          var oldData = indicesData[index.symbol];
+          var priceChanged = !oldData || oldData.price !== result.price;
+
           indicesData[index.symbol] = result;
           successCount++;
 
-          // INSTANT UPDATE: render this index card immediately as data arrives
-          renderIndicesBar();
+          if (priceChanged) {
+            renderIndicesBar();
+          }
         }
-        // If fetch failed, old data stays in indicesData — nothing to do
       } catch (err) {
-        console.log("[INDICES] Error fetching " + index.shortName + ": " + err.message);
-        // Old data remains — no action needed
+        // Silent fail — old data stays visible
       }
     })();
   });
@@ -6678,6 +6701,251 @@ function startPriorityStockRefresh() {
     }
     // Outside market hours: do nothing (timer still runs but skips)
   }, 15000);
+}
+/* ================= PRIORITY HOMEPAGE STOCK FETCHER ================= */
+// Fetches first 6 visible stocks on homepage + all holdings on initial load
+async function fetchPriorityHomepageStocks() {
+  var priorityList = STOCK_DATA.slice(0, 6);
+
+  // Also add holding stocks
+  var addedSyms = {};
+  priorityList.forEach(function(s) { addedSyms[s.sym] = true; });
+
+  for (var h = 0; h < userHoldings.length; h++) {
+    var hSym = userHoldings[h].sym;
+    if (!addedSyms[hSym]) {
+      for (var sd = 0; sd < STOCK_DATA.length; sd++) {
+        if (STOCK_DATA[sd].sym === hSym) {
+          priorityList.push(STOCK_DATA[sd]);
+          addedSyms[hSym] = true;
+          break;
+        }
+      }
+    }
+  }
+
+  console.log("[PRIORITY] Fetching " + priorityList.length + " priority stocks...");
+
+  for (var i = 0; i < priorityList.length; i++) {
+    var stock = priorityList[i];
+    if (pricesData[stock.sym]) {
+      pricesData[stock.sym].fetchedAt = 0;
+    }
+
+    try {
+      var data = await fetchStockPrice(stock, "holdings");
+      if (data && data.price > 0) {
+        var old = pricesData[stock.sym] ? pricesData[stock.sym].price : 0;
+        updateCardPriceDisplay(stock.sym, data.price, data.change || 0, data.changePercent || 0, old);
+
+        var cc = document.getElementById("minichart_" + stock.sym);
+        if (cc) loadMiniChart(stock.sym, stock.yahoo, cc);
+      }
+    } catch (e) {}
+
+    if (i < priorityList.length - 1) {
+      await new Promise(function(r) { setTimeout(r, 400); });
+    }
+  }
+
+  try { localStorage.setItem("stockPricesCache", JSON.stringify(pricesData)); } catch (e) {}
+  displayHoldings();
+  refreshLastUpdateDisplay();
+  console.log("[PRIORITY] Done");
+}
+  /* ================= SCROLL-BASED LAZY STOCK LOADER ================= */
+// When user scrolls and a stock card becomes visible for 1+ seconds,
+// fetch its price and mini chart automatically
+var scrollObserver = null;
+var scrollFetchQueue = [];
+var scrollFetchTimer = null;
+var scrollFetchingActive = false;
+
+function initStockScrollObserver() {
+  // Don't reinitialize if already running
+  if (scrollObserver) {
+    scrollObserver.disconnect();
+    scrollObserver = null;
+  }
+
+  // Check browser support
+  if (!("IntersectionObserver" in window)) {
+    console.log("[SCROLL] IntersectionObserver not supported");
+    return;
+  }
+
+  scrollObserver = new IntersectionObserver(function(entries) {
+    entries.forEach(function(entry) {
+      var card = entry.target;
+      var sym = card.dataset.symbol;
+      if (!sym) return;
+
+      if (entry.isIntersecting) {
+        // Card is now visible — wait 1 second before fetching
+        card.dataset.scrollVisible = "true";
+        card.dataset.scrollVisibleAt = Date.now().toString();
+      } else {
+        // Card scrolled out of view — cancel
+        card.dataset.scrollVisible = "false";
+        card.dataset.scrollVisibleAt = "";
+      }
+    });
+
+    // Schedule check after 1 second
+    if (scrollFetchTimer) clearTimeout(scrollFetchTimer);
+    scrollFetchTimer = setTimeout(function() {
+      processScrollQueue();
+    }, 1100); // 1.1 second delay
+  }, {
+    root: null,
+    rootMargin: "0px",
+    threshold: 0.3 // 30% of card must be visible
+  });
+
+  // Observe all existing stock cards
+  observeStockCards();
+
+  console.log("[SCROLL] Lazy loader initialized");
+}
+
+function observeStockCards() {
+  if (!scrollObserver) return;
+
+  var cards = document.querySelectorAll(".stock-card[data-symbol]");
+  cards.forEach(function(card) {
+    var sym = card.dataset.symbol;
+    if (!sym) return;
+
+    // Only observe cards that don't already have a price
+    var priceData = pricesData[sym];
+    if (!priceData || !priceData.price || priceData.price <= 0) {
+      scrollObserver.observe(card);
+    }
+  });
+}
+
+// Re-observe cards when displayStocks is called (new cards rendered)
+var _originalDisplayStocks = displayStocks;
+
+// We override displayStocks by wrapping it
+// (not replacing — just adding observer after render)
+var _displayStocksObserverTimer = null;
+
+function attachScrollObserverAfterRender() {
+  if (_displayStocksObserverTimer) clearTimeout(_displayStocksObserverTimer);
+  _displayStocksObserverTimer = setTimeout(function() {
+    if (scrollObserver) {
+      observeStockCards();
+    }
+  }, 500);
+}
+
+// Hook into displayStocks — add a MutationObserver on the container
+(function() {
+  var stocksContainer = document.getElementById("stocksContainer");
+  if (!stocksContainer) return;
+
+  var mutObserver = new MutationObserver(function() {
+    attachScrollObserverAfterRender();
+  });
+
+  mutObserver.observe(stocksContainer, { childList: true });
+})();
+
+async function processScrollQueue() {
+  if (scrollFetchingActive) return;
+  scrollFetchingActive = true;
+
+  var now = Date.now();
+  var cardsToFetch = [];
+
+  // Find all cards that have been visible for 1+ seconds
+  var allCards = document.querySelectorAll('.stock-card[data-scroll-visible="true"]');
+  allCards.forEach(function(card) {
+    var sym = card.dataset.symbol;
+    var visibleAt = parseInt(card.dataset.scrollVisibleAt || "0");
+
+    if (!sym || !visibleAt) return;
+
+    // Must be visible for at least 1 second
+    if (now - visibleAt < 1000) return;
+
+    // Skip if already has fresh price
+    var existing = pricesData[sym];
+    if (existing && existing.price > 0 && existing.fetchedAt && (now - existing.fetchedAt < 30000)) {
+      return;
+    }
+
+    // Find stock data
+    var stockData = null;
+    for (var i = 0; i < STOCK_DATA.length; i++) {
+      if (STOCK_DATA[i].sym === sym) {
+        stockData = STOCK_DATA[i];
+        break;
+      }
+    }
+
+    if (stockData) {
+      cardsToFetch.push(stockData);
+    }
+  });
+
+  if (cardsToFetch.length === 0) {
+    scrollFetchingActive = false;
+    return;
+  }
+
+  console.log("[SCROLL] Fetching " + cardsToFetch.length + " newly visible stocks");
+
+  // Fetch max 3 at a time
+  var maxFetch = Math.min(cardsToFetch.length, 3);
+  for (var i = 0; i < maxFetch; i++) {
+    var stock = cardsToFetch[i];
+
+    try {
+      // Clear cache to force fresh fetch
+      if (pricesData[stock.sym]) {
+        pricesData[stock.sym].fetchedAt = 0;
+      }
+
+      var data = await fetchStockPrice(stock, "scroll");
+
+      if (data && data.price > 0) {
+        var oldPrice = pricesData[stock.sym] ? pricesData[stock.sym].price : 0;
+
+        // Silent update — just update the card, don't re-render entire grid
+        updateCardPriceDisplay(stock.sym, data.price, data.change || 0, data.changePercent || 0, oldPrice);
+
+        // Load mini chart too
+        var chartContainer = document.getElementById("minichart_" + stock.sym);
+        if (chartContainer) {
+          loadMiniChart(stock.sym, stock.yahoo, chartContainer);
+        }
+
+        // Unobserve this card (already loaded)
+        var card = document.querySelector('[data-symbol="' + stock.sym + '"]');
+        if (card && scrollObserver) {
+          scrollObserver.unobserve(card);
+        }
+
+        console.log("[SCROLL] ✓ " + stock.sym + " = ₹" + data.price.toFixed(2));
+      }
+    } catch (e) {
+      console.log("[SCROLL] ✗ " + stock.sym + " failed");
+    }
+
+    // Small delay between fetches
+    if (i < maxFetch - 1) {
+      await new Promise(function(r) { setTimeout(r, 400); });
+    }
+  }
+
+  // Save cache
+  try {
+    localStorage.setItem("stockPricesCache", JSON.stringify(pricesData));
+  } catch (e) {}
+
+  scrollFetchingActive = false;
 }
   /* ================= DAILY CHANGE BADGE BUILDER ================= */
 function buildDailyChangeBadge(currentPrice, priceChange, changePercent) {
@@ -8006,7 +8274,7 @@ auth.onAuthStateChanged(async function(user) {
     startPriorityStockRefresh();
   }, 2000);
 
-  console.log("[BOOT] Loading order: Cache → Indices → Holdings → Auto-refresh");
+  // Step 6: Initialize scroll-based lazy loader for stock cards   setTimeout(function() {     initStockScrollObserver();   }, 2500);    // Step 7: Set initial market status   setTimeout(function() {     setRefreshStatus("auto", false);   }, 3000);    console.log("[BOOT] Loading order: Cache → Indices → Holdings → Auto-refresh → Scroll observer");
     // Step 6: Market status badge updater (every 30s)
   setInterval(function() {
     if (!isFetchingData) {
@@ -8595,18 +8863,13 @@ async function fetchStockPrice(stock, reason) {
 async function fetchLatestPrices() {
   if (isFetchingData) return;
 
-  // Smart check: should we even fetch?
+  // Guard against rapid duplicate calls only (5 second minimum gap)
   var market = getMarketInfo();
   var lastUpdate = parseInt(localStorage.getItem("lastPriceUpdate") || "0");
   var timeSinceUpdate = Date.now() - lastUpdate;
 
-  // During post-market window (3:30-4:00 PM), allow limited fetches
-  var isPostMarket = market.isWeekday && market.totalMinutes > 930 && market.totalMinutes <= 960;
-
-  // If market is closed (not post-market) and we updated recently, skip
-  if (!market.isOpen && !market.isPreOpen && !isPostMarket && timeSinceUpdate < 300000 && lastUpdate > 0) {
-    console.log("[HOLDINGS] Market closed, prices are fresh (" + Math.floor(timeSinceUpdate / 1000) + "s old). Skipping fetch.");
-    setRefreshStatus("Market Closed", false);
+  if (timeSinceUpdate < 5000 && lastUpdate > 0) {
+    console.log("[HOLDINGS] Too soon (" + Math.floor(timeSinceUpdate / 1000) + "s). Skipping.");
     displayHoldings();
     return;
   }
@@ -8730,39 +8993,71 @@ async function fetchLatestPrices() {
     }
   }
 }
-// Fetch prices for search results only (max 10)
+// Fetch prices for search results — quick focused fetch for searched stock
+var searchAbortFlag = false;
+
 async function fetchSearchResults(stocksToFetch, originalQuery) {
+  searchAbortFlag = false;
   setRefreshStatus("Searching...", true);
 
-  var batchSize = 2; // Conservative batch with single keys
-  for (var i = 0; i < stocksToFetch.length; i += batchSize) {
-    var batch = stocksToFetch.slice(i, i + batchSize);
-    var promises = batch.map(function(stock) {
-      return fetchStockPrice(stock, "search").then(function(data) {
-        return { sym: stock.sym, data: data };
-      });
-    });
+  // Only fetch max 5 stocks from search
+  var toFetch = stocksToFetch.slice(0, 5);
 
-    await Promise.allSettled(promises);
+  for (var i = 0; i < toFetch.length; i++) {
+    if (searchAbortFlag) break;
 
-    // Update display if user hasn't changed search
+    // Check if user changed query
     var currentQuery = document.getElementById("stockSearchInput").value.toLowerCase().trim();
+    if (currentQuery !== originalQuery) {
+      console.log("[SEARCH] Query changed, stopping");
+      break;
+    }
+
+    var stock = toFetch[i];
+
+    // Force fresh fetch
+    if (pricesData[stock.sym]) {
+      pricesData[stock.sym].fetchedAt = 0;
+    }
+
+    try {
+      var data = await fetchStockPrice(stock, "search");
+      if (data && data.price > 0) {
+        console.log("[SEARCH] ✓ " + stock.sym + " = ₹" + data.price.toFixed(2));
+
+        // Silent card update
+        var oldPrice = pricesData[stock.sym] ? pricesData[stock.sym].price : 0;
+        updateCardPriceDisplay(stock.sym, data.price, data.change || 0, data.changePercent || 0, oldPrice);
+
+        // Load mini chart for searched stock
+        var chartContainer = document.getElementById("minichart_" + stock.sym);
+        if (chartContainer) {
+          loadMiniChart(stock.sym, stock.yahoo, chartContainer);
+        }
+      }
+    } catch (e) {
+      console.log("[SEARCH] ✗ " + stock.sym);
+    }
+
+    // Refresh display
+    currentQuery = document.getElementById("stockSearchInput").value.toLowerCase().trim();
     if (currentQuery === originalQuery) {
       var matches = STOCK_DATA.filter(function(s) {
         return s.name.toLowerCase().indexOf(currentQuery) !== -1 || s.sym.toLowerCase().indexOf(currentQuery) !== -1;
       });
       displayStocks(matches, true);
-    } else {
-      break;
     }
 
-     if (i + batchSize < stocksToFetch.length) {
-      await new Promise(function(r) { setTimeout(r, 1000); });
+    // Short delay between stocks (300ms)
+    if (i < toFetch.length - 1) {
+      await new Promise(function(r) { setTimeout(r, 300); });
     }
   }
 
-  localStorage.setItem("stockPricesCache", JSON.stringify(pricesData));
-  setRefreshStatus("Ready", false);
+  try {
+    localStorage.setItem("stockPricesCache", JSON.stringify(pricesData));
+  } catch (e) {}
+  setRefreshStatus("auto", false);
 }
   
 function triggerManualRefresh() {
@@ -8803,67 +9098,76 @@ function refreshHoldingsData() {
   fetchLatestPrices();
 }
 var autoRefreshInitialized = false;
-var postMarketFetchCount = 0; // Track fetches after market close
-var POST_MARKET_MAX_FETCHES = 3; // Only fetch 3 times after close
+var postMarketFetchCount = 0;
+var POST_MARKET_MAX_FETCHES = 7;
+var holdingsClosedFetchCount = 0;
+var HOLDINGS_CLOSED_MAX_PER_HOUR = 7;
+var lastClosedHourReset = 0;
 
 function initAutoRefresh() {
-  // Prevent multiple initializations
   if (autoRefreshTimer) {
     clearInterval(autoRefreshTimer);
     autoRefreshTimer = null;
   }
 
-  // Reset post-market counter when market opens
   var market = getMarketInfo();
   if (market.isOpen) {
     postMarketFetchCount = 0;
+    holdingsClosedFetchCount = 0;
+  }
+  lastClosedHourReset = Date.now();
+
+  function resetClosedCounter() {
+    var now = Date.now();
+    if (now - lastClosedHourReset > 3600000) {
+      holdingsClosedFetchCount = 0;
+      lastClosedHourReset = now;
+    }
   }
 
   function getSmartRefreshInterval() {
     var m = getMarketInfo();
 
     if (m.isOpen) {
-      // Market open: refresh every 12 seconds
-      postMarketFetchCount = 0; // Reset counter
+      postMarketFetchCount = 0;
+      holdingsClosedFetchCount = 0;
       return 12;
     }
-
     if (m.isPreOpen) {
-      // Pre-market (9:00 - 9:15): refresh every 30 seconds
       postMarketFetchCount = 0;
-      return 30;
+      return 20;
     }
-
-    if (m.isWeekday && m.totalMinutes > 930 && m.totalMinutes <= 960) {
-      // Post-market (3:30 PM - 4:00 PM): fetch a few times then stop
+    if (m.isWeekday && m.totalMinutes > 930 && m.totalMinutes <= 990) {
       if (postMarketFetchCount < POST_MARKET_MAX_FETCHES) {
-        return 20; // Every 20s for first 3 fetches
+        return 30;
       }
-      return 9999; // Effectively stop
+      return 600;
     }
-
-    // Market closed (after 4 PM, before 9 AM, weekends)
-    return 9999; // Don't auto-fetch
+    // Closed — 6-7 fetches per hour = every ~9 minutes
+    resetClosedCounter();
+    if (holdingsClosedFetchCount < HOLDINGS_CLOSED_MAX_PER_HOUR) {
+      return 540;
+    }
+    return 3600;
   }
 
   function shouldFetchNow() {
     var m = getMarketInfo();
-
-    // Always fetch during market hours
     if (m.isOpen || m.isPreOpen) return true;
-
-    // Post-market: only if under limit
-    if (m.isWeekday && m.totalMinutes > 930 && m.totalMinutes <= 960) {
+    if (m.isWeekday && m.totalMinutes > 930 && m.totalMinutes <= 990) {
       if (postMarketFetchCount < POST_MARKET_MAX_FETCHES) {
         postMarketFetchCount++;
         console.log("[REFRESH] Post-market fetch " + postMarketFetchCount + "/" + POST_MARKET_MAX_FETCHES);
         return true;
       }
-      console.log("[REFRESH] Post-market fetch limit reached. Showing last prices.");
       return false;
     }
-
-    // Closed hours — don't fetch
+    resetClosedCounter();
+    if (holdingsClosedFetchCount < HOLDINGS_CLOSED_MAX_PER_HOUR) {
+      holdingsClosedFetchCount++;
+      console.log("[REFRESH] Closed-hours fetch " + holdingsClosedFetchCount + "/" + HOLDINGS_CLOSED_MAX_PER_HOUR + " this hour");
+      return true;
+    }
     return false;
   }
 
@@ -8876,15 +9180,17 @@ function initAutoRefresh() {
     if (countdownEl) countdownEl.textContent = Math.max(0, refreshCountdown);
     refreshLastUpdateDisplay();
 
+    if (refreshCountdown % 30 === 0 && !isFetchingData) {
+      setRefreshStatus("auto", false);
+    }
+
     if (refreshCountdown <= 0) {
       refreshCountdown = getSmartRefreshInterval();
-
       if (!isFetchingData && document.visibilityState === "visible" && userHoldings.length > 0) {
         if (shouldFetchNow()) {
           fetchLatestPrices();
         } else {
-          // Not fetching — just show cached prices
-          setRefreshStatus("Cached", false);
+          setRefreshStatus("auto", false);
           displayHoldings();
         }
       }
@@ -8892,21 +9198,20 @@ function initAutoRefresh() {
   }, 1000);
 
   var m = getMarketInfo();
-  console.log("[REFRESH] Smart auto-refresh initialized. Market: " + m.label + ", Interval: " + getSmartRefreshInterval() + "s");
+  console.log("[REFRESH] Holdings auto-refresh started. Market: " + m.label + ", Interval: " + getSmartRefreshInterval() + "s");
 }
 function setRefreshStatus(text, isLoading) {
   var badge = document.getElementById("liveStatusBadge");
   var statusText = document.getElementById("liveStatusText");
   var market = getMarketInfo();
 
-  // Smart status text
   if (!isLoading) {
     if (text === "Cached" || text === "Ready" || text === "Live" || text === "auto" || text === "Market Closed") {
       if (market.isOpen) {
         text = "● Live";
       } else if (market.isPreOpen) {
-        text = "Pre-Market";
-      } else if (market.isWeekday && market.totalMinutes > 930 && market.totalMinutes <= 960) {
+        text = "● Pre-Market";
+      } else if (market.isWeekday && market.totalMinutes > 930 && market.totalMinutes <= 990) {
         text = "Post-Market";
       } else {
         text = "Market Closed";
@@ -8914,32 +9219,30 @@ function setRefreshStatus(text, isLoading) {
     }
   }
 
-  statusText.textContent = text;
+  if (statusText) statusText.textContent = text;
 
-  // Badge color based on market state
-  badge.classList.remove("updating", "error");
-  badge.style.background = "";
-  badge.style.color = "";
+  if (badge) {
+    badge.classList.remove("updating", "error");
+    badge.style.background = "";
+    badge.style.color = "";
 
-  if (isLoading) {
-    badge.classList.add("updating");
-  } else if (market.isOpen) {
-    // Green live badge
-    badge.style.background = "var(--success-light)";
-    badge.style.color = "#065f46";
-  } else if (market.isPreOpen) {
-    badge.style.background = "var(--warning-light)";
-    badge.style.color = "#92400e";
-  } else {
-    // Closed — grey/neutral
-    badge.style.background = "var(--border-lighter)";
-    badge.style.color = "var(--text-secondary)";
+    if (isLoading) {
+      badge.classList.add("updating");
+    } else if (market.isOpen) {
+      badge.style.background = "var(--success-light)";
+      badge.style.color = "#065f46";
+    } else if (market.isPreOpen) {
+      badge.style.background = "var(--warning-light)";
+      badge.style.color = "#92400e";
+    } else {
+      badge.style.background = "var(--border-lighter)";
+      badge.style.color = "var(--text-secondary)";
+    }
   }
 
   var btn = document.getElementById("mainRefreshBtn");
   if (btn) {
     btn.disabled = isLoading;
-
     if (isLoading) {
       btn.innerHTML = '<div class="loading-spinner"></div> Updating...';
     } else if (market.isOpen) {
@@ -8949,14 +9252,35 @@ function setRefreshStatus(text, isLoading) {
     }
   }
 
-  // Show which API is being used
   var apiEl = document.getElementById("apiIndicator");
   if (apiEl) {
-    if (lastUsedAPI && lastUsedAPI !== "none") {
+    if (lastUsedAPI && lastUsedAPI !== "none" && isLoading) {
       apiEl.style.display = "inline-block";
       apiEl.textContent = "via " + lastUsedAPI;
+    } else if (!isLoading) {
+      apiEl.style.display = "inline-block";
+      if (market.isOpen) {
+        apiEl.textContent = "NSE 9:15 AM - 3:30 PM";
+      } else {
+        apiEl.textContent = getNextMarketOpenText();
+      }
     }
   }
+}
+
+function getNextMarketOpenText() {
+  var now = new Date();
+  var utc = now.getTime() + (now.getTimezoneOffset() * 60000);
+  var ist = new Date(utc + (5.5 * 3600000));
+  var day = ist.getDay();
+  var totalMinutes = ist.getHours() * 60 + ist.getMinutes();
+
+  if (day >= 1 && day <= 5 && totalMinutes < 555) return "Opens today 9:15 AM";
+  if (day === 5 && totalMinutes > 930) return "Opens Mon 9:15 AM";
+  if (day === 6) return "Opens Mon 9:15 AM";
+  if (day === 0) return "Opens Mon 9:15 AM";
+  if (day >= 1 && day <= 4 && totalMinutes > 930) return "Opens tomorrow 9:15 AM";
+  return "NSE 9:15 AM IST";
 }
 
 function refreshLastUpdateDisplay() {
@@ -9135,12 +9459,18 @@ function displayStocks(stockList, showAll) {
 
         container.appendChild(card);
     });
-       // Load mini charts ONLY for stocks that already have cached prices
-    // Do NOT auto-fetch prices for homepage stocks
+    // Load mini charts for stocks with cached prices
     var chartsToLoad = displayList.filter(function(stock) {
       var cached = pricesData[stock.sym];
       return cached && cached.price > 0;
-    }).slice(0, 10);
+    });
+
+    // More charts for search results, limit for homepage
+    if (showAll) {
+      chartsToLoad = chartsToLoad.slice(0, 15);
+    } else {
+      chartsToLoad = chartsToLoad.slice(0, 10);
+    }
 
     if (chartsToLoad.length > 0) {
       setTimeout(function() {
@@ -9150,9 +9480,9 @@ function displayStocks(stockList, showAll) {
             if (container) {
               loadMiniChart(stock.sym, stock.yahoo, container);
             }
-          }, idx * 300);
+          }, idx * 200);
         });
-      }, 1000);
+      }, 500);
     }
     if (!showAll && stockList.length > 25) {
         var moreMsg = document.createElement("div");
@@ -10643,6 +10973,7 @@ showSettings = function() {
 </script>
 </body>
 </html>
+
 
 
 
