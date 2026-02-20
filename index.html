@@ -8955,7 +8955,7 @@ async function fetchLatestPrices() {
   }
 
   // If completely outside trading hours (not post-market), and have recent data, skip
-  if (!market.isOpen && !market.isPreOpen && !isPostMarket && lastUpdate > 0) {
+  var isPostMarket = (market.isWeekday && market.totalMinutes > 930 && market.totalMinutes <= 990); if (!market.isOpen && !market.isPreOpen && !isPostMarket && lastUpdate > 0) {
     var hoursSinceUpdate = timeSinceUpdate / 3600000;
     // If last update was today, don't refetch until tomorrow's market opens
     var lastUpdateDate = new Date(lastUpdate);
@@ -11053,6 +11053,7 @@ showSettings = function() {
 </script>
 </body>
 </html>
+
 
 
 
