@@ -4242,8 +4242,6 @@ const MARKET_INDICES = [
 // Indices data store
 let indicesData = {};
 let indicesFetching = false;
-let indicesLoopRunning = false;
-let _indicesAbortCurrent = false;
 let indicesLastFetchTime = 0;
 const INDICES_CACHE_KEY = "finzotalk_indices_cache";
 const INDICES_CACHE_DURATION = 500; // 0.5s — sequential system handles timing, this is just a safety net
@@ -6202,94 +6200,24 @@ async function fetchSingleIndexTwelveData(index) {
   return null;
 }
 
-// ==================== CORE: Fetch one index with smart timeout ====================
-// Yahoo starts immediately. If Yahoo takes >10s, TwelveData starts IN PARALLEL.
-// Whichever responds first with valid data wins. The other is ignored (not cancelled).
-// Total max wait per index: 20 seconds.
-function fetchOneIndex(index) {
-  return new Promise(function(resolve) {
-    var done = false;
-    var yahooFinished = false;
-    var fallbackStarted = false;
-    var slowTimer = null;
-    var maxTimer = null;
+// ==================== INDICES ENGINE v5 — BULLETPROOF ====================
+// Rules:
+// 1. Fetch all 7 one by one (no parallel — avoids proxy rate limits)
+// 2. Each index: try Yahoo (2s timeout per proxy), then TwelveData (3s)
+// 3. Show each result immediately on screen
+// 4. After all 7 done → wait 2s → fetch all 7 again
+// 5. NEVER start new cycle if old one running
+// 6. No flag can get stuck — safety timeout releases after 60s
 
-    function finish(result) {
-      if (done) return;
-      done = true;
-      if (slowTimer) clearTimeout(slowTimer);
-      if (maxTimer) clearTimeout(maxTimer);
-      resolve(result);
-    }
+var _idxLastCycleStart = 0;
 
-    // HARD LIMIT: 8 seconds max per index, then give up
-    maxTimer = setTimeout(function() {
-      if (!done) {
-        console.log("[IDX] " + index.shortName + " hard timeout 8s — giving up");
-        finish(null);
-      }
-    }, 8000);
-
-    // START YAHOO IMMEDIATELY
-    fetchSingleIndexPrice(index).then(function(yahooResult) {
-      yahooFinished = true;
-      if (yahooResult && yahooResult.price > 0) {
-        finish(yahooResult);
-      } else {
-        // Yahoo returned but no valid data — try fallback now
-        startFallback();
-      }
-    }).catch(function() {
-      yahooFinished = true;
-      startFallback();
-    });
-
-    // IF YAHOO IS SLOW (3 seconds), start TwelveData IN PARALLEL
-    // Yahoo keeps running — if it responds later, it still wins
-    slowTimer = setTimeout(function() {
-      if (!done && !yahooFinished) {
-        console.log("[IDX] " + index.shortName + " Yahoo slow (3s), adding TwelveData...");
-        startFallback();
-      }
-    }, 3000);
-
-    function startFallback() {
-      if (fallbackStarted || done) return;
-      fallbackStarted = true;
-
-      // TwelveData
-      fetchSingleIndexTwelveData(index).then(function(tdResult) {
-        if (tdResult && tdResult.price > 0) {
-          finish(tdResult);
-        }
-      }).catch(function() {});
-
-      // Yahoo retry with reversed proxy order
-      fetchYahooRetry(index).then(function(retryResult) {
-        if (retryResult && retryResult.price > 0) {
-          finish(retryResult);
-        }
-      }).catch(function() {});
-
-      // Give fallbacks 4 more seconds, then give up
-      setTimeout(function() {
-        if (!done) {
-          console.log("[IDX] " + index.shortName + " all fallbacks failed");
-          finish(null);
-        }
-      }, 4000);
-    }
-  });
-}
-
-// Yahoo retry with reversed proxy order
-async function fetchYahooRetry(index) {
+async function fetchOneIndexFast(index) {
+  // TRY YAHOO FIRST (3 proxies, 2s each)
   var yahooUrl = "https://query1.finance.yahoo.com/v8/finance/chart/" + encodeURIComponent(index.yahoo) + "?interval=1d&range=1d";
-
   var proxies = [
-    "https://api.codetabs.com/v1/proxy?quest=",
+    "https://api.allorigins.win/raw?url=",
     "https://corsproxy.io/?",
-    "https://api.allorigins.win/raw?url="
+    "https://api.codetabs.com/v1/proxy?quest="
   ];
 
   for (var p = 0; p < proxies.length; p++) {
@@ -6298,11 +6226,9 @@ async function fetchYahooRetry(index) {
       var tid = setTimeout(function() { controller.abort(); }, 2000);
       var resp = await fetch(proxies[p] + encodeURIComponent(yahooUrl), { signal: controller.signal });
       clearTimeout(tid);
-
       if (!resp.ok) continue;
       var txt = await resp.text();
       if (!txt || txt.charAt(0) !== '{') continue;
-
       var data = JSON.parse(txt);
       if (data && data.chart && data.chart.result && data.chart.result[0]) {
         var meta = data.chart.result[0].meta;
@@ -6315,64 +6241,98 @@ async function fetchYahooRetry(index) {
             changePercent: prevClose > 0 ? ((price - prevClose) / prevClose) * 100 : 0,
             prevClose: prevClose,
             fetchedAt: Date.now(),
+            source: "Yahoo-P" + (p + 1)
+          };
+        }
+      }
+    } catch (e) {
+      // timeout or network error — try next proxy
+    }
+  }
+
+  // TRY TWELVEDATA AS BACKUP (3s timeout)
+  try {
+    var result = await fetchSingleIndexTwelveData(index);
+    if (result && result.price > 0) return result;
+  } catch (e) {}
+
+  // TRY YAHOO AGAIN with reversed proxy order (2s each)
+  var reversedProxies = [
+    "https://api.codetabs.com/v1/proxy?quest=",
+    "https://corsproxy.io/?",
+    "https://api.allorigins.win/raw?url="
+  ];
+
+  for (var r = 0; r < reversedProxies.length; r++) {
+    try {
+      var ctrl2 = new AbortController();
+      var tid2 = setTimeout(function() { ctrl2.abort(); }, 2000);
+      var resp2 = await fetch(reversedProxies[r] + encodeURIComponent(yahooUrl), { signal: ctrl2.signal });
+      clearTimeout(tid2);
+      if (!resp2.ok) continue;
+      var txt2 = await resp2.text();
+      if (!txt2 || txt2.charAt(0) !== '{') continue;
+      var data2 = JSON.parse(txt2);
+      if (data2 && data2.chart && data2.chart.result && data2.chart.result[0]) {
+        var meta2 = data2.chart.result[0].meta;
+        var price2 = meta2.regularMarketPrice || 0;
+        var prevClose2 = meta2.previousClose || meta2.chartPreviousClose || price2;
+        if (price2 > 0) {
+          return {
+            price: price2,
+            change: price2 - prevClose2,
+            changePercent: prevClose2 > 0 ? ((price2 - prevClose2) / prevClose2) * 100 : 0,
+            prevClose: prevClose2,
+            fetchedAt: Date.now(),
             source: "Yahoo-Retry"
           };
         }
       }
     } catch (e) {}
   }
+
   return null;
 }
 
-// ==================== CORE: Fetch ALL 7 indices one by one ====================
-// Simple and bulletproof. No flag gets stuck. Always resolves.
-// ==================== CORE: Fetch ALL 7 indices sequentially (CLEAN v4) ====================
-// Rule: NEVER start a new fetch if previous one is still running.
-// Show old data on screen while fetching. Update silently when new data arrives.
-// Works exactly like first fetch every time.
-
 async function fetchAllIndicesSequential() {
-  // HARD RULE: If already fetching, do NOT start another
+  // SAFETY: If flag stuck for more than 60 seconds, force release it
   if (indicesFetching) {
-    console.log("[IDX] Already fetching, skipping this call");
-    return;
+    var stuckTime = Date.now() - _idxLastCycleStart;
+    if (stuckTime > 60000) {
+      console.log("[IDX] Flag stuck for " + Math.floor(stuckTime / 1000) + "s — force releasing");
+      indicesFetching = false;
+    } else {
+      console.log("[IDX] Skipping — previous fetch still running (" + Math.floor(stuckTime / 1000) + "s)");
+      return;
+    }
   }
 
   indicesFetching = true;
-  _indicesAbortCurrent = false;
-  var startTime = Date.now();
+  _idxLastCycleStart = Date.now();
   var successCount = 0;
 
-  console.log("[IDX] ── Starting fetch for " + MARKET_INDICES.length + " indices ──");
+  console.log("[IDX] ── Cycle starting for " + MARKET_INDICES.length + " indices ──");
 
   var btn = document.getElementById("indicesRefreshBtn");
   if (btn) { btn.disabled = true; btn.textContent = "⏳ Fetching..."; }
 
-  // Fetch 2 indices at a time (parallel pairs for speed)
-  var pairSize = 2;
-  for (var i = 0; i < MARKET_INDICES.length; i += pairSize) {
-    if (_indicesAbortCurrent) {
-      console.log("[IDX] Fetch aborted");
-      break;
+  for (var i = 0; i < MARKET_INDICES.length; i++) {
+    var index = MARKET_INDICES[i];
+    try {
+      var result = await fetchOneIndexFast(index);
+      if (result && result.price > 0) {
+        indicesData[index.symbol] = result;
+        successCount++;
+        renderIndicesBar();
+        console.log("[IDX] ✓ " + index.shortName + " = " + result.price);
+      } else {
+        console.log("[IDX] ✗ " + index.shortName + " — no data");
+      }
+    } catch (e) {
+      console.log("[IDX] ✗ " + index.shortName + " — error: " + (e.message || ""));
     }
-
-    var pair = MARKET_INDICES.slice(i, i + pairSize);
-    var pairPromises = pair.map(function(index) {
-      return fetchOneIndex(index).then(function(result) {
-        if (result && result.price > 0) {
-          indicesData[index.symbol] = result;
-          successCount++;
-          renderIndicesBar();
-        }
-      }).catch(function(e) {
-        console.log("[IDX] " + index.shortName + " error: " + (e.message || "unknown"));
-      });
-    });
-
-    await Promise.all(pairPromises);
   }
 
-  // Save results
   if (successCount > 0) {
     indicesLastFetchTime = Date.now();
     saveIndicesCache();
@@ -6383,30 +6343,26 @@ async function fetchAllIndicesSequential() {
 
   if (btn) { btn.disabled = false; btn.textContent = "🔄 Refresh"; }
 
-  var duration = ((Date.now() - startTime) / 1000).toFixed(1);
+  var duration = ((Date.now() - _idxLastCycleStart) / 1000).toFixed(1);
   console.log("[IDX] ── Done: " + successCount + "/" + MARKET_INDICES.length + " in " + duration + "s ──");
 
-  // CRITICAL: Release lock ALWAYS
   indicesFetching = false;
-
-  // Auto-trigger next fetch after 2 seconds (loop continues in startIndicesAutoRefresh)
-  // This ensures the button shows "Refresh" for 2s then goes back to "Fetching..."
 }
-// ==================== WRAPPER for compatibility ====================
+
 async function fetchAllIndices() {
   return fetchAllIndicesSequential();
 }
-// ==================== MANUAL REFRESH button ====================
-function refreshIndices() {
-  // If stuck for more than 45 seconds, force release
-  if (indicesFetching && indicesLastFetchTime > 0 && (Date.now() - indicesLastFetchTime) > 45000) {
-    console.log("[IDX] Force-releasing stuck flag (45s timeout)");
-    indicesFetching = false;
-  }
 
+function refreshIndices() {
   if (indicesFetching) {
-    ToastManager.info("Please Wait", "Indices are currently being fetched...");
-    return;
+    var stuckTime = Date.now() - _idxLastCycleStart;
+    if (stuckTime > 45000) {
+      console.log("[IDX] Manual refresh — force releasing stuck flag");
+      indicesFetching = false;
+    } else {
+      ToastManager.info("Please Wait", "Still fetching indices (" + Math.floor(stuckTime / 1000) + "s)...");
+      return;
+    }
   }
 
   console.log("[IDX] Manual refresh triggered");
@@ -6421,10 +6377,6 @@ function refreshIndices() {
     }
   });
 }
-// ==================== AUTO-REFRESH LOOP ====================
-// Flow: Fetch all 7 → show data → wait 2s → fetch again → forever
-// Button shows "⏳ Fetching..." during fetch, "🔄 Refresh" for 2s between cycles
-// Old data stays visible while new fetch runs. New data replaces silently.
 
 var indicesTimestampTimer = null;
 var indicesPostMarketCount = 0;
@@ -6434,7 +6386,7 @@ function startIndicesAutoRefresh() {
   if (indicesAutoTimer) { clearTimeout(indicesAutoTimer); indicesAutoTimer = null; }
   if (indicesTimestampTimer) { clearInterval(indicesTimestampTimer); indicesTimestampTimer = null; }
 
-  console.log("[IDX-LOOP] Starting continuous refresh system...");
+  console.log("[IDX-LOOP] Starting continuous refresh...");
 
   var mkt = getMarketInfo();
   if (mkt.isOpen || mkt.isPreOpen) {
@@ -6448,65 +6400,55 @@ function startIndicesAutoRefresh() {
   function runOneCycle() {
     var m = getMarketInfo();
 
-    // === MARKET OPEN: fetch → 2s pause → fetch again ===
     if (m.isOpen) {
       indicesPostMarketCount = 0;
-
       if (document.visibilityState !== "visible") {
         indicesAutoTimer = setTimeout(runOneCycle, 5000);
         return;
       }
-
       if (indicesFetching) {
         indicesAutoTimer = setTimeout(runOneCycle, 1000);
         return;
       }
-
       fetchAllIndicesSequential().then(function() {
-        // Data arrived! Button already shows "🔄 Refresh"
-        // Wait exactly 2 seconds showing the fresh data, then fetch again
         indicesAutoTimer = setTimeout(runOneCycle, 2000);
       }).catch(function() {
+        indicesFetching = false;
         indicesAutoTimer = setTimeout(runOneCycle, 3000);
       });
       return;
     }
 
-    // === PRE-MARKET: fetch → 2s pause → fetch again ===
     if (m.isPreOpen) {
       indicesPostMarketCount = 0;
-
       if (document.visibilityState !== "visible") {
         indicesAutoTimer = setTimeout(runOneCycle, 5000);
         return;
       }
-
       if (indicesFetching) {
         indicesAutoTimer = setTimeout(runOneCycle, 1000);
         return;
       }
-
       fetchAllIndicesSequential().then(function() {
         indicesAutoTimer = setTimeout(runOneCycle, 2000);
       }).catch(function() {
+        indicesFetching = false;
         indicesAutoTimer = setTimeout(runOneCycle, 3000);
       });
       return;
     }
 
-    // === POST-MARKET (3:30-4:30 PM): limited fetches with 2s gap ===
     if (m.isWeekday && m.totalMinutes > 930 && m.totalMinutes <= 990) {
       if (indicesPostMarketCount < INDICES_POST_MARKET_LIMIT) {
         indicesPostMarketCount++;
-
         if (indicesFetching) {
           indicesAutoTimer = setTimeout(runOneCycle, 2000);
           return;
         }
-
         fetchAllIndicesSequential().then(function() {
           indicesAutoTimer = setTimeout(runOneCycle, 2000);
         }).catch(function() {
+          indicesFetching = false;
           indicesAutoTimer = setTimeout(runOneCycle, 5000);
         });
         return;
@@ -6515,20 +6457,16 @@ function startIndicesAutoRefresh() {
       return;
     }
 
-    // === MARKET CLOSED: check every 5 minutes ===
     console.log("[IDX-LOOP] Market closed. Next check in 5 minutes.");
     indicesAutoTimer = setTimeout(runOneCycle, 300000);
   }
 
-  // Start immediately
   runOneCycle();
 
-  // Timestamp updater
   indicesTimestampTimer = setInterval(function() {
     updateIndicesTimestamp();
   }, 3000);
 
-  // Resume when tab becomes visible
   document.addEventListener("visibilitychange", function() {
     if (document.visibilityState === "visible") {
       var m = getMarketInfo();
@@ -6539,93 +6477,6 @@ function startIndicesAutoRefresh() {
     }
   });
 }
-
-// Update indices timestamp display
-function updateIndicesTimestamp() {
-  var el = document.getElementById("indicesLastUpdate");
-  if (!el) return;
-
-  if (indicesLastFetchTime <= 0) {
-    el.textContent = "";
-    return;
-  }
-
-  var diffSec = Math.floor((Date.now() - indicesLastFetchTime) / 1000);
-  var text = "";
-
-  if (diffSec < 5) text = "Just now";
-  else if (diffSec < 60) text = diffSec + "s ago";
-  else if (diffSec < 3600) text = Math.floor(diffSec / 60) + "m ago";
-  else text = Math.floor(diffSec / 3600) + "h ago";
-
-  el.textContent = "Updated " + text;
-}
-
-// Render indices bar UI
-function renderIndicesBar() {
-  var container = document.getElementById("indicesBar");
-  if (!container) return;
-
-  for (var i = 0; i < MARKET_INDICES.length; i++) {
-    var idx = MARKET_INDICES[i];
-    var data = indicesData[idx.symbol];
-
-    var card = container.querySelector('[data-index-symbol="' + idx.symbol + '"]');
-    var isNewCard = false;
-
-    if (!card) {
-      card = document.createElement("div");
-      card.dataset.indexSymbol = idx.symbol;
-      isNewCard = true;
-    }
-
-    if (data && data.price > 0) {
-      var isUp = data.change >= 0;
-      var isNeutral = data.change === 0;
-
-      card.className = "index-card" + (isNeutral ? " idx-neutral" : (isUp ? " idx-up" : " idx-down"));
-
-      var priceStr = "";
-      if (data.price >= 10000) {
-        priceStr = data.price.toLocaleString("en-IN", { minimumFractionDigits: 0, maximumFractionDigits: 0 });
-      } else {
-        priceStr = data.price.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-      }
-
-      var changeStr = (isUp ? "+" : "") + data.change.toFixed(2);
-      var percentStr = (isUp ? "▲ +" : "▼ ") + Math.abs(data.changePercent).toFixed(2) + "%";
-      if (isNeutral) percentStr = "— 0.00%";
-
-      var currentDisplayedPrice = card.querySelector(".index-card-price");
-      var displayedText = currentDisplayedPrice ? currentDisplayedPrice.textContent : "";
-
-      if (displayedText !== priceStr || isNewCard) {
-        card.innerHTML =
-          '<div class="index-card-name">' + idx.shortName + '</div>' +
-          '<div class="index-card-price">' + priceStr + '</div>' +
-          '<div class="index-card-change">' +
-            '<span class="index-change-value ' + (isUp ? 'positive' : 'negative') + '">' + changeStr + '</span>' +
-            '<span class="index-change-percent ' + (isUp ? 'positive' : 'negative') + '">' + percentStr + '</span>' +
-          '</div>' +
-          '<div style="position:absolute;top:50%;right:-8px;width:12px;height:12px;background:' + (isUp ? '#10b981' : '#ef4444') + ';border-radius:50%;filter:blur(6px);transform:translateY(-50%);"></div>';
-      }
-    } else {
-      var hasNumbers = card.querySelector(".index-card-price");
-      if (!hasNumbers) {
-        card.className = "index-card idx-neutral";
-        card.innerHTML =
-          '<div class="index-card-name">' + idx.shortName + '</div>' +
-          '<div style="margin-bottom:8px"><div style="height:22px;width:80%;border-radius:6px;background:linear-gradient(90deg,var(--border-lighter) 25%,var(--border-light) 50%,var(--border-lighter) 75%);background-size:200% 100%;animation:shimmer 1.5s infinite;"></div></div>' +
-          '<div style="display:flex;gap:8px"><div style="height:14px;width:50px;border-radius:4px;background:linear-gradient(90deg,var(--border-lighter) 25%,var(--border-light) 50%,var(--border-lighter) 75%);background-size:200% 100%;animation:shimmer 1.5s infinite;"></div><div style="height:14px;width:60px;border-radius:4px;background:linear-gradient(90deg,var(--border-lighter) 25%,var(--border-light) 50%,var(--border-lighter) 75%);background-size:200% 100%;animation:shimmer 1.5s infinite;"></div></div>';
-      }
-    }
-
-    if (isNewCard) {
-      container.appendChild(card);
-    }
-  }
-}
-
 // Render skeleton loading state
 function renderIndicesLoadingState() {
   var container = document.getElementById("indicesBar");
@@ -11026,5 +10877,6 @@ showSettings = function() {
 </script>
 </body>
 </html>
+
 
 
