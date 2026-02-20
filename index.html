@@ -4241,7 +4241,7 @@ const MARKET_INDICES = [
 
 // Indices data store
 let indicesData = {};
-let indicesFetching = false;
+var _idxLastCycleStart = 0;
 let indicesLastFetchTime = 0;
 const INDICES_CACHE_KEY = "finzotalk_indices_cache";
 const INDICES_CACHE_DURATION = 500; // 0.5s — sequential system handles timing, this is just a safety net
@@ -6295,23 +6295,10 @@ async function fetchOneIndexFast(index) {
 }
 
 async function fetchAllIndicesSequential() {
-  // SAFETY: If flag stuck for more than 60 seconds, force release it
-  if (indicesFetching) {
-    var stuckTime = Date.now() - _idxLastCycleStart;
-    if (stuckTime > 60000) {
-      console.log("[IDX] Flag stuck for " + Math.floor(stuckTime / 1000) + "s — force releasing");
-      indicesFetching = false;
-    } else {
-      console.log("[IDX] Skipping — previous fetch still running (" + Math.floor(stuckTime / 1000) + "s)");
-      return;
-    }
-  }
-
-  indicesFetching = true;
-  _idxLastCycleStart = Date.now();
+  var startTime = Date.now();
   var successCount = 0;
 
-  console.log("[IDX] ── Cycle starting for " + MARKET_INDICES.length + " indices ──");
+  console.log("[IDX] ── Fetching " + MARKET_INDICES.length + " indices (fresh call) ──");
 
   var btn = document.getElementById("indicesRefreshBtn");
   if (btn) { btn.disabled = true; btn.textContent = "⏳ Fetching..."; }
@@ -6343,10 +6330,8 @@ async function fetchAllIndicesSequential() {
 
   if (btn) { btn.disabled = false; btn.textContent = "🔄 Refresh"; }
 
-  var duration = ((Date.now() - _idxLastCycleStart) / 1000).toFixed(1);
+  var duration = ((Date.now() - startTime) / 1000).toFixed(1);
   console.log("[IDX] ── Done: " + successCount + "/" + MARKET_INDICES.length + " in " + duration + "s ──");
-
-  indicesFetching = false;
 }
 
 async function fetchAllIndices() {
@@ -6354,17 +6339,6 @@ async function fetchAllIndices() {
 }
 
 function refreshIndices() {
-  if (indicesFetching) {
-    var stuckTime = Date.now() - _idxLastCycleStart;
-    if (stuckTime > 45000) {
-      console.log("[IDX] Manual refresh — force releasing stuck flag");
-      indicesFetching = false;
-    } else {
-      ToastManager.info("Please Wait", "Still fetching indices (" + Math.floor(stuckTime / 1000) + "s)...");
-      return;
-    }
-  }
-
   console.log("[IDX] Manual refresh triggered");
   ToastManager.info("Refreshing", "Fetching latest indices...");
 
@@ -6386,7 +6360,7 @@ function startIndicesAutoRefresh() {
   if (indicesAutoTimer) { clearTimeout(indicesAutoTimer); indicesAutoTimer = null; }
   if (indicesTimestampTimer) { clearInterval(indicesTimestampTimer); indicesTimestampTimer = null; }
 
-  console.log("[IDX-LOOP] Starting continuous refresh...");
+  console.log("[IDX-LOOP] Starting continuous refresh (no flags, like first fetch every time)...");
 
   var mkt = getMarketInfo();
   if (mkt.isOpen || mkt.isPreOpen) {
@@ -6406,14 +6380,11 @@ function startIndicesAutoRefresh() {
         indicesAutoTimer = setTimeout(runOneCycle, 5000);
         return;
       }
-      if (indicesFetching) {
-        indicesAutoTimer = setTimeout(runOneCycle, 1000);
-        return;
-      }
+      // Just call it fresh — exactly like first time, no flag check
       fetchAllIndicesSequential().then(function() {
+        // Done! Show data for 2 seconds, then fetch again
         indicesAutoTimer = setTimeout(runOneCycle, 2000);
       }).catch(function() {
-        indicesFetching = false;
         indicesAutoTimer = setTimeout(runOneCycle, 3000);
       });
       return;
@@ -6425,14 +6396,9 @@ function startIndicesAutoRefresh() {
         indicesAutoTimer = setTimeout(runOneCycle, 5000);
         return;
       }
-      if (indicesFetching) {
-        indicesAutoTimer = setTimeout(runOneCycle, 1000);
-        return;
-      }
       fetchAllIndicesSequential().then(function() {
         indicesAutoTimer = setTimeout(runOneCycle, 2000);
       }).catch(function() {
-        indicesFetching = false;
         indicesAutoTimer = setTimeout(runOneCycle, 3000);
       });
       return;
@@ -6441,14 +6407,9 @@ function startIndicesAutoRefresh() {
     if (m.isWeekday && m.totalMinutes > 930 && m.totalMinutes <= 990) {
       if (indicesPostMarketCount < INDICES_POST_MARKET_LIMIT) {
         indicesPostMarketCount++;
-        if (indicesFetching) {
-          indicesAutoTimer = setTimeout(runOneCycle, 2000);
-          return;
-        }
         fetchAllIndicesSequential().then(function() {
           indicesAutoTimer = setTimeout(runOneCycle, 2000);
         }).catch(function() {
-          indicesFetching = false;
           indicesAutoTimer = setTimeout(runOneCycle, 5000);
         });
         return;
@@ -6470,76 +6431,12 @@ function startIndicesAutoRefresh() {
   document.addEventListener("visibilitychange", function() {
     if (document.visibilityState === "visible") {
       var m = getMarketInfo();
-      if ((m.isOpen || m.isPreOpen) && !indicesFetching) {
+      if (m.isOpen || m.isPreOpen) {
         if (indicesAutoTimer) clearTimeout(indicesAutoTimer);
         indicesAutoTimer = setTimeout(runOneCycle, 500);
       }
     }
   });
-}
-// Render indices bar UI
-function renderIndicesBar() {
-  var container = document.getElementById("indicesBar");
-  if (!container) return;
-
-  for (var i = 0; i < MARKET_INDICES.length; i++) {
-    var idx = MARKET_INDICES[i];
-    var data = indicesData[idx.symbol];
-
-    var card = container.querySelector('[data-index-symbol="' + idx.symbol + '"]');
-    var isNewCard = false;
-
-    if (!card) {
-      card = document.createElement("div");
-      card.dataset.indexSymbol = idx.symbol;
-      isNewCard = true;
-    }
-
-    if (data && data.price > 0) {
-      var isUp = data.change >= 0;
-      var isNeutral = data.change === 0;
-
-      card.className = "index-card" + (isNeutral ? " idx-neutral" : (isUp ? " idx-up" : " idx-down"));
-
-      var priceStr = "";
-      if (data.price >= 10000) {
-        priceStr = data.price.toLocaleString("en-IN", { minimumFractionDigits: 0, maximumFractionDigits: 0 });
-      } else {
-        priceStr = data.price.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-      }
-
-      var changeStr = (isUp ? "+" : "") + data.change.toFixed(2);
-      var percentStr = (isUp ? "▲ +" : "▼ ") + Math.abs(data.changePercent).toFixed(2) + "%";
-      if (isNeutral) percentStr = "— 0.00%";
-
-      var currentDisplayedPrice = card.querySelector(".index-card-price");
-      var displayedText = currentDisplayedPrice ? currentDisplayedPrice.textContent : "";
-
-      if (displayedText !== priceStr || isNewCard) {
-        card.innerHTML =
-          '<div class="index-card-name">' + idx.shortName + '</div>' +
-          '<div class="index-card-price">' + priceStr + '</div>' +
-          '<div class="index-card-change">' +
-            '<span class="index-change-value ' + (isUp ? 'positive' : 'negative') + '">' + changeStr + '</span>' +
-            '<span class="index-change-percent ' + (isUp ? 'positive' : 'negative') + '">' + percentStr + '</span>' +
-          '</div>' +
-          '<div style="position:absolute;top:50%;right:-8px;width:12px;height:12px;background:' + (isUp ? '#10b981' : '#ef4444') + ';border-radius:50%;filter:blur(6px);transform:translateY(-50%);"></div>';
-      }
-    } else {
-      var hasNumbers = card.querySelector(".index-card-price");
-      if (!hasNumbers) {
-        card.className = "index-card idx-neutral";
-        card.innerHTML =
-          '<div class="index-card-name">' + idx.shortName + '</div>' +
-          '<div style="margin-bottom:8px"><div style="height:22px;width:80%;border-radius:6px;background:linear-gradient(90deg,var(--border-lighter) 25%,var(--border-light) 50%,var(--border-lighter) 75%);background-size:200% 100%;animation:shimmer 1.5s infinite;"></div></div>' +
-          '<div style="display:flex;gap:8px"><div style="height:14px;width:50px;border-radius:4px;background:linear-gradient(90deg,var(--border-lighter) 25%,var(--border-light) 50%,var(--border-lighter) 75%);background-size:200% 100%;animation:shimmer 1.5s infinite;"></div><div style="height:14px;width:60px;border-radius:4px;background:linear-gradient(90deg,var(--border-lighter) 25%,var(--border-light) 50%,var(--border-lighter) 75%);background-size:200% 100%;animation:shimmer 1.5s infinite;"></div></div>';
-      }
-    }
-
-    if (isNewCard) {
-      container.appendChild(card);
-    }
-  }
 }
 
 // Update indices timestamp display
@@ -10962,6 +10859,7 @@ showSettings = function() {
 </script>
 </body>
 </html>
+
 
 
 
