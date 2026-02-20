@@ -6459,24 +6459,71 @@ function updateIndicesTimestamp() {
 
   el.textContent = "Updated " + text;
 }
-// Render skeleton loading state
-function renderIndicesLoadingState() {
+  // Render indices bar UI
+function renderIndicesBar() {
   var container = document.getElementById("indicesBar");
   if (!container) return;
-  container.innerHTML = "";
 
   for (var i = 0; i < MARKET_INDICES.length; i++) {
     var idx = MARKET_INDICES[i];
-    var card = document.createElement("div");
-    card.className = "index-card idx-neutral";
-    card.dataset.indexSymbol = idx.symbol;
-    card.innerHTML =
-      '<div class="index-card-name">' + idx.shortName + '</div>' +
-      '<div style="margin-bottom:8px"><div style="height:22px;width:80%;border-radius:6px;background:linear-gradient(90deg,var(--border-lighter) 25%,var(--border-light) 50%,var(--border-lighter) 75%);background-size:200% 100%;animation:shimmer 1.5s infinite;"></div></div>' +
-      '<div style="display:flex;gap:8px"><div style="height:14px;width:50px;border-radius:4px;background:linear-gradient(90deg,var(--border-lighter) 25%,var(--border-light) 50%,var(--border-lighter) 75%);background-size:200% 100%;animation:shimmer 1.5s infinite;"></div><div style="height:14px;width:60px;border-radius:4px;background:linear-gradient(90deg,var(--border-lighter) 25%,var(--border-light) 50%,var(--border-lighter) 75%);background-size:200% 100%;animation:shimmer 1.5s infinite;"></div></div>';
-    container.appendChild(card);
+    var data = indicesData[idx.symbol];
+
+    var card = container.querySelector('[data-index-symbol="' + idx.symbol + '"]');
+    var isNewCard = false;
+
+    if (!card) {
+      card = document.createElement("div");
+      card.dataset.indexSymbol = idx.symbol;
+      isNewCard = true;
+    }
+
+    if (data && data.price > 0) {
+      var isUp = data.change >= 0;
+      var isNeutral = data.change === 0;
+
+      card.className = "index-card" + (isNeutral ? " idx-neutral" : (isUp ? " idx-up" : " idx-down"));
+
+      var priceStr = "";
+      if (data.price >= 10000) {
+        priceStr = data.price.toLocaleString("en-IN", { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+      } else {
+        priceStr = data.price.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      }
+
+      var changeStr = (isUp ? "+" : "") + data.change.toFixed(2);
+      var percentStr = (isUp ? "▲ +" : "▼ ") + Math.abs(data.changePercent).toFixed(2) + "%";
+      if (isNeutral) percentStr = "— 0.00%";
+
+      var currentDisplayedPrice = card.querySelector(".index-card-price");
+      var displayedText = currentDisplayedPrice ? currentDisplayedPrice.textContent : "";
+
+      if (displayedText !== priceStr || isNewCard) {
+        card.innerHTML =
+          '<div class="index-card-name">' + idx.shortName + '</div>' +
+          '<div class="index-card-price">' + priceStr + '</div>' +
+          '<div class="index-card-change">' +
+            '<span class="index-change-value ' + (isUp ? 'positive' : 'negative') + '">' + changeStr + '</span>' +
+            '<span class="index-change-percent ' + (isUp ? 'positive' : 'negative') + '">' + percentStr + '</span>' +
+          '</div>' +
+          '<div style="position:absolute;top:50%;right:-8px;width:12px;height:12px;background:' + (isUp ? '#10b981' : '#ef4444') + ';border-radius:50%;filter:blur(6px);transform:translateY(-50%);"></div>';
+      }
+    } else {
+      var hasNumbers = card.querySelector(".index-card-price");
+      if (!hasNumbers) {
+        card.className = "index-card idx-neutral";
+        card.innerHTML =
+          '<div class="index-card-name">' + idx.shortName + '</div>' +
+          '<div style="margin-bottom:8px"><div style="height:22px;width:80%;border-radius:6px;background:linear-gradient(90deg,var(--border-lighter) 25%,var(--border-light) 50%,var(--border-lighter) 75%);background-size:200% 100%;animation:shimmer 1.5s infinite;"></div></div>' +
+          '<div style="display:flex;gap:8px"><div style="height:14px;width:50px;border-radius:4px;background:linear-gradient(90deg,var(--border-lighter) 25%,var(--border-light) 50%,var(--border-lighter) 75%);background-size:200% 100%;animation:shimmer 1.5s infinite;"></div><div style="height:14px;width:60px;border-radius:4px;background:linear-gradient(90deg,var(--border-lighter) 25%,var(--border-light) 50%,var(--border-lighter) 75%);background-size:200% 100%;animation:shimmer 1.5s infinite;"></div></div>';
+      }
+    }
+
+    if (isNewCard) {
+      container.appendChild(card);
+    }
   }
 }
+
 /* ================= PRIORITY STOCK FETCHER ================= */
 // Fetches first 6 homepage stocks + all holdings stocks
 // Uses same "show old, update silently" pattern as indices
@@ -10859,6 +10906,10 @@ showSettings = function() {
 </script>
 </body>
 </html>
+
+
+
+
 
 
 
