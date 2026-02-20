@@ -4244,7 +4244,7 @@ let indicesData = {};
 let indicesFetching = false;
 let indicesLastFetchTime = 0;
 const INDICES_CACHE_KEY = "finzotalk_indices_cache";
-const INDICES_CACHE_DURATION = 1500; // 1.5 second minimum during market hours
+const INDICES_CACHE_DURATION = 500; // 0.5s — sequential system handles timing, this is just a safety net
 let indicesAutoTimer = null;
 /* ================= 300+ INDIAN STOCKS LIST ================= */
 const STOCK_DATA = [
@@ -6287,12 +6287,14 @@ async function fetchSingleIndexTwelveData(index) {
   return null;
 }
 // Start indices auto-refresh
-// Market open: every 2 seconds via Yahoo (no API key needed, unlimited)
+// SEQUENTIAL: Fetch → Show → Wait → Fetch again (never overlapping)
+// Market open: fetch, wait 2s after completion, fetch again
 // Post-market: 2-4 fetches then stop completely
 // Closed/Weekend: no fetching at all
 var indicesTimestampTimer = null;
 var indicesPostMarketCount = 0;
 var INDICES_POST_MARKET_LIMIT = 4;
+var indicesFetchCompleted = true; // KEY FLAG: true = ready for next fetch
 
 function startIndicesAutoRefresh() {
   if (indicesAutoTimer) {
@@ -6314,29 +6316,32 @@ function startIndicesAutoRefresh() {
     indicesPostMarketCount = 0;
   }
 
-  function scheduleNext() {
+  // SEQUENTIAL SCHEDULER: Only schedules next fetch AFTER previous one completes
+  function scheduleNextAfterCompletion() {
     var m = getMarketInfo();
-    var interval;
+    var waitAfterFetch;
 
     if (m.isOpen) {
-      interval = 2000;
+      waitAfterFetch = 2000; // 2s pause after data arrives during market
       indicesPostMarketCount = 0;
     } else if (m.isPreOpen) {
-      interval = 5000;
+      waitAfterFetch = 5000;
       indicesPostMarketCount = 0;
     } else if (m.isWeekday && m.totalMinutes > 930 && m.totalMinutes <= 990) {
       if (indicesPostMarketCount < INDICES_POST_MARKET_LIMIT) {
-        interval = 15000;
+        waitAfterFetch = 15000;
       } else {
-        interval = 999999;
+        console.log("[INDICES] Post-market limit reached. Stopping auto-refresh.");
+        return; // Stop scheduling
       }
     } else {
-      interval = 999999;
+      console.log("[INDICES] Market closed. No auto-refresh.");
+      return; // Stop scheduling
     }
 
     indicesAutoTimer = setTimeout(function() {
-      var shouldFetch = false;
       var mk = getMarketInfo();
+      var shouldFetch = false;
 
       if (mk.isOpen || mk.isPreOpen) {
         shouldFetch = true;
@@ -6348,34 +6353,159 @@ function startIndicesAutoRefresh() {
         }
       }
 
-      if (shouldFetch && !indicesFetching && document.visibilityState === "visible") {
-        fetchAllIndices();
+      if (shouldFetch && document.visibilityState === "visible") {
+        // SEQUENTIAL: fetch, then schedule next only after it completes
+        indicesFetchCompleted = false;
+        fetchAllIndicesSequential().then(function() {
+          indicesFetchCompleted = true;
+          updateIndicesTimestamp();
+          scheduleNextAfterCompletion(); // Schedule NEXT only after THIS one is done
+        }).catch(function() {
+          indicesFetchCompleted = true;
+          updateIndicesTimestamp();
+          scheduleNextAfterCompletion();
+        });
+      } else {
+        updateIndicesTimestamp();
+        scheduleNextAfterCompletion(); // Still schedule next check
       }
-
-      updateIndicesTimestamp();
-      scheduleNext();
-    }, interval);
+    }, waitAfterFetch);
   }
 
+  // INITIAL FETCH: Start the chain
   if (Object.keys(indicesData).length === 0) {
-    fetchAllIndices();
+    // No cached data — fetch immediately, then start chain
+    indicesFetchCompleted = false;
+    fetchAllIndicesSequential().then(function() {
+      indicesFetchCompleted = true;
+      updateIndicesTimestamp();
+      scheduleNextAfterCompletion();
+    }).catch(function() {
+      indicesFetchCompleted = true;
+      updateIndicesTimestamp();
+      scheduleNextAfterCompletion();
+    });
   } else {
+    // Have cached data — show it, then start chain
     renderIndicesBar();
+    scheduleNextAfterCompletion();
   }
 
-  scheduleNext();
-
+  // Timestamp updater (independent, just updates "Xs ago" text)
   indicesTimestampTimer = setInterval(function() {
     updateIndicesTimestamp();
   }, 3000);
 }
+// SEQUENTIAL FETCH: Returns a Promise that resolves only when ALL indices are fetched
+// This prevents overlapping fetches — next fetch starts only after this one finishes
+async function fetchAllIndicesSequential() {
+  // Prevent concurrent fetches (double safety)
+  if (indicesFetching) {
+    console.log("[INDICES-SEQ] Already fetching, waiting...");
+    // Wait for current fetch to finish instead of skipping
+    return new Promise(function(resolve) {
+      var waitTimer = setInterval(function() {
+        if (!indicesFetching) {
+          clearInterval(waitTimer);
+          resolve();
+        }
+      }, 200);
+      // Safety timeout: don't wait forever
+      setTimeout(function() {
+        clearInterval(waitTimer);
+        resolve();
+      }, 15000);
+    });
+  }
+
+  indicesFetching = true;
+  console.log("[INDICES-SEQ] Starting sequential fetch for " + MARKET_INDICES.length + " indices...");
+
+  var btn = document.getElementById("indicesRefreshBtn");
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = "⏳ Fetching...";
+  }
+
+  var successCount = 0;
+  var totalCount = MARKET_INDICES.length;
+  var fetchStartTime = Date.now();
+
+  // Fetch indices ONE BY ONE sequentially (no parallel race conditions)
+  for (var i = 0; i < MARKET_INDICES.length; i++) {
+    var index = MARKET_INDICES[i];
+
+    try {
+      var result = await fetchSingleIndexPrice(index);
+
+      if (result && result.price > 0) {
+        var oldData = indicesData[index.symbol];
+        var priceChanged = !oldData || oldData.price !== result.price;
+
+        indicesData[index.symbol] = result;
+        successCount++;
+
+        // Update UI immediately when each index arrives (progressive update)
+        if (priceChanged) {
+          renderIndicesBar();
+        }
+
+        console.log("[INDICES-SEQ] ✓ " + index.shortName + " = " + result.price + " (" + (i + 1) + "/" + totalCount + ")");
+      } else {
+        console.log("[INDICES-SEQ] ✗ " + index.shortName + " no data (" + (i + 1) + "/" + totalCount + ")");
+      }
+    } catch (err) {
+      console.log("[INDICES-SEQ] ✗ " + index.shortName + " error: " + err.message);
+      // Continue to next index, don't stop the chain
+    }
+  }
+
+  var fetchDuration = Date.now() - fetchStartTime;
+
+  // Update timestamp and cache only if we got data
+  if (successCount > 0) {
+    indicesLastFetchTime = Date.now();
+    saveIndicesCache();
+    console.log("[INDICES-SEQ] ✅ Updated " + successCount + "/" + totalCount + " indices in " + (fetchDuration / 1000).toFixed(1) + "s");
+  } else {
+    console.log("[INDICES-SEQ] ⚠️ No indices updated (all failed). Keeping old data. Took " + (fetchDuration / 1000).toFixed(1) + "s");
+  }
+
+  // Final render
+  renderIndicesBar();
+  updateIndicesTimestamp();
+
+  // Re-enable button
+  if (btn) {
+    btn.disabled = false;
+    btn.innerHTML = "🔄 Refresh";
+  }
+
+  indicesFetching = false;
+  // Promise resolves here — caller knows fetch is truly done
+}
 // Manual refresh — keep showing current numbers while fetching new ones
 function refreshIndices() {
+  // If already fetching, don't start another one
+  if (indicesFetching) {
+    console.log("[INDICES] Already fetching, please wait...");
+    ToastManager.info("Please Wait", "Indices are already being fetched...");
+    return;
+  }
+
   indicesLastFetchTime = 0; // Reset cooldown so fetch is allowed
   // Do NOT call renderIndicesLoadingState() — keep existing numbers visible
   // Old data stays on screen while new data loads in background
   console.log("[INDICES] Manual refresh triggered — old data stays visible");
-  fetchAllIndices();
+
+  // Use sequential fetch (returns promise, won't overlap)
+  indicesFetchCompleted = false;
+  fetchAllIndicesSequential().then(function() {
+    indicesFetchCompleted = true;
+    ToastManager.success("Indices Updated", "Market indices refreshed successfully");
+  }).catch(function() {
+    indicesFetchCompleted = true;
+  });
 }
 
 // Update indices timestamp display
@@ -8252,7 +8382,13 @@ auth.onAuthStateChanged(async function(user) {
   
   // Step 1: Fetch fresh indices in background (300ms delay for DOM to settle)
   setTimeout(function() {
-    fetchAllIndices();
+    indicesFetchCompleted = false;
+    fetchAllIndicesSequential().then(function() {
+      indicesFetchCompleted = true;
+      console.log("[BOOT] Initial indices fetch complete");
+    }).catch(function() {
+      indicesFetchCompleted = true;
+    });
   }, 300);
 
   // Step 2: Start indices auto-refresh (will keep updating in background)
@@ -10973,6 +11109,7 @@ showSettings = function() {
 </script>
 </body>
 </html>
+
 
 
 
