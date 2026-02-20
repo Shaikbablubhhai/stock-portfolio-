@@ -6340,16 +6340,95 @@ async function fetchAllIndices() {
 
 function refreshIndices() {
   console.log("[IDX] Manual refresh triggered");
-  ToastManager.info("Refreshing", "Fetching latest indices...");
 
-  fetchAllIndicesSequential().then(function() {
-    var count = Object.keys(indicesData).length;
-    if (count > 0) {
-      ToastManager.success("Updated", count + " indices refreshed");
-    } else {
-      ToastManager.warning("Issue", "Could not fetch indices data");
+  var btn = document.getElementById("indicesRefreshBtn");
+  if (btn) { btn.disabled = true; btn.textContent = "⏳ Fetching..."; }
+
+  // Clear all old index data so it fetches 100% fresh
+  var oldData = JSON.parse(JSON.stringify(indicesData));
+
+  var yahooUrl, proxies, successCount = 0;
+  var allDone = 0;
+  var total = MARKET_INDICES.length;
+
+  function fetchOneManual(index) {
+    var url = "https://query1.finance.yahoo.com/v8/finance/chart/" + encodeURIComponent(index.yahoo) + "?interval=1d&range=1d";
+    var proxyList = [
+      "https://api.allorigins.win/raw?url=",
+      "https://corsproxy.io/?",
+      "https://api.codetabs.com/v1/proxy?quest="
+    ];
+
+    function tryProxy(pIdx) {
+      if (pIdx >= proxyList.length) {
+        // All proxies failed for this index
+        allDone++;
+        checkAllDone();
+        return;
+      }
+
+      var fullUrl = proxyList[pIdx] + encodeURIComponent(url);
+      var controller = new AbortController();
+      var tid = setTimeout(function() { controller.abort(); }, 3000);
+
+      fetch(fullUrl, { signal: controller.signal })
+        .then(function(resp) {
+          clearTimeout(tid);
+          if (!resp.ok) throw new Error("bad response");
+          return resp.text();
+        })
+        .then(function(txt) {
+          if (!txt || txt.charAt(0) !== '{') throw new Error("not json");
+          var data = JSON.parse(txt);
+          if (data && data.chart && data.chart.result && data.chart.result[0]) {
+            var meta = data.chart.result[0].meta;
+            var price = meta.regularMarketPrice || 0;
+            var prevClose = meta.previousClose || meta.chartPreviousClose || price;
+            if (price > 0) {
+              indicesData[index.symbol] = {
+                price: price,
+                change: price - prevClose,
+                changePercent: prevClose > 0 ? ((price - prevClose) / prevClose) * 100 : 0,
+                prevClose: prevClose,
+                fetchedAt: Date.now(),
+                source: "Yahoo-Manual"
+              };
+              successCount++;
+              renderIndicesBar();
+              allDone++;
+              checkAllDone();
+              return;
+            }
+          }
+          throw new Error("no price");
+        })
+        .catch(function() {
+          clearTimeout(tid);
+          tryProxy(pIdx + 1);
+        });
     }
-  });
+
+    tryProxy(0);
+  }
+
+  function checkAllDone() {
+    if (allDone >= total) {
+      if (successCount > 0) {
+        indicesLastFetchTime = Date.now();
+        saveIndicesCache();
+      }
+      renderIndicesBar();
+      updateIndicesTimestamp();
+      if (btn) { btn.disabled = false; btn.textContent = "🔄 Refresh"; }
+      ToastManager.success("Updated", successCount + "/" + total + " indices refreshed");
+      console.log("[IDX] Manual refresh done: " + successCount + "/" + total);
+    }
+  }
+
+  // Fire all 7 at the same time (parallel) for maximum speed
+  for (var i = 0; i < MARKET_INDICES.length; i++) {
+    fetchOneManual(MARKET_INDICES[i]);
+  }
 }
 
 var indicesTimestampTimer = null;
@@ -10906,6 +10985,7 @@ showSettings = function() {
 </script>
 </body>
 </html>
+
 
 
 
