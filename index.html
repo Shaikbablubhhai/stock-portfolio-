@@ -6346,7 +6346,7 @@ async function fetchAllIndicesSequential() {
   console.log("[IDX] ── Starting fetch for " + MARKET_INDICES.length + " indices ──");
 
   var btn = document.getElementById("indicesRefreshBtn");
-  if (btn) { btn.disabled = true; btn.innerHTML = "⏳ Fetching..."; }
+  if (btn) { btn.disabled = true; btn.textContent = "⏳ Fetching..."; }
 
   // Fetch 2 indices at a time (parallel pairs for speed)
   var pairSize = 2;
@@ -6381,13 +6381,16 @@ async function fetchAllIndicesSequential() {
   renderIndicesBar();
   updateIndicesTimestamp();
 
-  if (btn) { btn.disabled = false; btn.innerHTML = "🔄 Refresh"; }
+  if (btn) { btn.disabled = false; btn.textContent = "🔄 Refresh"; }
 
   var duration = ((Date.now() - startTime) / 1000).toFixed(1);
   console.log("[IDX] ── Done: " + successCount + "/" + MARKET_INDICES.length + " in " + duration + "s ──");
 
   // CRITICAL: Release lock ALWAYS
   indicesFetching = false;
+
+  // Auto-trigger next fetch after 2 seconds (loop continues in startIndicesAutoRefresh)
+  // This ensures the button shows "Refresh" for 2s then goes back to "Fetching..."
 }
 // ==================== WRAPPER for compatibility ====================
 async function fetchAllIndices() {
@@ -6419,64 +6422,57 @@ function refreshIndices() {
   });
 }
 // ==================== AUTO-REFRESH LOOP ====================
-// Simple loop: Fetch → Wait → Fetch → Wait (never overlapping)
-// Old data stays on screen while new data is being fetched.
-// When new data arrives, it updates silently (no flicker).
+// Flow: Fetch all 7 → show data → wait 2s → fetch again → forever
+// Button shows "⏳ Fetching..." during fetch, "🔄 Refresh" for 2s between cycles
+// Old data stays visible while new fetch runs. New data replaces silently.
 
 var indicesTimestampTimer = null;
 var indicesPostMarketCount = 0;
 var INDICES_POST_MARKET_LIMIT = 4;
 
 function startIndicesAutoRefresh() {
-  // Clear any old timers
   if (indicesAutoTimer) { clearTimeout(indicesAutoTimer); indicesAutoTimer = null; }
   if (indicesTimestampTimer) { clearInterval(indicesTimestampTimer); indicesTimestampTimer = null; }
 
-  console.log("[IDX-LOOP] Starting auto-refresh system...");
+  console.log("[IDX-LOOP] Starting continuous refresh system...");
 
   var mkt = getMarketInfo();
   if (mkt.isOpen || mkt.isPreOpen) {
     indicesPostMarketCount = 0;
   }
 
-  // Show whatever cached data we have right now (old data stays visible)
   if (Object.keys(indicesData).length > 0) {
     renderIndicesBar();
   }
 
-  // The simple loop
   function runOneCycle() {
     var m = getMarketInfo();
 
-    // === MARKET OPEN: fetch, then wait 3s, then fetch again ===
+    // === MARKET OPEN: fetch → 2s pause → fetch again ===
     if (m.isOpen) {
       indicesPostMarketCount = 0;
 
-      // Skip if tab is hidden (save API calls)
       if (document.visibilityState !== "visible") {
         indicesAutoTimer = setTimeout(runOneCycle, 5000);
         return;
       }
 
-      // Don't start if previous fetch is still running
       if (indicesFetching) {
-        console.log("[IDX-LOOP] Previous fetch still running, checking in 2s...");
-        indicesAutoTimer = setTimeout(runOneCycle, 2000);
+        indicesAutoTimer = setTimeout(runOneCycle, 1000);
         return;
       }
 
-      // Fetch all indices (old data stays on screen during this)
       fetchAllIndicesSequential().then(function() {
-        // Done! Wait 3 seconds, then start next cycle
-        indicesAutoTimer = setTimeout(runOneCycle, 3000);
+        // Data arrived! Button already shows "🔄 Refresh"
+        // Wait exactly 2 seconds showing the fresh data, then fetch again
+        indicesAutoTimer = setTimeout(runOneCycle, 2000);
       }).catch(function() {
-        // Error, retry in 5s
-        indicesAutoTimer = setTimeout(runOneCycle, 5000);
+        indicesAutoTimer = setTimeout(runOneCycle, 3000);
       });
       return;
     }
 
-    // === PRE-MARKET: fetch every 15s ===
+    // === PRE-MARKET: fetch → 2s pause → fetch again ===
     if (m.isPreOpen) {
       indicesPostMarketCount = 0;
 
@@ -6486,36 +6482,35 @@ function startIndicesAutoRefresh() {
       }
 
       if (indicesFetching) {
-        indicesAutoTimer = setTimeout(runOneCycle, 2000);
+        indicesAutoTimer = setTimeout(runOneCycle, 1000);
         return;
       }
 
       fetchAllIndicesSequential().then(function() {
-        indicesAutoTimer = setTimeout(runOneCycle, 15000);
+        indicesAutoTimer = setTimeout(runOneCycle, 2000);
       }).catch(function() {
-        indicesAutoTimer = setTimeout(runOneCycle, 5000);
+        indicesAutoTimer = setTimeout(runOneCycle, 3000);
       });
       return;
     }
 
-    // === POST-MARKET (3:30-4:30 PM): limited fetches ===
+    // === POST-MARKET (3:30-4:30 PM): limited fetches with 2s gap ===
     if (m.isWeekday && m.totalMinutes > 930 && m.totalMinutes <= 990) {
       if (indicesPostMarketCount < INDICES_POST_MARKET_LIMIT) {
         indicesPostMarketCount++;
 
         if (indicesFetching) {
-          indicesAutoTimer = setTimeout(runOneCycle, 3000);
+          indicesAutoTimer = setTimeout(runOneCycle, 2000);
           return;
         }
 
         fetchAllIndicesSequential().then(function() {
-          indicesAutoTimer = setTimeout(runOneCycle, 20000);
+          indicesAutoTimer = setTimeout(runOneCycle, 2000);
         }).catch(function() {
-          indicesAutoTimer = setTimeout(runOneCycle, 10000);
+          indicesAutoTimer = setTimeout(runOneCycle, 5000);
         });
         return;
       }
-      // Limit reached
       indicesAutoTimer = setTimeout(runOneCycle, 60000);
       return;
     }
@@ -6525,22 +6520,21 @@ function startIndicesAutoRefresh() {
     indicesAutoTimer = setTimeout(runOneCycle, 300000);
   }
 
-  // Start first cycle immediately
+  // Start immediately
   runOneCycle();
 
-  // Timestamp updater (shows "Xs ago")
+  // Timestamp updater
   indicesTimestampTimer = setInterval(function() {
     updateIndicesTimestamp();
   }, 3000);
 
-  // When tab becomes visible during market hours, restart quickly
+  // Resume when tab becomes visible
   document.addEventListener("visibilitychange", function() {
     if (document.visibilityState === "visible") {
       var m = getMarketInfo();
       if ((m.isOpen || m.isPreOpen) && !indicesFetching) {
         if (indicesAutoTimer) clearTimeout(indicesAutoTimer);
-        console.log("[IDX-LOOP] Tab visible again, restarting in 1s...");
-        indicesAutoTimer = setTimeout(runOneCycle, 1000);
+        indicesAutoTimer = setTimeout(runOneCycle, 500);
       }
     }
   });
@@ -11032,4 +11026,5 @@ showSettings = function() {
 </script>
 </body>
 </html>
+
 
