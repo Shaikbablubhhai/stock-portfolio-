@@ -4241,7 +4241,7 @@ const MARKET_INDICES = [
 
 // Indices data store
 let indicesData = {};
-let indicesFetching = false;
+let indicesFetching = false; let indicesLoopRunning = false;
 let indicesLastFetchTime = 0;
 const INDICES_CACHE_KEY = "finzotalk_indices_cache";
 const INDICES_CACHE_DURATION = 500; // 0.5s — sequential system handles timing, this is just a safety net
@@ -6407,8 +6407,6 @@ function startIndicesAutoRefresh() {
     }
   });
 }
-// SMART SEQUENTIAL FETCH: Yahoo first, fallback to TwelveData/Alpha if Yahoo is slow (>12s)
-// Returns a Promise that resolves only when ALL indices are fetched
 // Loop: Fetch → Show → Wait → Fetch again (never stops during market hours)
 async function fetchAllIndicesSequential() {
   // Prevent concurrent fetches (double safety)
@@ -6642,23 +6640,28 @@ async function fetchSingleIndexYahooRetry(index) {
 
   return null;
 }
-// Manual refresh — keep showing current numbers while fetching new ones
+
+// Manual refresh — works anytime, fetches all 7 indices fresh
 function refreshIndices() {
-  // If already fetching, don't start another one
   if (indicesFetching) {
-    console.log("[INDICES] Already fetching, please wait...");
-    ToastManager.info("Please Wait", "Indices are already being fetched...");
+    ToastManager.info("Please Wait", "Already fetching indices...");
     return;
   }
 
   indicesLastFetchTime = 0;
-  console.log("[INDICES] Manual refresh triggered — old data stays visible");
+  console.log("[IDX] Manual refresh triggered");
 
   fetchAllIndicesSequential().then(function() {
-    ToastManager.success("Indices Updated", "All " + Object.keys(indicesData).length + " indices refreshed");
+    var count = Object.keys(indicesData).length;
+    ToastManager.success("Updated", count + " indices refreshed");
   }).catch(function() {
-    ToastManager.warning("Partial Update", "Some indices may not have updated");
+    ToastManager.warning("Issue", "Some indices may not have updated");
   });
+}
+
+// Wrapper for compatibility — single source of truth
+async function fetchAllIndices() {
+  return fetchAllIndicesSequential();
 }
 
 // Update indices timestamp display
@@ -6788,87 +6791,6 @@ function renderIndicesLoadingState() {
   }
 }
 
-  /* ================= FETCH ALL INDICES (CORE ENGINE) ================= */
-async function fetchAllIndices() {
-  // Prevent concurrent fetches
-  if (indicesFetching) {
-    console.log("[INDICES] Already fetching, skipping...");
-    return;
-  }
-
-  // Respect minimum interval between fetches
-  var timeSinceLast = Date.now() - indicesLastFetchTime;
-  var mktNow = getMarketInfo();
-  var minGap = mktNow.isOpen ? 1500 : 10000;
-  if (indicesLastFetchTime > 0 && timeSinceLast < minGap) {
-    renderIndicesBar();
-    return;
-  }
-
-  indicesFetching = true;
-  console.log("[INDICES] Fetching " + MARKET_INDICES.length + " indices...");
-
-  var btn = document.getElementById("indicesRefreshBtn");
-  if (btn) {
-    btn.disabled = true;
-    btn.innerHTML = "⏳ Fetching...";
-  }
-
-  var successCount = 0;
-  var totalCount = MARKET_INDICES.length;
-
-  // Fetch all indices in parallel — Yahoo ONLY (no API key, unlimited, fast)
-  // TwelveData saved for stock prices only
-  var fetchPromises = MARKET_INDICES.map(function(index) {
-    return (async function() {
-      try {
-        var result = await fetchSingleIndexPrice(index);
-
-        if (result && result.price > 0) {
-          var oldData = indicesData[index.symbol];
-          var priceChanged = !oldData || oldData.price !== result.price;
-
-          indicesData[index.symbol] = result;
-          successCount++;
-
-          if (priceChanged) {
-            renderIndicesBar();
-          }
-        }
-      } catch (err) {
-        // Silent fail — old data stays visible
-      }
-    })();
-  });
-
-  // Wait for all to complete (or fail)
-  try {
-    await Promise.allSettled(fetchPromises);
-  } catch (e) {
-    console.log("[INDICES] Batch error:", e.message);
-  }
-
-  // Update timestamp and cache
-  if (successCount > 0) {
-    indicesLastFetchTime = Date.now();
-    saveIndicesCache();
-    console.log("[INDICES] Updated " + successCount + "/" + totalCount + " indices");
-  } else {
-    console.log("[INDICES] No indices updated (using cached data)");
-  }
-
-  // Final render to ensure all cards are up to date
-  renderIndicesBar();
-  updateIndicesTimestamp();
-
-  // Re-enable button
-  if (btn) {
-    btn.disabled = false;
-    btn.innerHTML = "🔄 Refresh";
-  }
-
-  indicesFetching = false;
-}
 /* ================= PRIORITY STOCK FETCHER ================= */
 // Fetches first 6 homepage stocks + all holdings stocks
 // Uses same "show old, update silently" pattern as indices
@@ -8538,11 +8460,6 @@ auth.onAuthStateChanged(async function(user) {
   setTimeout(function() {
     startIndicesAutoRefresh();
   }, 300);
-
-  // Step 2: Start indices auto-refresh (will keep updating in background)
-  setTimeout(function() {
-    startIndicesAutoRefresh();
-  }, 500);
 
   // Step 3: Fetch PRIORITY stocks (first 6 homepage stocks)   setTimeout(function() {     fetchPriorityStocks();   }, 800);    // Step 4: Fetch holdings prices
   setTimeout(function() {
@@ -11257,6 +11174,8 @@ showSettings = function() {
 </script>
 </body>
 </html>
+
+
 
 
 
