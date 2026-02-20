@@ -6439,104 +6439,170 @@ function startIndicesAutoRefresh() {
   if (indicesAutoTimer) { clearTimeout(indicesAutoTimer); indicesAutoTimer = null; }
   if (indicesTimestampTimer) { clearInterval(indicesTimestampTimer); indicesTimestampTimer = null; }
 
-  console.log("[IDX-LOOP] Starting continuous refresh (no flags, like first fetch every time)...");
-
-  var mkt = getMarketInfo();
-  if (mkt.isOpen || mkt.isPreOpen) {
-    indicesPostMarketCount = 0;
-  }
+  console.log("[IDX-LOOP] Auto-refresh starting...");
 
   if (Object.keys(indicesData).length > 0) {
     renderIndicesBar();
   }
 
-  function runOneCycle() {
+  // Simple auto-fetch: uses same parallel logic as manual refresh button
+  function autoFetchAllIndices() {
+    return new Promise(function(resolve) {
+      var btn = document.getElementById("indicesRefreshBtn");
+      if (btn) { btn.disabled = true; btn.textContent = "⏳ Fetching..."; }
+
+      var successCount = 0;
+      var allDone = 0;
+      var total = MARKET_INDICES.length;
+
+      function fetchOneAuto(index) {
+        var url = "https://query1.finance.yahoo.com/v8/finance/chart/" + encodeURIComponent(index.yahoo) + "?interval=1d&range=1d";
+        var proxyList = [
+          "https://api.allorigins.win/raw?url=",
+          "https://corsproxy.io/?",
+          "https://api.codetabs.com/v1/proxy?quest="
+        ];
+
+        function tryProxy(pIdx) {
+          if (pIdx >= proxyList.length) {
+            allDone++;
+            checkDone();
+            return;
+          }
+
+          var fullUrl = proxyList[pIdx] + encodeURIComponent(url);
+          var controller = new AbortController();
+          var tid = setTimeout(function() { controller.abort(); }, 3000);
+
+          fetch(fullUrl, { signal: controller.signal })
+            .then(function(resp) {
+              clearTimeout(tid);
+              if (!resp.ok) throw new Error("bad");
+              return resp.text();
+            })
+            .then(function(txt) {
+              if (!txt || txt.charAt(0) !== '{') throw new Error("not json");
+              var data = JSON.parse(txt);
+              if (data && data.chart && data.chart.result && data.chart.result[0]) {
+                var meta = data.chart.result[0].meta;
+                var price = meta.regularMarketPrice || 0;
+                var prevClose = meta.previousClose || meta.chartPreviousClose || price;
+                if (price > 0) {
+                  indicesData[index.symbol] = {
+                    price: price,
+                    change: price - prevClose,
+                    changePercent: prevClose > 0 ? ((price - prevClose) / prevClose) * 100 : 0,
+                    prevClose: prevClose,
+                    fetchedAt: Date.now(),
+                    source: "Yahoo-Auto"
+                  };
+                  successCount++;
+                  renderIndicesBar();
+                  allDone++;
+                  checkDone();
+                  return;
+                }
+              }
+              throw new Error("no price");
+            })
+            .catch(function() {
+              clearTimeout(tid);
+              tryProxy(pIdx + 1);
+            });
+        }
+
+        tryProxy(0);
+      }
+
+      function checkDone() {
+        if (allDone >= total) {
+          if (successCount > 0) {
+            indicesLastFetchTime = Date.now();
+            saveIndicesCache();
+          }
+          renderIndicesBar();
+          updateIndicesTimestamp();
+          if (btn) { btn.disabled = false; btn.textContent = "🔄 Refresh"; }
+          console.log("[IDX-AUTO] Cycle done: " + successCount + "/" + total);
+          resolve(successCount);
+        }
+      }
+
+      // Fire all 7 in parallel
+      for (var i = 0; i < total; i++) {
+        fetchOneAuto(MARKET_INDICES[i]);
+      }
+
+      // Safety: if nothing responds in 15 seconds, resolve anyway
+      setTimeout(function() {
+        if (allDone < total) {
+          console.log("[IDX-AUTO] Safety timeout — " + allDone + "/" + total + " responded");
+          if (successCount > 0) {
+            indicesLastFetchTime = Date.now();
+            saveIndicesCache();
+          }
+          renderIndicesBar();
+          updateIndicesTimestamp();
+          if (btn) { btn.disabled = false; btn.textContent = "🔄 Refresh"; }
+          resolve(successCount);
+        }
+      }, 15000);
+    });
+  }
+
+  // The loop: fetch → show data → wait 2s → fetch again
+  function runLoop() {
     var m = getMarketInfo();
 
-    if (m.isOpen) {
-      indicesPostMarketCount = 0;
+    if (m.isOpen || m.isPreOpen) {
       if (document.visibilityState !== "visible") {
-        indicesAutoTimer = setTimeout(runOneCycle, 5000);
+        indicesAutoTimer = setTimeout(runLoop, 5000);
         return;
       }
-      // Just call it fresh — exactly like first time, no flag check
-      fetchAllIndicesSequential().then(function() {
-        // Done! Show data for 2 seconds, then fetch again
-        indicesAutoTimer = setTimeout(runOneCycle, 2000);
-      }).catch(function() {
-        indicesAutoTimer = setTimeout(runOneCycle, 3000);
+
+      // Fetch all 7 (parallel, fast, like first time)
+      autoFetchAllIndices().then(function() {
+        // Data is on screen now. Wait 2 seconds, then fetch again.
+        indicesAutoTimer = setTimeout(runLoop, 2000);
       });
       return;
     }
 
-    if (m.isPreOpen) {
-      indicesPostMarketCount = 0;
-      if (document.visibilityState !== "visible") {
-        indicesAutoTimer = setTimeout(runOneCycle, 5000);
-        return;
-      }
-      fetchAllIndicesSequential().then(function() {
-        indicesAutoTimer = setTimeout(runOneCycle, 2000);
-      }).catch(function() {
-        indicesAutoTimer = setTimeout(runOneCycle, 3000);
-      });
-      return;
-    }
-
+    // Post market
     if (m.isWeekday && m.totalMinutes > 930 && m.totalMinutes <= 990) {
       if (indicesPostMarketCount < INDICES_POST_MARKET_LIMIT) {
         indicesPostMarketCount++;
-        fetchAllIndicesSequential().then(function() {
-          indicesAutoTimer = setTimeout(runOneCycle, 2000);
-        }).catch(function() {
-          indicesAutoTimer = setTimeout(runOneCycle, 5000);
+        autoFetchAllIndices().then(function() {
+          indicesAutoTimer = setTimeout(runLoop, 10000);
         });
         return;
       }
-      indicesAutoTimer = setTimeout(runOneCycle, 60000);
+      indicesAutoTimer = setTimeout(runLoop, 60000);
       return;
     }
 
-    console.log("[IDX-LOOP] Market closed. Next check in 5 minutes.");
-    indicesAutoTimer = setTimeout(runOneCycle, 300000);
+    // Market closed
+    indicesAutoTimer = setTimeout(runLoop, 300000);
   }
 
-  runOneCycle();
+  // Start first cycle now
+  runLoop();
 
+  // Timestamp updater
   indicesTimestampTimer = setInterval(function() {
     updateIndicesTimestamp();
   }, 3000);
 
+  // Resume when tab becomes visible
   document.addEventListener("visibilitychange", function() {
     if (document.visibilityState === "visible") {
       var m = getMarketInfo();
       if (m.isOpen || m.isPreOpen) {
         if (indicesAutoTimer) clearTimeout(indicesAutoTimer);
-        indicesAutoTimer = setTimeout(runOneCycle, 500);
+        indicesAutoTimer = setTimeout(runLoop, 500);
       }
     }
   });
-}
-
-// Update indices timestamp display
-function updateIndicesTimestamp() {
-  var el = document.getElementById("indicesLastUpdate");
-  if (!el) return;
-
-  if (indicesLastFetchTime <= 0) {
-    el.textContent = "";
-    return;
-  }
-
-  var diffSec = Math.floor((Date.now() - indicesLastFetchTime) / 1000);
-  var text = "";
-
-  if (diffSec < 5) text = "Just now";
-  else if (diffSec < 60) text = diffSec + "s ago";
-  else if (diffSec < 3600) text = Math.floor(diffSec / 60) + "m ago";
-  else text = Math.floor(diffSec / 3600) + "h ago";
-
-  el.textContent = "Updated " + text;
 }
   // Render indices bar UI
 function renderIndicesBar() {
@@ -10985,6 +11051,7 @@ showSettings = function() {
 </script>
 </body>
 </html>
+
 
 
 
