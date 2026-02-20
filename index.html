@@ -4241,7 +4241,9 @@ const MARKET_INDICES = [
 
 // Indices data store
 let indicesData = {};
-let indicesFetching = false; let indicesLoopRunning = false;
+let indicesFetching = false;
+let indicesLoopRunning = false;
+let _indicesAbortCurrent = false;
 let indicesLastFetchTime = 0;
 const INDICES_CACHE_KEY = "finzotalk_indices_cache";
 const INDICES_CACHE_DURATION = 500; // 0.5s — sequential system handles timing, this is just a safety net
@@ -6344,64 +6346,53 @@ async function fetchYahooRetry(index) {
 
 // ==================== CORE: Fetch ALL 7 indices one by one ====================
 // Simple and bulletproof. No flag gets stuck. Always resolves.
-var _indicesFetchID = 0; // unique ID per fetch cycle to detect stale calls
+// ==================== CORE: Fetch ALL 7 indices sequentially (CLEAN v4) ====================
+// Rule: NEVER start a new fetch if previous one is still running.
+// Show old data on screen while fetching. Update silently when new data arrives.
+// Works exactly like first fetch every time.
 
 async function fetchAllIndicesSequential() {
-  // Generate unique fetch ID
-  _indicesFetchID++;
-  var myFetchID = _indicesFetchID;
-
-  // If already fetching, just wait for it (don't start another)
+  // HARD RULE: If already fetching, do NOT start another
   if (indicesFetching) {
-    console.log("[IDX] Fetch already running, waiting...");
-    return new Promise(function(resolve) {
-      var waitCheck = setInterval(function() {
-        if (!indicesFetching) {
-          clearInterval(waitCheck);
-          resolve();
-        }
-      }, 300);
-      // Safety: never wait more than 25s
-      setTimeout(function() { clearInterval(waitCheck); resolve(); }, 25000);
-    });
+    console.log("[IDX] Already fetching, skipping this call");
+    return;
   }
 
   indicesFetching = true;
+  _indicesAbortCurrent = false;
   var startTime = Date.now();
   var successCount = 0;
 
-  console.log("[IDX] ── Cycle #" + myFetchID + " starting for " + MARKET_INDICES.length + " indices ──");
+  console.log("[IDX] ── Starting fetch for " + MARKET_INDICES.length + " indices ──");
 
   var btn = document.getElementById("indicesRefreshBtn");
   if (btn) { btn.disabled = true; btn.innerHTML = "⏳ Fetching..."; }
 
-  try {
-    for (var i = 0; i < MARKET_INDICES.length; i++) {
-      // If a newer fetch was started, abort this one
-      if (_indicesFetchID !== myFetchID) {
-        console.log("[IDX] Cycle #" + myFetchID + " superseded by #" + _indicesFetchID + ", stopping");
-        break;
-      }
-
-      var index = MARKET_INDICES[i];
-
-      try {
-        var result = await fetchOneIndex(index);
-
-        if (result && result.price > 0) {
-          indicesData[index.symbol] = result;
-          successCount++;
-          renderIndicesBar(); // show immediately
-        }
-      } catch (e) {
-        console.log("[IDX] " + index.shortName + " error: " + (e.message || ""));
-      }
+  for (var i = 0; i < MARKET_INDICES.length; i++) {
+    // Check if we should abort (e.g., page unload)
+    if (_indicesAbortCurrent) {
+      console.log("[IDX] Fetch aborted");
+      break;
     }
-  } catch (outerErr) {
-    console.log("[IDX] Unexpected error in fetch loop: " + outerErr.message);
+
+    var index = MARKET_INDICES[i];
+
+    try {
+      var result = await fetchOneIndex(index);
+
+      if (result && result.price > 0) {
+        // Silently update data
+        indicesData[index.symbol] = result;
+        successCount++;
+        // Update UI immediately for this one index (silent update)
+        renderIndicesBar();
+      }
+    } catch (e) {
+      console.log("[IDX] " + index.shortName + " error: " + (e.message || "unknown"));
+    }
   }
 
-  // ALWAYS clean up — this is the key fix
+  // Save results
   if (successCount > 0) {
     indicesLastFetchTime = Date.now();
     saveIndicesCache();
@@ -6413,147 +6404,163 @@ async function fetchAllIndicesSequential() {
   if (btn) { btn.disabled = false; btn.innerHTML = "🔄 Refresh"; }
 
   var duration = ((Date.now() - startTime) / 1000).toFixed(1);
-  console.log("[IDX] ── Cycle #" + myFetchID + " done: " + successCount + "/" + MARKET_INDICES.length + " in " + duration + "s ──");
+  console.log("[IDX] ── Done: " + successCount + "/" + MARKET_INDICES.length + " in " + duration + "s ──");
 
-  // ★ CRITICAL: Always release the lock no matter what
+  // CRITICAL: Release lock ALWAYS
   indicesFetching = false;
 }
-
 // ==================== WRAPPER for compatibility ====================
 async function fetchAllIndices() {
   return fetchAllIndicesSequential();
 }
-
 // ==================== MANUAL REFRESH button ====================
 function refreshIndices() {
+  // If stuck for more than 45 seconds, force release
+  if (indicesFetching && indicesLastFetchTime > 0 && (Date.now() - indicesLastFetchTime) > 45000) {
+    console.log("[IDX] Force-releasing stuck flag (45s timeout)");
+    indicesFetching = false;
+  }
+
   if (indicesFetching) {
-    // Force-release stuck flag if it's been more than 30s
-    if (indicesLastFetchTime > 0 && (Date.now() - indicesLastFetchTime) > 30000) {
-      console.log("[IDX] Force-releasing stuck indicesFetching flag");
-      indicesFetching = false;
-    } else {
-      ToastManager.info("Please Wait", "Already fetching indices...");
-      return;
-    }
+    ToastManager.info("Please Wait", "Indices are currently being fetched...");
+    return;
   }
 
   console.log("[IDX] Manual refresh triggered");
+  ToastManager.info("Refreshing", "Fetching latest indices...");
 
   fetchAllIndicesSequential().then(function() {
     var count = Object.keys(indicesData).length;
-    ToastManager.success("Updated", count + " indices refreshed");
-  }).catch(function() {
-    ToastManager.warning("Issue", "Some indices may not have updated");
+    if (count > 0) {
+      ToastManager.success("Updated", count + " indices refreshed");
+    } else {
+      ToastManager.warning("Issue", "Could not fetch indices data");
+    }
   });
 }
-
 // ==================== AUTO-REFRESH LOOP ====================
-// Simple: Fetch → Wait 10s → Fetch → Wait 10s → forever during market hours
+// Simple loop: Fetch → Wait → Fetch → Wait (never overlapping)
+// Old data stays on screen while new data is being fetched.
+// When new data arrives, it updates silently (no flicker).
+
 var indicesTimestampTimer = null;
 var indicesPostMarketCount = 0;
 var INDICES_POST_MARKET_LIMIT = 4;
 
 function startIndicesAutoRefresh() {
-  // Clear old timers
+  // Clear any old timers
   if (indicesAutoTimer) { clearTimeout(indicesAutoTimer); indicesAutoTimer = null; }
   if (indicesTimestampTimer) { clearInterval(indicesTimestampTimer); indicesTimestampTimer = null; }
 
-  console.log("[IDX-LOOP] Auto-refresh starting...");
+  console.log("[IDX-LOOP] Starting auto-refresh system...");
 
   var mkt = getMarketInfo();
   if (mkt.isOpen || mkt.isPreOpen) {
     indicesPostMarketCount = 0;
   }
 
-  // Show cached data immediately
+  // Show whatever cached data we have right now (old data stays visible)
   if (Object.keys(indicesData).length > 0) {
     renderIndicesBar();
   }
 
-  // The main loop function
-  function loop() {
+  // The simple loop
+  function runOneCycle() {
     var m = getMarketInfo();
 
-    // DURING MARKET HOURS: fetch every 10s
+    // === MARKET OPEN: fetch, then wait 3s, then fetch again ===
     if (m.isOpen) {
       indicesPostMarketCount = 0;
 
-      // Skip if tab is hidden
+      // Skip if tab is hidden (save API calls)
       if (document.visibilityState !== "visible") {
-        console.log("[IDX-LOOP] Tab hidden, checking in 5s...");
-        indicesAutoTimer = setTimeout(loop, 5000);
+        indicesAutoTimer = setTimeout(runOneCycle, 5000);
         return;
       }
 
-      console.log("[IDX-LOOP] Market open — fetching...");
+      // Don't start if previous fetch is still running
+      if (indicesFetching) {
+        console.log("[IDX-LOOP] Previous fetch still running, checking in 2s...");
+        indicesAutoTimer = setTimeout(runOneCycle, 2000);
+        return;
+      }
+
+      // Fetch all indices (old data stays on screen during this)
       fetchAllIndicesSequential().then(function() {
-        // Wait 10 seconds, then fetch again
-        indicesAutoTimer = setTimeout(loop, 10000);
+        // Done! Wait 3 seconds, then start next cycle
+        indicesAutoTimer = setTimeout(runOneCycle, 3000);
       }).catch(function() {
-        // On error, retry in 5s
-        indicesAutoTimer = setTimeout(loop, 5000);
+        // Error, retry in 5s
+        indicesAutoTimer = setTimeout(runOneCycle, 5000);
       });
       return;
     }
 
-    // PRE-MARKET: fetch every 15s
+    // === PRE-MARKET: fetch every 15s ===
     if (m.isPreOpen) {
       indicesPostMarketCount = 0;
 
       if (document.visibilityState !== "visible") {
-        indicesAutoTimer = setTimeout(loop, 5000);
+        indicesAutoTimer = setTimeout(runOneCycle, 5000);
         return;
       }
 
-      console.log("[IDX-LOOP] Pre-market — fetching...");
+      if (indicesFetching) {
+        indicesAutoTimer = setTimeout(runOneCycle, 2000);
+        return;
+      }
+
       fetchAllIndicesSequential().then(function() {
-        indicesAutoTimer = setTimeout(loop, 15000);
+        indicesAutoTimer = setTimeout(runOneCycle, 15000);
       }).catch(function() {
-        indicesAutoTimer = setTimeout(loop, 5000);
+        indicesAutoTimer = setTimeout(runOneCycle, 5000);
       });
       return;
     }
 
-    // POST-MARKET (3:30 PM - 4:30 PM): limited fetches
+    // === POST-MARKET (3:30-4:30 PM): limited fetches ===
     if (m.isWeekday && m.totalMinutes > 930 && m.totalMinutes <= 990) {
       if (indicesPostMarketCount < INDICES_POST_MARKET_LIMIT) {
         indicesPostMarketCount++;
-        console.log("[IDX-LOOP] Post-market fetch " + indicesPostMarketCount + "/" + INDICES_POST_MARKET_LIMIT);
+
+        if (indicesFetching) {
+          indicesAutoTimer = setTimeout(runOneCycle, 3000);
+          return;
+        }
 
         fetchAllIndicesSequential().then(function() {
-          indicesAutoTimer = setTimeout(loop, 20000);
+          indicesAutoTimer = setTimeout(runOneCycle, 20000);
         }).catch(function() {
-          indicesAutoTimer = setTimeout(loop, 10000);
+          indicesAutoTimer = setTimeout(runOneCycle, 10000);
         });
         return;
-      } else {
-        console.log("[IDX-LOOP] Post-market limit reached, checking in 60s...");
-        indicesAutoTimer = setTimeout(loop, 60000);
-        return;
       }
+      // Limit reached
+      indicesAutoTimer = setTimeout(runOneCycle, 60000);
+      return;
     }
 
-    // MARKET CLOSED: check every 5 minutes if market opened
-    console.log("[IDX-LOOP] Market closed. Checking in 5 minutes...");
-    indicesAutoTimer = setTimeout(loop, 300000);
+    // === MARKET CLOSED: check every 5 minutes ===
+    console.log("[IDX-LOOP] Market closed. Next check in 5 minutes.");
+    indicesAutoTimer = setTimeout(runOneCycle, 300000);
   }
 
-  // Start the loop immediately
-  loop();
+  // Start first cycle immediately
+  runOneCycle();
 
-  // Timestamp updater (shows "Xs ago" text)
+  // Timestamp updater (shows "Xs ago")
   indicesTimestampTimer = setInterval(function() {
     updateIndicesTimestamp();
   }, 3000);
 
-  // Resume loop when tab becomes visible during market hours
+  // When tab becomes visible during market hours, restart quickly
   document.addEventListener("visibilitychange", function() {
     if (document.visibilityState === "visible") {
       var m = getMarketInfo();
       if ((m.isOpen || m.isPreOpen) && !indicesFetching) {
         if (indicesAutoTimer) clearTimeout(indicesAutoTimer);
-        console.log("[IDX-LOOP] Tab visible, restarting loop in 1s...");
-        indicesAutoTimer = setTimeout(loop, 1000);
+        console.log("[IDX-LOOP] Tab visible again, restarting in 1s...");
+        indicesAutoTimer = setTimeout(runOneCycle, 1000);
       }
     }
   });
@@ -11045,14 +11052,3 @@ showSettings = function() {
 </script>
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-
-
