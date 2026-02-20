@@ -6116,7 +6116,7 @@ async function fetchSingleIndexPrice(index) {
     try {
       var fullUrl = proxies[p] + encodeURIComponent(yahooUrl);
       var controller = new AbortController();
-      var timeoutId = setTimeout(function() { controller.abort(); }, 4000);
+      var timeoutId = setTimeout(function() { controller.abort(); }, 2000);
 
       var response = await fetch(fullUrl, { signal: controller.signal });
       clearTimeout(timeoutId);
@@ -6179,7 +6179,7 @@ async function fetchSingleIndexTwelveData(index) {
   try {
     var url = "https://api.twelvedata.com/quote?symbol=" + encodeURIComponent(tdSymbol) + "&apikey=" + apiKey;
     var controller = new AbortController();
-    var timeoutId = setTimeout(function() { controller.abort(); }, 8000);
+    var timeoutId = setTimeout(function() { controller.abort(); }, 4000);
 
     var response = await fetch(url, { signal: controller.signal });
     clearTimeout(timeoutId);
@@ -6192,26 +6192,6 @@ async function fetchSingleIndexTwelveData(index) {
     var data = JSON.parse(text);
 
     if (data && data.close && !data.code && data.status !== "error") {
-      var currentPrice = parseFloat(data.close) || 0;
-      var previousClose = parseFloat(data.previous_close) || currentPrice;
-      var priceChange = parseFloat(data.change) || (currentPrice - previousClose);
-      var changePercent = parseFloat(data.percent_change) || 0;
-
-      if (currentPrice > 0) {
-        markTwelveKeySuccess(apiKey);
-        console.log("[INDICES] ✓ " + index.shortName + " = " + currentPrice + " via TwelveData");
-        return {
-          price: currentPrice,
-          change: priceChange,
-          changePercent: changePercent,
-          prevClose: previousClose,
-          fetchedAt: Date.now(),
-          source: "TwelveData"
-        };
-      }
-    }
-
-    if (data && (data.code === 429 || data.status === "error")) {
       markTwelveKeyBlocked(apiKey);
     }
   } catch (error) {
@@ -6242,13 +6222,13 @@ function fetchOneIndex(index) {
       resolve(result);
     }
 
-    // HARD LIMIT: 20 seconds max per index, then give up
+    // HARD LIMIT: 8 seconds max per index, then give up
     maxTimer = setTimeout(function() {
       if (!done) {
-        console.log("[IDX] " + index.shortName + " hard timeout 20s — giving up");
+        console.log("[IDX] " + index.shortName + " hard timeout 8s — giving up");
         finish(null);
       }
-    }, 20000);
+    }, 8000);
 
     // START YAHOO IMMEDIATELY
     fetchSingleIndexPrice(index).then(function(yahooResult) {
@@ -6264,14 +6244,14 @@ function fetchOneIndex(index) {
       startFallback();
     });
 
-    // IF YAHOO IS SLOW (10 seconds), start TwelveData IN PARALLEL
+    // IF YAHOO IS SLOW (3 seconds), start TwelveData IN PARALLEL
     // Yahoo keeps running — if it responds later, it still wins
     slowTimer = setTimeout(function() {
       if (!done && !yahooFinished) {
-        console.log("[IDX] " + index.shortName + " Yahoo slow (10s), adding TwelveData...");
+        console.log("[IDX] " + index.shortName + " Yahoo slow (3s), adding TwelveData...");
         startFallback();
       }
-    }, 10000);
+    }, 3000);
 
     function startFallback() {
       if (fallbackStarted || done) return;
@@ -6291,13 +6271,13 @@ function fetchOneIndex(index) {
         }
       }).catch(function() {});
 
-      // Give fallbacks 8 more seconds, then give up
+      // Give fallbacks 4 more seconds, then give up
       setTimeout(function() {
         if (!done) {
           console.log("[IDX] " + index.shortName + " all fallbacks failed");
           finish(null);
         }
-      }, 8000);
+      }, 4000);
     }
   });
 }
@@ -6315,7 +6295,7 @@ async function fetchYahooRetry(index) {
   for (var p = 0; p < proxies.length; p++) {
     try {
       var controller = new AbortController();
-      var tid = setTimeout(function() { controller.abort(); }, 5000);
+      var tid = setTimeout(function() { controller.abort(); }, 2000);
       var resp = await fetch(proxies[p] + encodeURIComponent(yahooUrl), { signal: controller.signal });
       clearTimeout(tid);
 
@@ -6368,28 +6348,28 @@ async function fetchAllIndicesSequential() {
   var btn = document.getElementById("indicesRefreshBtn");
   if (btn) { btn.disabled = true; btn.innerHTML = "⏳ Fetching..."; }
 
-  for (var i = 0; i < MARKET_INDICES.length; i++) {
-    // Check if we should abort (e.g., page unload)
+  // Fetch 2 indices at a time (parallel pairs for speed)
+  var pairSize = 2;
+  for (var i = 0; i < MARKET_INDICES.length; i += pairSize) {
     if (_indicesAbortCurrent) {
       console.log("[IDX] Fetch aborted");
       break;
     }
 
-    var index = MARKET_INDICES[i];
+    var pair = MARKET_INDICES.slice(i, i + pairSize);
+    var pairPromises = pair.map(function(index) {
+      return fetchOneIndex(index).then(function(result) {
+        if (result && result.price > 0) {
+          indicesData[index.symbol] = result;
+          successCount++;
+          renderIndicesBar();
+        }
+      }).catch(function(e) {
+        console.log("[IDX] " + index.shortName + " error: " + (e.message || "unknown"));
+      });
+    });
 
-    try {
-      var result = await fetchOneIndex(index);
-
-      if (result && result.price > 0) {
-        // Silently update data
-        indicesData[index.symbol] = result;
-        successCount++;
-        // Update UI immediately for this one index (silent update)
-        renderIndicesBar();
-      }
-    } catch (e) {
-      console.log("[IDX] " + index.shortName + " error: " + (e.message || "unknown"));
-    }
+    await Promise.all(pairPromises);
   }
 
   // Save results
@@ -11052,3 +11032,4 @@ showSettings = function() {
 </script>
 </body>
 </html>
+
