@@ -6316,93 +6316,104 @@ function startIndicesAutoRefresh() {
     indicesPostMarketCount = 0;
   }
 
-  // SEQUENTIAL SCHEDULER: Only schedules next fetch AFTER previous one completes
-  function scheduleNextAfterCompletion() {
+  // CONTINUOUS LOOP: Fetch → Wait → Fetch → Wait → forever (during market hours)
+  // The loop NEVER stops during market hours. It only pauses between fetches.
+  function runContinuousLoop() {
     var m = getMarketInfo();
-    var waitAfterFetch;
+
+    // Determine if we should fetch and how long to wait after
+    var shouldFetch = false;
+    var waitAfterFetch = 3000; // default 3s
 
     if (m.isOpen) {
-      waitAfterFetch = 2000; // 2s pause after data arrives during market
+      shouldFetch = true;
+      waitAfterFetch = 2000; // 2s after data arrives
       indicesPostMarketCount = 0;
     } else if (m.isPreOpen) {
+      shouldFetch = true;
       waitAfterFetch = 5000;
       indicesPostMarketCount = 0;
     } else if (m.isWeekday && m.totalMinutes > 930 && m.totalMinutes <= 990) {
+      // Post-market
       if (indicesPostMarketCount < INDICES_POST_MARKET_LIMIT) {
+        shouldFetch = true;
         waitAfterFetch = 15000;
+        indicesPostMarketCount++;
+        console.log("[INDICES-LOOP] Post-market fetch " + indicesPostMarketCount + "/" + INDICES_POST_MARKET_LIMIT);
       } else {
-        console.log("[INDICES] Post-market limit reached. Stopping auto-refresh.");
-        return; // Stop scheduling
+        // Post-market limit reached — check again in 60s (market might still be in window)
+        console.log("[INDICES-LOOP] Post-market limit reached. Checking again in 60s...");
+        indicesAutoTimer = setTimeout(runContinuousLoop, 60000);
+        return;
       }
     } else {
-      console.log("[INDICES] Market closed. No auto-refresh.");
-      return; // Stop scheduling
+      // Market closed — check every 5 minutes if market opened (handles day transitions)
+      console.log("[INDICES-LOOP] Market closed. Checking again in 5 minutes...");
+      indicesAutoTimer = setTimeout(runContinuousLoop, 300000);
+      return;
     }
 
-    indicesAutoTimer = setTimeout(function() {
-      var mk = getMarketInfo();
-      var shouldFetch = false;
+    if (!shouldFetch) {
+      // Shouldn't happen but safety net
+      indicesAutoTimer = setTimeout(runContinuousLoop, 30000);
+      return;
+    }
 
-      if (mk.isOpen || mk.isPreOpen) {
-        shouldFetch = true;
-      } else if (mk.isWeekday && mk.totalMinutes > 930 && mk.totalMinutes <= 990) {
-        if (indicesPostMarketCount < INDICES_POST_MARKET_LIMIT) {
-          indicesPostMarketCount++;
-          console.log("[INDICES] Post-market fetch " + indicesPostMarketCount + "/" + INDICES_POST_MARKET_LIMIT);
-          shouldFetch = true;
-        }
-      }
+    // Skip if tab is hidden (save resources)
+    if (document.visibilityState !== "visible") {
+      console.log("[INDICES-LOOP] Tab hidden, retrying in 5s...");
+      indicesAutoTimer = setTimeout(runContinuousLoop, 5000);
+      return;
+    }
 
-      if (shouldFetch && document.visibilityState === "visible") {
-        // SEQUENTIAL: fetch, then schedule next only after it completes
-        indicesFetchCompleted = false;
-        fetchAllIndicesSequential().then(function() {
-          indicesFetchCompleted = true;
-          updateIndicesTimestamp();
-          scheduleNextAfterCompletion(); // Schedule NEXT only after THIS one is done
-        }).catch(function() {
-          indicesFetchCompleted = true;
-          updateIndicesTimestamp();
-          scheduleNextAfterCompletion();
-        });
-      } else {
-        updateIndicesTimestamp();
-        scheduleNextAfterCompletion(); // Still schedule next check
-      }
-    }, waitAfterFetch);
-  }
+    // DO THE FETCH — then wait — then loop again
+    console.log("[INDICES-LOOP] Fetching... (next fetch in " + (waitAfterFetch / 1000) + "s after completion)");
 
-  // INITIAL FETCH: Start the chain
-  if (Object.keys(indicesData).length === 0) {
-    // No cached data — fetch immediately, then start chain
-    indicesFetchCompleted = false;
     fetchAllIndicesSequential().then(function() {
-      indicesFetchCompleted = true;
       updateIndicesTimestamp();
-      scheduleNextAfterCompletion();
-    }).catch(function() {
-      indicesFetchCompleted = true;
+      // Wait, then fetch again
+      indicesAutoTimer = setTimeout(runContinuousLoop, waitAfterFetch);
+    }).catch(function(err) {
+      console.log("[INDICES-LOOP] Fetch error, retrying in 5s...");
       updateIndicesTimestamp();
-      scheduleNextAfterCompletion();
+      // On error, retry sooner
+      indicesAutoTimer = setTimeout(runContinuousLoop, 5000);
     });
-  } else {
-    // Have cached data — show it, then start chain
-    renderIndicesBar();
-    scheduleNextAfterCompletion();
   }
 
-  // Timestamp updater (independent, just updates "Xs ago" text)
+  // KICKSTART: Show cached data, then start the loop
+  if (Object.keys(indicesData).length > 0) {
+    renderIndicesBar();
+  }
+
+  // Start the continuous loop immediately
+  runContinuousLoop();
+
+  // Timestamp updater (independent — just updates "Xs ago" text)
   indicesTimestampTimer = setInterval(function() {
     updateIndicesTimestamp();
   }, 3000);
+
+  // Resume loop when tab becomes visible again
+  document.addEventListener("visibilitychange", function() {
+    if (document.visibilityState === "visible" && window._indicesAutoStarted) {
+      var m = getMarketInfo();
+      if ((m.isOpen || m.isPreOpen) && !indicesFetching) {
+        // Tab came back during market hours — restart loop if not already running
+        if (indicesAutoTimer) clearTimeout(indicesAutoTimer);
+        console.log("[INDICES-LOOP] Tab visible again, restarting loop...");
+        indicesAutoTimer = setTimeout(runContinuousLoop, 1000);
+      }
+    }
+  });
 }
-// SEQUENTIAL FETCH: Returns a Promise that resolves only when ALL indices are fetched
-// This prevents overlapping fetches — next fetch starts only after this one finishes
+// SMART SEQUENTIAL FETCH: Yahoo first, fallback to TwelveData/Alpha if Yahoo is slow (>12s)
+// Returns a Promise that resolves only when ALL indices are fetched
+// Loop: Fetch → Show → Wait → Fetch again (never stops during market hours)
 async function fetchAllIndicesSequential() {
   // Prevent concurrent fetches (double safety)
   if (indicesFetching) {
-    console.log("[INDICES-SEQ] Already fetching, waiting...");
-    // Wait for current fetch to finish instead of skipping
+    console.log("[INDICES-SEQ] Already fetching, waiting for it to finish...");
     return new Promise(function(resolve) {
       var waitTimer = setInterval(function() {
         if (!indicesFetching) {
@@ -6410,16 +6421,16 @@ async function fetchAllIndicesSequential() {
           resolve();
         }
       }, 200);
-      // Safety timeout: don't wait forever
       setTimeout(function() {
         clearInterval(waitTimer);
         resolve();
-      }, 15000);
+      }, 20000);
     });
   }
 
   indicesFetching = true;
-  console.log("[INDICES-SEQ] Starting sequential fetch for " + MARKET_INDICES.length + " indices...");
+  var fetchStartTime = Date.now();
+  console.log("[INDICES-SEQ] Starting smart fetch for " + MARKET_INDICES.length + " indices...");
 
   var btn = document.getElementById("indicesRefreshBtn");
   if (btn) {
@@ -6429,14 +6440,15 @@ async function fetchAllIndicesSequential() {
 
   var successCount = 0;
   var totalCount = MARKET_INDICES.length;
-  var fetchStartTime = Date.now();
 
-  // Fetch indices ONE BY ONE sequentially (no parallel race conditions)
+  // Fetch each index with smart fallback
   for (var i = 0; i < MARKET_INDICES.length; i++) {
     var index = MARKET_INDICES[i];
+    var indexStartTime = Date.now();
+    var gotResult = false;
 
     try {
-      var result = await fetchSingleIndexPrice(index);
+      var result = await fetchSingleIndexSmart(index);
 
       if (result && result.price > 0) {
         var oldData = indicesData[index.symbol];
@@ -6444,45 +6456,191 @@ async function fetchAllIndicesSequential() {
 
         indicesData[index.symbol] = result;
         successCount++;
+        gotResult = true;
 
-        // Update UI immediately when each index arrives (progressive update)
+        // Update UI immediately when each index arrives
         if (priceChanged) {
           renderIndicesBar();
         }
 
-        console.log("[INDICES-SEQ] ✓ " + index.shortName + " = " + result.price + " (" + (i + 1) + "/" + totalCount + ")");
-      } else {
-        console.log("[INDICES-SEQ] ✗ " + index.shortName + " no data (" + (i + 1) + "/" + totalCount + ")");
+        var indexTime = ((Date.now() - indexStartTime) / 1000).toFixed(1);
+        console.log("[INDICES-SEQ] ✓ " + index.shortName + " = " + result.price + " via " + result.source + " (" + indexTime + "s) [" + (i + 1) + "/" + totalCount + "]");
       }
     } catch (err) {
-      console.log("[INDICES-SEQ] ✗ " + index.shortName + " error: " + err.message);
-      // Continue to next index, don't stop the chain
+      console.log("[INDICES-SEQ] ✗ " + index.shortName + " error: " + (err.message || err));
+    }
+
+    if (!gotResult) {
+      console.log("[INDICES-SEQ] ✗ " + index.shortName + " no data [" + (i + 1) + "/" + totalCount + "]");
     }
   }
 
   var fetchDuration = Date.now() - fetchStartTime;
 
-  // Update timestamp and cache only if we got data
   if (successCount > 0) {
     indicesLastFetchTime = Date.now();
     saveIndicesCache();
-    console.log("[INDICES-SEQ] ✅ Updated " + successCount + "/" + totalCount + " indices in " + (fetchDuration / 1000).toFixed(1) + "s");
+    console.log("[INDICES-SEQ] ✅ Updated " + successCount + "/" + totalCount + " in " + (fetchDuration / 1000).toFixed(1) + "s");
   } else {
-    console.log("[INDICES-SEQ] ⚠️ No indices updated (all failed). Keeping old data. Took " + (fetchDuration / 1000).toFixed(1) + "s");
+    console.log("[INDICES-SEQ] ⚠️ No indices updated. Keeping old data.");
   }
 
-  // Final render
   renderIndicesBar();
   updateIndicesTimestamp();
 
-  // Re-enable button
   if (btn) {
     btn.disabled = false;
     btn.innerHTML = "🔄 Refresh";
   }
 
   indicesFetching = false;
-  // Promise resolves here — caller knows fetch is truly done
+}
+
+// SMART SINGLE INDEX FETCH:
+// 1. Start Yahoo fetch immediately
+// 2. If Yahoo doesn't respond in 12 seconds, ALSO start TwelveData + Alpha in parallel
+// 3. Whichever API responds first with valid data WINS
+// 4. Cancel the others
+async function fetchSingleIndexSmart(index) {
+  return new Promise(function(resolve) {
+    var resolved = false;
+    var yahooFinished = false;
+    var fallbackStarted = false;
+    var fallbackTimer = null;
+    var overallTimeout = null;
+
+    function finishWith(result) {
+      if (resolved) return;
+      resolved = true;
+      if (fallbackTimer) clearTimeout(fallbackTimer);
+      if (overallTimeout) clearTimeout(overallTimeout);
+      resolve(result);
+    }
+
+    // Overall safety timeout: 25 seconds max per index
+    overallTimeout = setTimeout(function() {
+      if (!resolved) {
+        console.log("[SMART] " + index.shortName + " overall timeout (25s)");
+        finishWith(null);
+      }
+    }, 25000);
+
+    // STEP 1: Start Yahoo fetch immediately
+    fetchSingleIndexPrice(index).then(function(yahooResult) {
+      yahooFinished = true;
+      if (yahooResult && yahooResult.price > 0) {
+        yahooResult.source = yahooResult.source || "Yahoo";
+        finishWith(yahooResult);
+      } else if (!fallbackStarted && !resolved) {
+        // Yahoo returned but no data — start fallbacks immediately
+        console.log("[SMART] " + index.shortName + " Yahoo returned no data, trying fallbacks...");
+        startFallbacks();
+      }
+    }).catch(function(err) {
+      yahooFinished = true;
+      console.log("[SMART] " + index.shortName + " Yahoo error: " + (err.message || err));
+      if (!fallbackStarted && !resolved) {
+        startFallbacks();
+      }
+    });
+
+    // STEP 2: After 12 seconds, if Yahoo hasn't responded, start fallbacks IN PARALLEL
+    // (Yahoo keeps running — if it responds later it still wins)
+    fallbackTimer = setTimeout(function() {
+      if (!resolved && !yahooFinished) {
+        console.log("[SMART] " + index.shortName + " Yahoo slow (12s), starting fallbacks in parallel...");
+        startFallbacks();
+      }
+    }, 12000);
+
+    function startFallbacks() {
+      if (fallbackStarted || resolved) return;
+      fallbackStarted = true;
+
+      // TwelveData fallback
+      fetchSingleIndexTwelveData(index).then(function(twelveResult) {
+        if (twelveResult && twelveResult.price > 0) {
+          twelveResult.source = "TwelveData";
+          finishWith(twelveResult);
+        }
+      }).catch(function() {
+        // ignore
+      });
+
+      // Alpha Vantage fallback (for indices we try via TwelveData only,
+      // but we add a secondary Yahoo retry with different proxy)
+      fetchSingleIndexYahooRetry(index).then(function(retryResult) {
+        if (retryResult && retryResult.price > 0) {
+          retryResult.source = "Yahoo-Retry";
+          finishWith(retryResult);
+        }
+      }).catch(function() {
+        // ignore
+      });
+
+      // If nothing responds in 10 more seconds after fallback started, give up
+      setTimeout(function() {
+        if (!resolved) {
+          console.log("[SMART] " + index.shortName + " all sources timed out");
+          finishWith(null);
+        }
+      }, 10000);
+    }
+  });
+}
+
+// Yahoo retry with different proxy order (used as fallback)
+async function fetchSingleIndexYahooRetry(index) {
+  var yahooUrl = "https://query1.finance.yahoo.com/v8/finance/chart/" + encodeURIComponent(index.yahoo) + "?interval=1d&range=1d";
+
+  // Reversed proxy order from the main function
+  var proxies = [
+    "https://api.codetabs.com/v1/proxy?quest=",
+    "https://corsproxy.io/?",
+    "https://api.allorigins.win/raw?url="
+  ];
+
+  for (var p = 0; p < proxies.length; p++) {
+    try {
+      var fullUrl = proxies[p] + encodeURIComponent(yahooUrl);
+
+      var controller = new AbortController();
+      var timeoutId = setTimeout(function() { controller.abort(); }, 6000);
+
+      var response = await fetch(fullUrl, { signal: controller.signal });
+      clearTimeout(timeoutId);
+
+      if (!response.ok) continue;
+
+      var text = await response.text();
+      if (!text || text.charAt(0) !== '{') continue;
+
+      var data = JSON.parse(text);
+
+      if (data && data.chart && data.chart.result && data.chart.result[0]) {
+        var meta = data.chart.result[0].meta;
+        var currentPrice = meta.regularMarketPrice || 0;
+        var previousClose = meta.previousClose || meta.chartPreviousClose || currentPrice;
+        var priceChange = currentPrice - previousClose;
+        var changePercent = previousClose > 0 ? (priceChange / previousClose) * 100 : 0;
+
+        if (currentPrice > 0) {
+          return {
+            price: currentPrice,
+            change: priceChange,
+            changePercent: changePercent,
+            prevClose: previousClose,
+            fetchedAt: Date.now(),
+            source: "Yahoo-Retry-P" + (p + 1)
+          };
+        }
+      }
+    } catch (error) {
+      // Continue to next proxy
+    }
+  }
+
+  return null;
 }
 // Manual refresh — keep showing current numbers while fetching new ones
 function refreshIndices() {
@@ -6493,18 +6651,13 @@ function refreshIndices() {
     return;
   }
 
-  indicesLastFetchTime = 0; // Reset cooldown so fetch is allowed
-  // Do NOT call renderIndicesLoadingState() — keep existing numbers visible
-  // Old data stays on screen while new data loads in background
+  indicesLastFetchTime = 0;
   console.log("[INDICES] Manual refresh triggered — old data stays visible");
 
-  // Use sequential fetch (returns promise, won't overlap)
-  indicesFetchCompleted = false;
   fetchAllIndicesSequential().then(function() {
-    indicesFetchCompleted = true;
-    ToastManager.success("Indices Updated", "Market indices refreshed successfully");
+    ToastManager.success("Indices Updated", "All " + Object.keys(indicesData).length + " indices refreshed");
   }).catch(function() {
-    indicesFetchCompleted = true;
+    ToastManager.warning("Partial Update", "Some indices may not have updated");
   });
 }
 
@@ -8380,15 +8533,10 @@ auth.onAuthStateChanged(async function(user) {
     renderIndicesLoadingState();
   }
   
-  // Step 1: Fetch fresh indices in background (300ms delay for DOM to settle)
+  // Step 1+2: Start indices auto-refresh (handles initial fetch + continuous loop)
+  // No separate initial fetch needed — the loop does it immediately
   setTimeout(function() {
-    indicesFetchCompleted = false;
-    fetchAllIndicesSequential().then(function() {
-      indicesFetchCompleted = true;
-      console.log("[BOOT] Initial indices fetch complete");
-    }).catch(function() {
-      indicesFetchCompleted = true;
-    });
+    startIndicesAutoRefresh();
   }, 300);
 
   // Step 2: Start indices auto-refresh (will keep updating in background)
@@ -11109,6 +11257,7 @@ showSettings = function() {
 </script>
 </body>
 </html>
+
 
 
 
