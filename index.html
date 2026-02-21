@@ -3025,6 +3025,56 @@ body.dark-mode .stock-buy-btn:hover{
 .stock-chart-container:active{
   opacity:0.7;
 }
+/* ================= ENHANCED CHART STYLES ================= */
+.stock-chart-container {
+  position: relative;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  transition: height 0.3s ease, opacity 0.3s ease;
+  background: linear-gradient(180deg, transparent 0%, rgba(79,70,229,0.01) 100%);
+}
+.stock-chart-container canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.stock-chart-container:hover {
+  background: linear-gradient(180deg, transparent 0%, rgba(79,70,229,0.03) 100%);
+}
+.stock-chart-container:hover canvas {
+  filter: brightness(1.05);
+}
+body.dark-mode .stock-chart-container {
+  background: linear-gradient(180deg, transparent 0%, rgba(99,102,241,0.02) 100%);
+}
+body.dark-mode .stock-chart-container:hover {
+  background: linear-gradient(180deg, transparent 0%, rgba(99,102,241,0.05) 100%);
+}
+
+/* Chart skeleton loading animation */
+.stock-chart-container .skeleton {
+  margin: 6px;
+}
+.stock-chart-container .chart-loading {
+  width: calc(100% - 12px);
+  height: calc(100% - 12px);
+  margin: 6px;
+  border-radius: 8px;
+  background: linear-gradient(90deg, var(--border-lighter) 25%, var(--border-light) 50%, var(--border-lighter) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+}
+body.dark-mode .stock-chart-container .chart-loading {
+  background: linear-gradient(90deg, #1e293b 25%, #334155 50%, #1e293b 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+}
+
+/* No chart data message */
+.stock-chart-container div[style*="No chart"] {
+  font-style: italic;
+  opacity: 0.6;
+}
   /* ================= MINI PRICE CHART ================= */
 .stock-chart-container{
   position:relative;
@@ -6942,7 +6992,7 @@ async function fetchPriorityStocks() {
   }
 }
 
-// Start priority stock auto-refresh (runs alongside indices)
+// Smart auto-refresh for visible stocks during market hours
 function startPriorityStockRefresh() {
   if (priorityFetchTimer) {
     clearInterval(priorityFetchTimer);
@@ -6952,18 +7002,64 @@ function startPriorityStockRefresh() {
   priorityFetchTimer = setInterval(function() {
     var market = getMarketInfo();
     if (document.visibilityState !== "visible") return;
+    if (_smartFetching) return; // Don't overlap with scroll fetcher
 
     if (market.isOpen) {
-      // During market hours: refresh every 15 seconds
-      fetchPriorityStocks();
-    } else if (market.isWeekday && market.totalMinutes > 930 && market.totalMinutes <= 960) {
-      // Post-market: fetch a few times
-      if (postMarketFetchCount < POST_MARKET_MAX_FETCHES) {
-        fetchPriorityStocks();
+      // During market hours: refresh stocks that are currently visible AND loaded
+      refreshLoadedVisibleStocks();
+    }
+  }, 15000); // Every 15 seconds
+}
+
+// Refresh only stocks that are visible AND already have prices (no new fetches)
+async function refreshLoadedVisibleStocks() {
+  if (_smartFetching || isFetchingData) return;
+
+  var visibleStocks = [];
+  var allCards = document.querySelectorAll('.stock-card[data-symbol][data-loaded="true"]');
+
+  allCards.forEach(function(card) {
+    var rect = card.getBoundingClientRect();
+    var isVisible = (rect.top < window.innerHeight && rect.bottom > 0);
+
+    if (isVisible) {
+      var sym = card.dataset.symbol;
+      for (var i = 0; i < STOCK_DATA.length; i++) {
+        if (STOCK_DATA[i].sym === sym) {
+          visibleStocks.push(STOCK_DATA[i]);
+          break;
+        }
       }
     }
-    // Outside market hours: do nothing (timer still runs but skips)
-  }, 15000);
+  });
+
+  if (visibleStocks.length === 0) return;
+
+  // Only refresh first 6 visible
+  var toRefresh = visibleStocks.slice(0, 6);
+
+  console.log("[AUTO-REFRESH] Updating " + toRefresh.length + " visible stocks");
+
+  for (var i = 0; i < toRefresh.length; i++) {
+    var stock = toRefresh[i];
+    try {
+      if (pricesData[stock.sym]) pricesData[stock.sym].fetchedAt = 0;
+      var data = await fetchStockPrice(stock, "priority");
+
+      if (data && data.price > 0) {
+        var oldPrice = pricesData[stock.sym] ? pricesData[stock.sym].price : 0;
+        updateCardPriceDisplay(stock.sym, data.price, data.change || 0, data.changePercent || 0, oldPrice);
+      }
+    } catch (e) {
+      // Individual failure — continue
+    }
+
+    if (i < toRefresh.length - 1) {
+      await new Promise(function(r) { setTimeout(r, 500); });
+    }
+  }
+
+  try { localStorage.setItem("stockPricesCache", JSON.stringify(pricesData)); } catch (e) {}
 }
 /* ================= PRIORITY HOMEPAGE STOCK FETCHER ================= */
 // Fetches first 6 visible stocks on homepage + all holdings on initial load
@@ -7018,170 +7114,29 @@ async function fetchPriorityHomepageStocks() {
     console.error("[PRIORITY-HOME] Unexpected error:", outerError);
   }
 }
-  /* ================= SCROLL-BASED LAZY STOCK LOADER ================= */
-// When user scrolls and a stock card becomes visible for 1+ seconds,
-// fetch its price and mini chart automatically
+/* ================= SCROLL-BASED LAZY STOCK LOADER (REPLACED) ================= */
+// Old scroll observer removed — replaced by Smart Stock Loader above
+// Keep variable declarations for compatibility
 var scrollObserver = null;
 var scrollFetchQueue = [];
 var scrollFetchTimer = null;
 var scrollFetchingActive = false;
 
 function initStockScrollObserver() {
-  // Don't reinitialize if already running
-  if (scrollObserver) {
-    scrollObserver.disconnect();
-    scrollObserver = null;
-  }
-
-  // Check browser support
-  if (!("IntersectionObserver" in window)) {
-    console.log("[SCROLL] IntersectionObserver not supported");
-    return;
-  }
-
-  scrollObserver = new IntersectionObserver(function(entries) {
-    entries.forEach(function(entry) {
-      var card = entry.target;
-      var sym = card.dataset.symbol;
-      if (!sym) return;
-
-      if (entry.isIntersecting) {
-        // Card is now visible — wait 1 second before fetching
-        card.dataset.scrollVisible = "true";
-        card.dataset.scrollVisibleAt = Date.now().toString();
-      } else {
-        // Card scrolled out of view — cancel
-        card.dataset.scrollVisible = "false";
-        card.dataset.scrollVisibleAt = "";
-      }
-    });
-
-    // Schedule check after 1 second
-    if (scrollFetchTimer) clearTimeout(scrollFetchTimer);
-    scrollFetchTimer = setTimeout(function() {
-      processScrollQueue();
-    }, 1100); // 1.1 second delay
-  }, {
-    root: null,
-    rootMargin: "0px",
-    threshold: 0.3 // 30% of card must be visible
-  });
-
-  // Observe all existing stock cards
-  observeStockCards();
-
-  console.log("[SCROLL] Lazy loader initialized");
+  // Now handled by initSmartStockLoader()
+  console.log("[SCROLL] Legacy observer disabled — using Smart Loader");
 }
 
 function observeStockCards() {
-  if (!scrollObserver) return;
-
-  var cards = document.querySelectorAll(".stock-card[data-symbol]");
-  cards.forEach(function(card) {
-    var sym = card.dataset.symbol;
-    if (!sym) return;
-
-    // Only observe cards that don't already have a price
-    var priceData = pricesData[sym];
-    if (!priceData || !priceData.price || priceData.price <= 0) {
-      scrollObserver.observe(card);
-    }
-  });
+  // No-op — handled by Smart Loader
 }
-
-// Re-observe cards when displayStocks is called (new cards rendered)
-var _originalDisplayStocks = displayStocks;
-
-// We override displayStocks by wrapping it
-// (not replacing — just adding observer after render)
-var _displayStocksObserverTimer = null;
 
 function attachScrollObserverAfterRender() {
-  if (_displayStocksObserverTimer) clearTimeout(_displayStocksObserverTimer);
-  _displayStocksObserverTimer = setTimeout(function() {
-    if (scrollObserver) {
-      observeStockCards();
-    }
-  }, 500);
+  // No-op — handled by Smart Loader
 }
 
-// Hook into displayStocks — add a MutationObserver on the container
-(function() {
-  var stocksContainer = document.getElementById("stocksContainer");
-  if (!stocksContainer) return;
-
-  var mutObserver = new MutationObserver(function() {
-    attachScrollObserverAfterRender();
-  });
-
-  mutObserver.observe(stocksContainer, { childList: true });
-})();
-
 async function processScrollQueue() {
-  if (scrollFetchingActive) return;
-  scrollFetchingActive = true;
-
-  try {
-    var now = Date.now();
-    var cardsToFetch = [];
-
-    var allCards = document.querySelectorAll('.stock-card[data-scroll-visible="true"]');
-    allCards.forEach(function(card) {
-      var sym = card.dataset.symbol;
-      var visibleAt = parseInt(card.dataset.scrollVisibleAt || "0");
-      if (!sym || !visibleAt) return;
-      if (now - visibleAt < 1000) return;
-
-      var existing = pricesData[sym];
-      if (existing && existing.price > 0 && existing.fetchedAt && (now - existing.fetchedAt < 30000)) return;
-
-      var stockData = null;
-      for (var i = 0; i < STOCK_DATA.length; i++) {
-        if (STOCK_DATA[i].sym === sym) { stockData = STOCK_DATA[i]; break; }
-      }
-      if (stockData) cardsToFetch.push(stockData);
-    });
-
-    if (cardsToFetch.length === 0) return;
-
-    console.log("[SCROLL] Fetching " + cardsToFetch.length + " newly visible stocks");
-    var maxFetch = Math.min(cardsToFetch.length, 3);
-
-    for (var i = 0; i < maxFetch; i++) {
-      var stock = cardsToFetch[i];
-      try {
-        if (pricesData[stock.sym]) pricesData[stock.sym].fetchedAt = 0;
-        var data = await fetchStockPrice(stock, "scroll");
-
-        if (data && data.price > 0) {
-          var oldPrice = pricesData[stock.sym] ? pricesData[stock.sym].price : 0;
-          updateCardPriceDisplay(stock.sym, data.price, data.change || 0, data.changePercent || 0, oldPrice);
-
-          var chartContainer = document.getElementById("minichart_" + stock.sym);
-          if (chartContainer) loadMiniChart(stock.sym, stock.yahoo, chartContainer);
-
-          var card = document.querySelector('[data-symbol="' + stock.sym + '"]');
-          if (card && scrollObserver) scrollObserver.unobserve(card);
-
-          console.log("[SCROLL] ✓ " + stock.sym + " = ₹" + data.price.toFixed(2));
-        }
-      } catch (e) {
-        console.log("[SCROLL] ✗ " + stock.sym + " failed: " + (e.message || ""));
-      }
-
-      if (i < maxFetch - 1) {
-        await new Promise(function(r) { setTimeout(r, 400); });
-      }
-    }
-
-    try { localStorage.setItem("stockPricesCache", JSON.stringify(pricesData)); } catch (e) {}
-
-  } catch (outerError) {
-    console.error("[SCROLL] Queue error:", outerError);
-  } finally {
-    // --- GUARANTEED UNLOCK ---
-    scrollFetchingActive = false;
-  }
+  // No-op — handled by fetchVisibleStocksBatch()
 }
   /* ================= DAILY CHANGE BADGE BUILDER ================= */
 function buildDailyChangeBadge(currentPrice, priceChange, changePercent) {
@@ -9625,175 +9580,179 @@ function formatRupeeFromPaise(paise) {
 /* ================= DISPLAY STOCKS ================= */
 // showAll = true means user searched, show all matches
 // showAll = false means default view, show only top 25
+/* ================= DISPLAY STOCKS (SMART LAZY LOAD v2) ================= */
+/*
+ * Architecture:
+ *   - Renders cards INSTANTLY with skeleton/cached data
+ *   - Only fetches prices for VISIBLE cards
+ *   - Top 6 cards auto-fetch on load
+ *   - Remaining cards fetch via IntersectionObserver when scrolled into view
+ *   - Charts load AFTER price is confirmed (not separately)
+ *   - No duplicate API calls
+ *   - Cards update in-place (no full re-render)
+ */
+
 function displayStocks(stockList, showAll) {
-    var container = document.getElementById("stocksContainer");
-    container.innerHTML = "";
+  var container = document.getElementById("stocksContainer");
+  if (!container) return;
+  container.innerHTML = "";
 
-    var displayList;
-    if (showAll) {
-        displayList = stockList;
-    } else {
-        displayList = stockList.slice(0, 25);
-    }
+  var displayList;
+  if (showAll) {
+    displayList = stockList;
+  } else {
+    displayList = stockList.slice(0, 25);
+  }
 
-    displayList.forEach(function(stock, index) {
-        var priceInfo = getStockData(stock.sym);
-        var currentPrice = priceInfo && priceInfo.price ? priceInfo.price : 0;
-        var priceChange = priceInfo && priceInfo.change ? priceInfo.change : 0;
-        var changePercent = priceInfo && priceInfo.changePercent ? priceInfo.changePercent : 0;
-        var isPositive = priceChange >= 0;
+  displayList.forEach(function(stock, index) {
+    var priceInfo = getStockData(stock.sym);
+    var currentPrice = priceInfo && priceInfo.price ? priceInfo.price : 0;
+    var priceChange = priceInfo && priceInfo.change ? priceInfo.change : 0;
+    var changePercent = priceInfo && priceInfo.changePercent ? priceInfo.changePercent : 0;
+    var isPositive = priceChange >= 0;
+    var hasCachedPrice = currentPrice > 0;
 
-        var card = document.createElement("div");
-        card.className = "stock-card";
-        card.dataset.symbol = stock.sym;
+    // === OUTER WRAPPER (for flip support) ===
+    var flipper = document.createElement("div");
+    flipper.className = "stock-card-flipper";
+    flipper.dataset.flipSym = stock.sym;
 
-        // ✨ ANIMATED GLASS CARD
-        card.style.cssText = `
-            background: var(--glass-bg);
-            backdrop-filter: var(--glass-blur);
-            border: 1px solid var(--glass-border);
-            border-radius: var(--radius-lg);
-            padding: 24px;
-            box-shadow: var(--shadow-sm);
-            transition: all 0.3s ease;
-            position: relative;
-            overflow: hidden;
-            animation: fadeInUp 0.5s ease-out ${index * 0.05}s forwards;
-            opacity: 0;
-        `;
+    var flipInner = document.createElement("div");
+    flipInner.className = "flip-inner";
 
-        // Shine layer
-        var shine = document.createElement("div");
-        shine.style.cssText = `
-            position: absolute; top: 0; left: -100%; width: 50%; height: 100%;
-            background: linear-gradient(to right, transparent, rgba(255,255,255,0.1), transparent);
-            transform: skewX(-20deg);
-            pointer-events: none;
-            z-index: 1;
-        `;
-        card.appendChild(shine);
+    var flipFront = document.createElement("div");
+    flipFront.className = "flip-front";
 
-        var priceHTML = "";
-        if (currentPrice > 0) {
-            priceHTML = '<div class="current-price">₹' + currentPrice.toFixed(2) + '</div>' +
-              '<div class="price-change">' +
-                '<div class="change-value ' + (isPositive ? 'positive' : 'negative') + '">' + (isPositive ? '+' : '') + '₹' + priceChange.toFixed(2) + '</div>' +
-                '<div class="change-badge ' + (isPositive ? 'positive' : 'negative') + '">' + (isPositive ? '▲' : '▼') + ' ' + Math.abs(changePercent).toFixed(2) + '%</div>' +
-              '</div>';
-        } else {
-            priceHTML = '<div class="current-price" style="color:#94a3b8;font-size:18px">₹ --</div>' +
-              '<div class="price-change">' +
-                '<div style="color:#94a3b8;font-size:12px">Click + to fetch price</div>' +
-              '</div>';
-        }
+    // === STOCK CARD ===
+    var card = document.createElement("div");
+    card.className = "stock-card";
+    card.dataset.symbol = stock.sym;
+    card.dataset.yahoo = stock.yahoo;
+    card.dataset.loaded = hasCachedPrice ? "true" : "false";
 
-                card.innerHTML =
-          '<div class="stock-header">' +
-            '<div class="stock-logo">' +
-              '<img src="https://logo.clearbit.com/' + stock.logo + '" ' +
-                   'onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'block\'" ' +
-                   'alt="' + stock.sym + '">' +
-              '<div class="stock-logo-fallback" style="display:none">' + stock.sym.charAt(0) + '</div>' +
-            '</div>' +
-            '<div class="stock-meta">' +
-              '<div class="stock-title" title="' + stock.name + '">' + stock.name + '</div>' +
-              '<div class="stock-symbol">' + stock.sym + '</div>' +
-            '</div>' +
+    // Price display HTML
+    var priceHTML;
+    if (hasCachedPrice) {
+      priceHTML =
+        '<div class="current-price">₹' + currentPrice.toFixed(2) + '</div>' +
+        '<div class="price-change">' +
+          '<div class="change-value ' + (isPositive ? 'positive' : 'negative') + '">' +
+            (isPositive ? '+' : '') + '₹' + Math.abs(priceChange).toFixed(2) +
           '</div>' +
-          '<div class="stock-chart-container" id="minichart_' + stock.sym + '" onclick="openChartModal(\'' + stock.sym + '\')" title="Click chart to expand">' +
-            '<div class="chart-loading"></div>' +
+          '<div class="change-badge ' + (isPositive ? 'positive' : 'negative') + '">' +
+            (isPositive ? '▲' : '▼') + ' ' + Math.abs(changePercent).toFixed(2) + '%' +
           '</div>' +
-          '<div class="price-display">' +
-            '<div>' +
-              (currentPrice > 0 ?
-                '<div class="current-price">₹' + currentPrice.toFixed(2) + '</div>' :
-                '<div class="current-price" style="color:#94a3b8;font-size:18px">₹ --</div>'
-              ) +
-            '</div>' +
-            '<div style="display:flex;align-items:center;gap:10px">' +
-              (currentPrice > 0 ?
-                '<div class="price-change">' +
-                  '<div class="change-value ' + (isPositive ? 'positive' : 'negative') + '">' + (isPositive ? '+' : '') + '₹' + priceChange.toFixed(2) + '</div>' +
-                  '<div class="change-badge ' + (isPositive ? 'positive' : 'negative') + '">' + (isPositive ? '▲' : '▼') + ' ' + Math.abs(changePercent).toFixed(2) + '%</div>' +
-                '</div>' :
-                '<div class="price-change"><div style="color:#94a3b8;font-size:12px">Search to fetch</div></div>'
-              ) +
-              '<button class="stock-buy-btn" onclick="event.stopPropagation();showAddStockModal(\'' + stock.sym + '\')" title="Buy / Add to Holdings">Buy</button>' +
-            '</div>' +
-          '</div>';
-
-               // Shine sweep effect (works alongside 3D tilt)
-        card.onmouseenter = function() {
-            shine.style.left = "150%";
-            shine.style.transition = "0.7s";
-        };
-        card.onmouseleave = function() {
-            shine.style.left = "-100%";
-        };
-
-        // Wrap card in flip container
-        var flipper = document.createElement("div");
-        flipper.className = "stock-card-flipper";
-        flipper.dataset.flipSym = stock.sym;
-
-        var flipInner = document.createElement("div");
-        flipInner.className = "flip-inner";
-
-        var flipFront = document.createElement("div");
-        flipFront.className = "flip-front";
-        flipFront.appendChild(card);
-
-        // Add info button to card
-        var infoBtn = document.createElement("button");
-        infoBtn.className = "flip-trigger-btn";
-        infoBtn.innerHTML = "ℹ";
-        infoBtn.title = "View stock details";
-        infoBtn.setAttribute("onclick", "toggleCardFlip('" + stock.sym + "', event)");
-        card.appendChild(infoBtn);
-
-        var flipBack = document.createElement("div");
-        flipBack.className = "flip-back";
-        flipBack.id = "flipback_" + stock.sym;
-        flipBack.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--text-muted)">Click ℹ to load details</div>';
-
-        flipInner.appendChild(flipFront);
-        flipInner.appendChild(flipBack);
-        flipper.appendChild(flipInner);
-        container.appendChild(flipper);
-    });
-    // Load mini charts for stocks with cached prices
-    var chartsToLoad = displayList.filter(function(stock) {
-      var cached = pricesData[stock.sym];
-      return cached && cached.price > 0;
-    });
-
-    // More charts for search results, limit for homepage
-    if (showAll) {
-      chartsToLoad = chartsToLoad.slice(0, 15);
+        '</div>';
     } else {
-      chartsToLoad = chartsToLoad.slice(0, 10);
+      // Skeleton price
+      priceHTML =
+        '<div class="current-price">' +
+          '<div class="skeleton skeleton-text" style="width:100px;height:28px;display:inline-block"></div>' +
+        '</div>' +
+        '<div class="price-change">' +
+          '<div class="skeleton skeleton-text" style="width:70px;height:16px;display:inline-block"></div>' +
+        '</div>';
     }
 
-    if (chartsToLoad.length > 0) {
-      setTimeout(function() {
-        chartsToLoad.forEach(function(stock, idx) {
-          setTimeout(function() {
-            var container = document.getElementById("minichart_" + stock.sym);
-            if (container) {
-              loadMiniChart(stock.sym, stock.yahoo, container);
-            }
-          }, idx * 200);
-        });
-      }, 500);
+    // Chart area HTML
+    var chartHTML;
+    if (hasCachedPrice) {
+      chartHTML = '<div class="stock-chart-container" id="minichart_' + stock.sym + '" onclick="openChartModal(\'' + stock.sym + '\')" title="Click to expand chart">' +
+        '<div class="chart-loading"></div></div>';
+    } else {
+      // Skeleton chart
+      chartHTML = '<div class="stock-chart-container" id="minichart_' + stock.sym + '" onclick="openChartModal(\'' + stock.sym + '\')" title="Click to expand chart">' +
+        '<div class="skeleton" style="width:100%;height:60px;border-radius:8px"></div></div>';
     }
-    if (!showAll && stockList.length > 25) {
-        var moreMsg = document.createElement("div");
-        moreMsg.style.cssText = "grid-column:1/-1;text-align:center;padding:40px 20px;color:#64748b;font-size:15px;background:#fff;border-radius:18px;border:1px solid #e2e8f0;";
-        moreMsg.innerHTML = '🔍 <strong>' + (stockList.length - 25) + '+ more stocks available</strong><br><span style="font-size:13px;margin-top:8px;display:block">Use the search bar above to find any stock or ETF</span>';
-        container.appendChild(moreMsg);
-    }
+
+    card.innerHTML =
+      '<div class="stock-header">' +
+        '<div class="stock-logo">' +
+          '<img src="https://logo.clearbit.com/' + stock.logo + '" ' +
+               'onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'block\'" ' +
+               'alt="' + stock.sym + '">' +
+          '<div class="stock-logo-fallback" style="display:none">' + stock.sym.charAt(0) + '</div>' +
+        '</div>' +
+        '<div class="stock-meta">' +
+          '<div class="stock-title" title="' + stock.name + '">' + stock.name + '</div>' +
+          '<div class="stock-symbol">' + stock.sym + '</div>' +
+        '</div>' +
+      '</div>' +
+      chartHTML +
+      '<div class="price-display">' +
+        '<div>' + priceHTML.split('</div><div class="price-change">')[0] + '</div>' +
+        '<div style="display:flex;align-items:center;gap:10px">' +
+          '<div class="price-change">' +
+            (hasCachedPrice ?
+              '<div class="change-value ' + (isPositive ? 'positive' : 'negative') + '">' +
+                (isPositive ? '+' : '') + '₹' + Math.abs(priceChange).toFixed(2) + '</div>' +
+              '<div class="change-badge ' + (isPositive ? 'positive' : 'negative') + '">' +
+                (isPositive ? '▲' : '▼') + ' ' + Math.abs(changePercent).toFixed(2) + '%</div>'
+              :
+              '<div class="skeleton skeleton-text" style="width:70px;height:16px;display:inline-block"></div>'
+            ) +
+          '</div>' +
+          '<button class="stock-buy-btn" onclick="event.stopPropagation();showAddStockModal(\'' + stock.sym + '\')" title="Add to Holdings">Buy</button>' +
+        '</div>' +
+      '</div>';
+
+    // Info flip button
+    var infoBtn = document.createElement("button");
+    infoBtn.className = "flip-trigger-btn";
+    infoBtn.innerHTML = "ℹ";
+    infoBtn.title = "View stock details";
+    infoBtn.setAttribute("onclick", "toggleCardFlip('" + stock.sym + "', event)");
+    card.appendChild(infoBtn);
+
+    // Flip back
+    var flipBack = document.createElement("div");
+    flipBack.className = "flip-back";
+    flipBack.id = "flipback_" + stock.sym;
+    flipBack.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--text-muted)">Click ℹ to load details</div>';
+
+    flipFront.appendChild(card);
+    flipInner.appendChild(flipFront);
+    flipInner.appendChild(flipBack);
+    flipper.appendChild(flipInner);
+    container.appendChild(flipper);
+  });
+
+  // "More stocks" message for homepage
+  if (!showAll && stockList.length > 25) {
+    var moreMsg = document.createElement("div");
+    moreMsg.style.cssText = "grid-column:1/-1;text-align:center;padding:40px 20px;color:var(--text-secondary);font-size:15px;background:var(--bg-card-solid);border-radius:var(--radius-lg);border:1px solid var(--border-light);";
+    moreMsg.innerHTML = '🔍 <strong>' + (stockList.length - 25) + '+ more stocks available</strong><br><span style="font-size:13px;margin-top:8px;display:block">Use the search bar above to find any stock or ETF</span>';
+    container.appendChild(moreMsg);
+  }
+
+  // === SMART LOADING: Start observer for lazy loading ===
+  setTimeout(function() {
+    initSmartStockLoader();
+  }, 300);
+
+  // === AUTO-LOAD first 6 stocks if they don't have prices ===
+  var firstBatch = displayList.slice(0, 6);
+  var needsFetch = firstBatch.filter(function(s) {
+    var p = pricesData[s.sym];
+    return !p || !p.price || p.price <= 0;
+  });
+
+  if (needsFetch.length > 0) {
+    setTimeout(function() {
+      fetchVisibleStocksBatch(needsFetch);
+    }, 500);
+  } else {
+    // All top 6 have cached prices — just load charts
+    setTimeout(function() {
+      firstBatch.forEach(function(stock, idx) {
+        setTimeout(function() {
+          var chartEl = document.getElementById("minichart_" + stock.sym);
+          if (chartEl) loadMiniChartSafe(stock.sym, stock.yahoo, chartEl);
+        }, idx * 200);
+      });
+    }, 400);
+  }
 }
-function displayStocksWithAnimation(stockList) {
   stockList.forEach(function(stock) {
     var oldPrice = prevPricesData[stock.sym] ? prevPricesData[stock.sym].price : 0;
     var newPrice = pricesData[stock.sym] ? pricesData[stock.sym].price : 0;
@@ -11712,6 +11671,7 @@ showSettings = function() {
 </script>
 </body>
 </html>
+
 
 
 
