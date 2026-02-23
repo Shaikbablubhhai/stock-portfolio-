@@ -9796,13 +9796,7 @@ function displayStocks(stockList, showAll) {
     }, 400);
   }
 }
-    if (!showAll && stockList.length > 25) {
-        var moreMsg = document.createElement("div");
-        moreMsg.style.cssText = "grid-column:1/-1;text-align:center;padding:40px 20px;color:#64748b;font-size:15px;background:#fff;border-radius:18px;border:1px solid #e2e8f0;";
-        moreMsg.innerHTML = '🔍 <strong>' + (stockList.length - 25) + '+ more stocks available</strong><br><span style="font-size:13px;margin-top:8px;display:block">Use the search bar above to find any stock or ETF</span>';
-        container.appendChild(moreMsg);
-    }
-}
+  
 function displayStocksWithAnimation(stockList) {
   stockList.forEach(function(stock) {
     var oldPrice = prevPricesData[stock.sym] ? prevPricesData[stock.sym].price : 0;
