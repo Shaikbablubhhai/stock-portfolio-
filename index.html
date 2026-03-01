@@ -7947,10 +7947,20 @@ function updateCardPriceDisplay(symbol, newPrice, priceChange, changePercent, ol
 /* ================= 3D TILT HOVER EFFECT ================= */
 function init3DTilt() {
   // Apply to stock cards, index cards, and stat cards
+var _tiltThrottle = false;
   document.addEventListener("mousemove", function(e) {
-    var cards = document.querySelectorAll(".stock-card, .index-card, .stat-card");
+    if (_tiltThrottle) return;
+    _tiltThrottle = true;
+    requestAnimationFrame(function() { _tiltThrottle = false; });
+    if (!init3DTilt._cards || Date.now() - (init3DTilt._t || 0) > 2000) {
+      init3DTilt._cards = Array.from(document.querySelectorAll(".stock-card, .index-card, .stat-card"));
+      init3DTilt._t = Date.now();
+    }
+    var cards = init3DTilt._cards;
     
-    cards.forEach(function(card) {
+cards.forEach(function(card) {
+      var flipper = card.closest ? card.closest(".stock-card-flipper") : null;
+      if (flipper && flipper.classList.contains("flipped")) return;
       var rect = card.getBoundingClientRect();
       var cardCenterX = rect.left + rect.width / 2;
       var cardCenterY = rect.top + rect.height / 2;
@@ -8087,6 +8097,17 @@ var isPostMarket = false;
 
 /* ================= INITIALIZATION ================= */
 document.addEventListener("DOMContentLoaded", function() {
+document.addEventListener("DOMContentLoaded", function() {
+  // === INJECT FLIP PERFORMANCE CSS ===
+  (function() {
+    var s = document.createElement("style");
+    s.textContent =
+      ".flip-inner{will-change:transform;transition:transform 0.45s cubic-bezier(0.4,0,0.2,1)!important}" +
+      ".flip-front,.flip-back{backface-visibility:hidden;-webkit-backface-visibility:hidden;will-change:transform}" +
+      ".stock-card-flipper{perspective:1000px}" +
+      ".stock-card{will-change:transform;transform:translateZ(0)}";
+    document.head.appendChild(s);
+  })();
   // Initialize toast manager
   ToastManager.init();  
   // Initialize 3D tilt effect (desktop only)
@@ -8501,9 +8522,10 @@ auth.onAuthStateChanged(async function(user) {
   
   // Step 5: Start auto-refresh system
   setTimeout(function() {
-    initAutoRefresh();
+initAutoRefresh();
     startMarketAutoRefresh();
     startPriorityStockRefresh();
+    initAutoSquareoff();
   }, 2000);
 
   // Step 6: Initialize scroll-based lazy loader for stock cards   setTimeout(function() {     initStockScrollObserver();   }, 2500);    // Step 7: Set initial market status   setTimeout(function() {     setRefreshStatus("auto", false);   }, 3000);    console.log("[BOOT] Loading order: Cache → Indices → Holdings → Auto-refresh → Scroll observer");
@@ -8783,7 +8805,60 @@ async function saveHoldingToFirebase(holdingData) {
     throw error;
   }
 }
+/* ================= SAVE INTRADAY POSITION TO FIREBASE ================= */
+async function saveIntradayPosition(posData) {
+  if (!activeUser) throw new Error("User not logged in");
 
+  const entry = Math.round(parseNumber(posData.entry) * 100) / 100;
+  const qty = parseInt(parseNumber(posData.qty), 10) || 0;
+  const sym = String((posData.sym || "")).toUpperCase();
+
+  const docData = {
+    userId: activeUser.uid,
+    name: String(posData.name || ""),
+    sym: sym,
+    entry: entry,
+    qty: qty,
+    type: posData.type || "BUY",
+    tradeType: "intraday",
+    status: "open",
+    limitPrice: 0,
+    openedAt: firebase.firestore.FieldValue.serverTimestamp()
+  };
+
+  const docRef = await db.collection("positions").add(docData);
+
+  var yahoo = sym + ".NS";
+  for (var i = 0; i < STOCK_DATA.length; i++) {
+    if (STOCK_DATA[i].sym === sym) { yahoo = STOCK_DATA[i].yahoo; break; }
+  }
+
+  var localPos = {
+    id: docRef.id,
+    firebaseId: docRef.id,
+    sym: sym,
+    name: docData.name,
+    yahoo: yahoo,
+    entry: entry,
+    qty: qty,
+    type: docData.type,
+    tradeType: "intraday",
+    currentPrice: 0,
+    limitPrice: 0,
+    addedAt: Date.now()
+  };
+
+  activePositions.push(localPos);
+  try { localStorage.setItem("finzotalk_positions", JSON.stringify(activePositions)); } catch(e) {}
+
+  renderPositions();
+  startPositionsRefresh();
+
+  var posTab = document.querySelector('.nav-tabs span[data-tab="positions"]');
+  if (posTab) posTab.click();
+
+  return docRef.id;
+}
 async function updateHoldingInFirebase(holdingId, updates) {
   try {
     // FIXED: Update in root-level holdings collection
@@ -9837,7 +9912,23 @@ function showAddStockModal(symbol) {
   document.getElementById("modalStockName").textContent = stock.name + " (" + symbol + ")";
   document.getElementById("modalStockPrice").textContent = price > 0 ? "₹" + price.toFixed(2) : "₹ Fetching...";
   document.getElementById("modalBuyPrice").value = price > 0 ? price.toFixed(2) : "";
-  document.getElementById("modalQuantity").value = "";
+document.getElementById("modalQuantity").value = "";
+
+  if (!document.getElementById("modalTradeType")) {
+    var _qtyEl = document.getElementById("modalQuantity");
+    var _tw = document.createElement("div");
+    _tw.style.cssText = "margin-top:14px";
+    _tw.innerHTML =
+      '<label style="font-size:13px;font-weight:500;color:var(--text-secondary,#64748b);display:block;margin-bottom:6px">Trade Type</label>' +
+      '<select id="modalTradeType" style="width:100%;padding:10px 12px;border:1px solid var(--border-light,#e2e8f0);border-radius:8px;font-size:14px;background:var(--bg-input,#f8fafc);color:var(--text-primary,#0f172a)">' +
+        '<option value="delivery">📦 Delivery — Add to Holdings</option>' +
+        '<option value="intraday">⚡ Intraday — Auto Squareoff 3:30 PM</option>' +
+      '</select>';
+    _qtyEl.parentNode.insertBefore(_tw, _qtyEl.nextSibling);
+  } else {
+    document.getElementById("modalTradeType").value = "delivery";
+  }
+
   document.getElementById("addStockModal").style.display = "flex";
 
   // Fetch price if not cached
@@ -9891,21 +9982,21 @@ async function confirmStockAdd() {
   var stockSym = String(pendingAddStock.sym).toUpperCase();
 
   try {
-    // Round buy price to 2 decimals before saving (prevents inconsistent stored precision)
-    const buyPriceRounded = Math.round(buyPrice * 100) / 100;
+const buyPriceRounded = Math.round(buyPrice * 100) / 100;
+    const _tradeTypeEl = document.getElementById("modalTradeType");
+    const tradeType = _tradeTypeEl ? _tradeTypeEl.value : "delivery";
 
-    // Use the centralized save function (ensures consistent normalization)
-    await saveHoldingToFirebase({
-      name: stockName,
-      sym: stockSym,
-      buyPrice: buyPriceRounded,
-      qty: quantity
-    });
-
-    document.getElementById("addStockModal").style.display = "none";
-    pendingAddStock = null;
-
-    ToastManager.success("Stock Added!", stockName + " added to your holdings");
+    if (tradeType === "intraday") {
+      await saveIntradayPosition({ name: stockName, sym: stockSym, entry: buyPriceRounded, qty: quantity, type: "BUY" });
+      document.getElementById("addStockModal").style.display = "none";
+      pendingAddStock = null;
+      ToastManager.success("Position Opened! ⚡", stockName + " added to intraday positions");
+    } else {
+      await saveHoldingToFirebase({ name: stockName, sym: stockSym, buyPrice: buyPriceRounded, qty: quantity });
+      document.getElementById("addStockModal").style.display = "none";
+      pendingAddStock = null;
+      ToastManager.success("Stock Added! 📦", stockName + " added to your holdings");
+    }
 
   } catch (error) {
     console.error("Add holding error:", error);
@@ -11189,10 +11280,17 @@ async function loadStockFundamentals(symbol) {
     var yahooUrl = "https://query1.finance.yahoo.com/v8/finance/chart/" +
       encodeURIComponent(stock.yahoo) + "?interval=1d&range=1y";
 
-    var text = await fetchWithHardTimeout(
-      "https://api.allorigins.win/raw?url=" + encodeURIComponent(yahooUrl),
-      8000
-    );
+var proxies = [
+      "https://api.allorigins.win/raw?url=",
+      "https://corsproxy.io/?",
+      "https://api.codetabs.com/v1/proxy?quest="
+    ];
+    var text = null;
+    for (var px = 0; px < proxies.length; px++) {
+      text = await fetchWithHardTimeout(proxies[px] + encodeURIComponent(yahooUrl), 6000);
+      if (text && text.charAt(0) === '{') break;
+      text = null;
+    }
 
     if (text && text.charAt(0) === '{') {
       var data = JSON.parse(text);
@@ -11373,7 +11471,75 @@ function removePosition(posId) {
     stopPositionsRefresh();
   }
 }
+/* ================= POSITION EXIT SYSTEM ================= */
+function marketExitPosition(posId) {
+  var pos = null;
+  for (var i = 0; i < activePositions.length; i++) {
+    if (activePositions[i].id === posId) { pos = activePositions[i]; break; }
+  }
+  if (!pos) return;
 
+  var exitPrice = (pos.currentPrice > 0) ? pos.currentPrice : pos.entry;
+  var pnl = pos.type === "BUY"
+    ? (exitPrice - pos.entry) * pos.qty
+    : (pos.entry - exitPrice) * pos.qty;
+
+  if (confirm("Exit " + pos.sym + " at ₹" + exitPrice.toFixed(2) + "?\nP&L: " + (pnl >= 0 ? "+" : "") + "₹" + Math.abs(pnl).toFixed(2))) {
+    closePositionWithPnl(posId, exitPrice, "market_exit");
+  }
+}
+
+function setLimitExit(posId) {
+  var limitEl = document.getElementById("limitprice_" + posId);
+  if (!limitEl) return;
+  var limitPrice = parseFloat(limitEl.value);
+  if (!limitPrice || limitPrice <= 0) {
+    ToastManager.warning("Invalid Price", "Enter a valid limit exit price");
+    return;
+  }
+  var pos = null;
+  for (var i = 0; i < activePositions.length; i++) {
+    if (activePositions[i].id === posId) { pos = activePositions[i]; break; }
+  }
+  if (!pos) return;
+
+  pos.limitPrice = limitPrice;
+  ToastManager.info("Limit Set ✓", pos.sym + " will auto-exit at ₹" + limitPrice.toFixed(2));
+
+  if (pos.firebaseId) {
+    db.collection("positions").doc(pos.firebaseId).update({ limitPrice: limitPrice }).catch(function(e) {});
+  }
+}
+
+async function closePositionWithPnl(posId, exitPrice, reason) {
+  var pos = null;
+  for (var i = 0; i < activePositions.length; i++) {
+    if (activePositions[i].id === posId) { pos = activePositions[i]; break; }
+  }
+  if (!pos) return;
+
+  var pnl = pos.type === "BUY"
+    ? (exitPrice - pos.entry) * pos.qty
+    : (pos.entry - exitPrice) * pos.qty;
+
+  try {
+    if (pos.firebaseId) {
+      await db.collection("positions").doc(pos.firebaseId).update({
+        status: "closed",
+        exitPrice: Math.round(exitPrice * 100) / 100,
+        finalPnl: Math.round(pnl * 100) / 100,
+        closedAt: firebase.firestore.FieldValue.serverTimestamp(),
+        closeReason: reason || "manual"
+      });
+    }
+  } catch(e) {
+    console.error("[EXIT] Firebase update failed:", e);
+  }
+
+  removePosition(posId);
+  var pnlStr = (pnl >= 0 ? "+" : "") + "₹" + Math.abs(pnl).toFixed(2);
+  ToastManager.success("Position Closed ✓", pos.sym + " | P&L: " + pnlStr);
+}
 function renderPositions() {
   var container = document.getElementById("positionsTableContainer");
   if (!container) return;
@@ -11418,8 +11584,13 @@ function renderPositions() {
       '<td id="pos_ltp_' + pos.id + '">' + (ltp > 0 ? '₹' + ltp.toFixed(2) : '<span style="color:var(--text-muted)">--</span>') + '</td>' +
       '<td><span class="position-pnl ' + pnlClass + '" id="pos_pnl_' + pos.id + '">' + (isProfit ? "+" : "") + '₹' + Math.abs(pnl).toFixed(2) + '</span></td>' +
       '<td class="' + (isProfit ? "text-profit" : "text-loss") + '" id="pos_pnlp_' + pos.id + '">' + (isProfit ? "+" : "") + pnlPercent.toFixed(2) + '%</td>' +
-      '<td><button class="position-exit-btn" onclick="removePosition(\'' + pos.id + '\')">✕ Exit</button></td>' +
-      '</tr>';
+'<td style="min-width:130px">' +
+        '<button class="position-exit-btn" onclick="marketExitPosition(\'' + pos.id + '\')" style="display:block;width:100%;margin-bottom:4px">✕ Market Exit</button>' +
+        '<div style="display:flex;gap:3px;align-items:center">' +
+          '<input id="limitprice_' + pos.id + '" type="number" placeholder="Limit ₹" style="width:68px;padding:3px 5px;border:1px solid var(--border-light,#e2e8f0);border-radius:4px;font-size:11px;background:var(--bg-input,#f8fafc)">' +
+          '<button onclick="setLimitExit(\'' + pos.id + '\')" style="font-size:10px;padding:2px 6px;border-radius:4px;border:1px solid var(--border-light,#e2e8f0);background:var(--bg-card,#fff);cursor:pointer;white-space:nowrap">Set</button>' +
+        '</div>' +
+      '</td>' +      '</tr>';
   });
 
   html += '</tbody></table>';
@@ -11478,6 +11649,16 @@ async function refreshPositionPrices() {
 function updatePositionUI(pos, newPrice) {
   var oldPrice = pos.currentPrice;
   pos.currentPrice = newPrice;
+
+  if (pos.limitPrice && pos.limitPrice > 0) {
+    var limitHit = (pos.type === "BUY" && newPrice >= pos.limitPrice) ||
+                   (pos.type === "SELL" && newPrice <= pos.limitPrice);
+    if (limitHit) {
+      ToastManager.success("Limit Exit! ✓", pos.sym + " hit ₹" + pos.limitPrice.toFixed(2));
+      closePositionWithPnl(pos.id, newPrice, "limit_exit");
+      return;
+    }
+  }
 
   var ltpEl = document.getElementById("pos_ltp_" + pos.id);
   var pnlEl = document.getElementById("pos_pnl_" + pos.id);
@@ -11575,6 +11756,45 @@ function loadSavedPositions() {
   } catch (e) {
     activePositions = [];
   }
+}
+  /* ================= AUTO SQUAREOFF ENGINE (3:30 PM IST) ================= */
+function initAutoSquareoff() {
+  if (!activeUser) return;
+
+  function checkSquareoff() {
+    var now = new Date();
+    var ist = new Date(now.getTime() + (now.getTimezoneOffset() * 60000) + (5.5 * 3600000));
+    var totalMin = ist.getHours() * 60 + ist.getMinutes();
+    if (ist.getDay() >= 1 && ist.getDay() <= 5 && totalMin >= 930 && totalMin < 935) {
+      squareoffAllIntradayPositions();
+    }
+  }
+
+  setInterval(checkSquareoff, 60000);
+  console.log("[SQUAREOFF] Auto squareoff engine active");
+}
+
+async function squareoffAllIntradayPositions() {
+  var intradayPos = activePositions.filter(function(p) { return p.tradeType === "intraday"; });
+  if (intradayPos.length === 0) return;
+
+  console.log("[SQUAREOFF] Closing " + intradayPos.length + " positions at market close");
+  ToastManager.warning("Market Closing 3:30 PM", "Auto squaring off " + intradayPos.length + " positions...");
+
+  var toClose = intradayPos.slice();
+  for (var i = 0; i < toClose.length; i++) {
+    var pos = toClose[i];
+    try {
+      var pd = pricesData[pos.sym];
+      var exitPrice = (pd && pd.price > 0) ? pd.price : pos.entry;
+      await closePositionWithPnl(pos.id, exitPrice, "auto_squareoff");
+      console.log("[SQUAREOFF] ✓ " + pos.sym + " @ ₹" + exitPrice.toFixed(2));
+    } catch(e) {
+      console.error("[SQUAREOFF] ✗ " + pos.sym, e);
+    }
+  }
+
+  ToastManager.info("Squareoff Complete ✓", "All intraday positions closed");
 }
 // ================= NEW SETTINGS FUNCTIONS =================
 
@@ -11716,6 +11936,7 @@ showSettings = function() {
 </script>
 </body>
 </html>
+
 
 
 
