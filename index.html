@@ -896,8 +896,7 @@ body{
   
 /* ================= 3D TILT EFFECT ================= */
 .stock-card{
-  transform-style:preserve-3d;
-  perspective:800px;
+  transform-style:flat;
 }
 .stock-card .stock-header,
 .stock-card .price-display,
@@ -3348,14 +3347,15 @@ body.dark-mode .chart-loading{
   position: relative;
   width: 100%;
   min-height: 280px;
-  perspective: 1000px;
+  perspective: 1200px;
 }
 .stock-card-flipper .flip-inner {
   position: relative;
   width: 100%;
   height: 100%;
-  transition: transform 0.6s cubic-bezier(0.16,1,0.3,1);
+  transition: transform 0.5s cubic-bezier(0.4,0,0.2,1);
   transform-style: preserve-3d;
+  will-change: transform;
 }
 .stock-card-flipper.flipped .flip-inner {
   transform: rotateY(180deg);
@@ -3366,10 +3366,13 @@ body.dark-mode .chart-loading{
   -webkit-backface-visibility: hidden;
   border-radius: var(--radius-lg);
   overflow: hidden;
+  will-change: transform;
+  transform: translateZ(0);
 }
 .stock-card-flipper .flip-front {
   position: relative;
   z-index: 2;
+  transform: rotateY(0deg);
 }
 .stock-card-flipper .flip-back {
   position: absolute;
@@ -4602,7 +4605,9 @@ let indicesLastFetchTime = 0;
 const INDICES_CACHE_KEY = "finzotalk_indices_cache";
 const INDICES_CACHE_DURATION = 500; // 0.5s — sequential system handles timing, this is just a safety net
 let indicesAutoTimer = null;
-/* ================= 300+ INDIAN STOCKS LIST ================= */
+let indicesTimestampTimer = null;
+let indicesPostMarketCount = 0;
+const INDICES_POST_MARKET_LIMIT = 5;/* ================= 300+ INDIAN STOCKS LIST ================= */
 const STOCK_DATA = [
   // ==================== NIFTY 50 ====================
   {name:"Reliance Industries",sym:"RELIANCE",yahoo:"RELIANCE.NS",logo:"ril.com"},
@@ -7183,6 +7188,41 @@ async function processScrollQueue() {
     scrollFetchingActive = false;
   }
 }
+  /* ================= SMART STOCK LOADER HELPERS ================= */
+function initSmartStockLoader() {
+  // Re-attach scroll observer for newly rendered cards
+  if (scrollObserver) {
+    observeStockCards();
+  }
+}
+
+function loadMiniChartSafe(symbol, yahooSymbol, container) {
+  try {
+    loadMiniChart(symbol, yahooSymbol, container);
+  } catch(e) {
+    console.log("[CHART] Safe load failed for " + symbol);
+  }
+}
+
+async function fetchVisibleStocksBatch(stockList) {
+  for (var i = 0; i < stockList.length; i++) {
+    var stock = stockList[i];
+    try {
+      var data = await fetchStockPrice(stock, "priority");
+      if (data && data.price > 0) {
+        var oldPrice = pricesData[stock.sym] ? pricesData[stock.sym].price : 0;
+        updateCardPriceDisplay(stock.sym, data.price, data.change || 0, data.changePercent || 0, oldPrice);
+        var chartEl = document.getElementById("minichart_" + stock.sym);
+        if (chartEl) loadMiniChartSafe(stock.sym, stock.yahoo, chartEl);
+      }
+    } catch(e) {
+      console.log("[BATCH] Failed: " + stock.sym);
+    }
+    if (i < stockList.length - 1) {
+      await new Promise(function(r) { setTimeout(r, 400); });
+    }
+  }
+}
   /* ================= DAILY CHANGE BADGE BUILDER ================= */
 function buildDailyChangeBadge(currentPrice, priceChange, changePercent) {
   if (!currentPrice || currentPrice <= 0) {
@@ -7960,7 +8000,12 @@ var _tiltThrottle = false;
     
 cards.forEach(function(card) {
       var flipper = card.closest ? card.closest(".stock-card-flipper") : null;
-      if (flipper && flipper.classList.contains("flipped")) return;
+      if (flipper && flipper.classList.contains("flipped")) {
+        card.style.transform = "";
+        var sh = card.querySelector(".tilt-shine");
+        if (sh) sh.style.opacity = "0";
+        return;
+      }
       var rect = card.getBoundingClientRect();
       var cardCenterX = rect.left + rect.width / 2;
       var cardCenterY = rect.top + rect.height / 2;
@@ -8097,15 +8142,14 @@ var isPostMarket = false;
 
 /* ================= INITIALIZATION ================= */
 document.addEventListener("DOMContentLoaded", function() {
-document.addEventListener("DOMContentLoaded", function() {
   // === INJECT FLIP PERFORMANCE CSS ===
   (function() {
     var s = document.createElement("style");
     s.textContent =
-      ".flip-inner{will-change:transform;transition:transform 0.45s cubic-bezier(0.4,0,0.2,1)!important}" +
-      ".flip-front,.flip-back{backface-visibility:hidden;-webkit-backface-visibility:hidden;will-change:transform}" +
-      ".stock-card-flipper{perspective:1000px}" +
-      ".stock-card{will-change:transform;transform:translateZ(0)}";
+      ".flip-inner{will-change:transform}" +
+      ".flip-front,.flip-back{backface-visibility:hidden;-webkit-backface-visibility:hidden;will-change:transform;transform:translateZ(0)}" +
+      ".stock-card-flipper{perspective:1200px}" +
+      ".stock-card-flipper.flipped .stock-card{pointer-events:none}";
     document.head.appendChild(s);
   })();
   // Initialize toast manager
@@ -11287,7 +11331,7 @@ var proxies = [
     ];
     var text = null;
     for (var px = 0; px < proxies.length; px++) {
-      text = await fetchWithHardTimeout(proxies[px] + encodeURIComponent(yahooUrl), 6000);
+      text = await fetchWithHardTimeout(proxies[px] + encodeURIComponent(yahooUrl), 8000);
       if (text && text.charAt(0) === '{') break;
       text = null;
     }
@@ -11337,11 +11381,52 @@ var proxies = [
     console.log("[FLIP] Failed to load fundamentals for " + symbol);
   }
 
-  // Fallback
-  backEl.innerHTML =
-    '<div class="flip-back-header"><span class="flip-back-title">' + symbol + '</span>' +
-    '<button class="flip-back-close" onclick="toggleCardFlip(\'' + symbol + '\')">✕</button></div>' +
-    '<div style="padding:20px;text-align:center;color:var(--text-muted)">Details unavailable. Try again later.</div>';
+  // Fallback: build from local cached price data
+  var fallbackData = pricesData[symbol];
+  if (fallbackData && fallbackData.price > 0) {
+    var fbPrice = fallbackData.price;
+    var fbPrev = fallbackData.prevClose || fbPrice;
+    var fbChange = fallbackData.change || 0;
+    var fbPct = fallbackData.changePercent || 0;
+    var fbFundamentals = {
+      exchange: "NSE",
+      currency: "INR",
+      type: "EQUITY",
+      high52w: 0,
+      low52w: 0,
+      rangePosition: 0,
+      volatility: "--",
+      riskLevel: "N/A",
+      prevClose: fbPrev,
+      dayHigh: fbPrice,
+      dayLow: fbPrice,
+      volume: 0
+    };
+    // Check chartDataCache for 1y data
+    var chartKey = (stock ? stock.yahoo : symbol + ".NS") + "_1y";
+    var cachedChart = chartDataCache[chartKey];
+    if (cachedChart && cachedChart.data && cachedChart.data.points && cachedChart.data.points.length > 10) {
+      var pts = cachedChart.data.points;
+      var cHighs = pts.map(function(p){ return p.high; }).filter(function(v){ return v > 0; });
+      var cLows = pts.map(function(p){ return p.low; }).filter(function(v){ return v > 0; });
+      if (cHighs.length > 0) fbFundamentals.high52w = Math.max.apply(null, cHighs);
+      if (cLows.length > 0) fbFundamentals.low52w = Math.min.apply(null, cLows);
+      if (fbFundamentals.high52w > fbFundamentals.low52w) {
+        fbFundamentals.rangePosition = (fbPrice - fbFundamentals.low52w) / (fbFundamentals.high52w - fbFundamentals.low52w);
+        fbFundamentals.volatility = ((fbFundamentals.high52w - fbFundamentals.low52w) / fbFundamentals.low52w * 100).toFixed(1);
+        if (parseFloat(fbFundamentals.volatility) > 60) fbFundamentals.riskLevel = "High";
+        else if (parseFloat(fbFundamentals.volatility) > 30) fbFundamentals.riskLevel = "Medium";
+        else fbFundamentals.riskLevel = "Low";
+      }
+    }
+    stockFundamentalsCache[symbol] = fbFundamentals;
+    renderFlipBack(symbol, fbFundamentals);
+  } else {
+    backEl.innerHTML =
+      '<div class="flip-back-header"><span class="flip-back-title">' + symbol + '</span>' +
+      '<button class="flip-back-close" onclick="toggleCardFlip(\'' + symbol + '\')">✕</button></div>' +
+      '<div style="padding:20px;text-align:center;color:var(--text-muted)">Details unavailable. Try again later.</div>';
+  }
 }
 
 function renderFlipBack(symbol, data) {
@@ -11412,7 +11497,7 @@ function populatePositionStockList() {
   });
 }
 
-function addPosition() {
+async function addPosition() {
   var selectEl = document.getElementById("positionStockSelect");
   var entryEl = document.getElementById("positionEntryPrice");
   var qtyEl = document.getElementById("positionQty");
@@ -11434,32 +11519,68 @@ function addPosition() {
   }
   if (!stock) { ToastManager.error("Error", "Stock not found"); return; }
 
-  var position = {
-    id: "pos_" + Date.now() + "_" + Math.random().toString(36).substr(2, 4),
-    sym: sym,
-    name: stock.name,
-    yahoo: stock.yahoo,
-    entry: Math.round(entry * 100) / 100,
-    qty: qty,
-    type: type,
-    currentPrice: 0,
-    addedAt: Date.now()
-  };
+  var entryRounded = Math.round(entry * 100) / 100;
 
-  activePositions.push(position);
-
-  // Save to localStorage
-  try { localStorage.setItem("finzotalk_positions", JSON.stringify(activePositions)); } catch (e) {}
-
-  // Reset inputs
-  entryEl.value = "";
-  qtyEl.value = "";
-
-  // Render and start refresh
-  renderPositions();
-  startPositionsRefresh();
-
-  ToastManager.success("Position Added", sym + " " + type + " @ ₹" + entry.toFixed(2) + " × " + qty);
+  // Save to Firebase if logged in
+  if (activeUser) {
+    try {
+      var posId = await saveIntradayPosition({
+        name: stock.name,
+        sym: sym,
+        entry: entryRounded,
+        qty: qty,
+        type: type
+      });
+      // Reset inputs
+      entryEl.value = "";
+      qtyEl.value = "";
+      ToastManager.success("Position Added", sym + " " + type + " @ ₹" + entryRounded.toFixed(2) + " × " + qty);
+    } catch (fbErr) {
+      console.error("[POSITION] Firebase save failed:", fbErr);
+      // Fallback to local-only
+      var position = {
+        id: "pos_" + Date.now() + "_" + Math.random().toString(36).substr(2, 4),
+        sym: sym,
+        name: stock.name,
+        yahoo: stock.yahoo,
+        entry: entryRounded,
+        qty: qty,
+        type: type,
+        tradeType: "intraday",
+        currentPrice: 0,
+        limitPrice: 0,
+        addedAt: Date.now()
+      };
+      activePositions.push(position);
+      try { localStorage.setItem("finzotalk_positions", JSON.stringify(activePositions)); } catch (e) {}
+      entryEl.value = "";
+      qtyEl.value = "";
+      renderPositions();
+      startPositionsRefresh();
+      ToastManager.success("Position Added (Local)", sym + " " + type + " @ ₹" + entryRounded.toFixed(2) + " × " + qty);
+    }
+  } else {
+    var position = {
+      id: "pos_" + Date.now() + "_" + Math.random().toString(36).substr(2, 4),
+      sym: sym,
+      name: stock.name,
+      yahoo: stock.yahoo,
+      entry: entryRounded,
+      qty: qty,
+      type: type,
+      tradeType: "intraday",
+      currentPrice: 0,
+      limitPrice: 0,
+      addedAt: Date.now()
+    };
+    activePositions.push(position);
+    try { localStorage.setItem("finzotalk_positions", JSON.stringify(activePositions)); } catch (e) {}
+    entryEl.value = "";
+    qtyEl.value = "";
+    renderPositions();
+    startPositionsRefresh();
+    ToastManager.success("Position Added", sym + " " + type + " @ ₹" + entryRounded.toFixed(2) + " × " + qty);
+  }
 }
 
 function removePosition(posId) {
@@ -11743,18 +11864,75 @@ function stopPositionsRefresh() {
 }
 
 // Load saved positions on page load
-function loadSavedPositions() {
+async function loadSavedPositions() {
+  // First load from localStorage for instant display
   try {
     var saved = localStorage.getItem("finzotalk_positions");
     if (saved) {
       activePositions = JSON.parse(saved);
-      if (activePositions.length > 0) {
-        renderPositions();
-        startPositionsRefresh();
-      }
     }
   } catch (e) {
     activePositions = [];
+  }
+
+  // Then merge from Firebase (source of truth)
+  if (activeUser) {
+    try {
+      var snapshot = await db.collection("positions")
+        .where("userId", "==", activeUser.uid)
+        .where("status", "==", "open")
+        .get();
+
+      var firebaseIds = {};
+      snapshot.forEach(function(doc) {
+        var data = doc.data();
+        firebaseIds[doc.id] = true;
+
+        // Check if already in local list
+        var exists = false;
+        for (var i = 0; i < activePositions.length; i++) {
+          if (activePositions[i].firebaseId === doc.id || activePositions[i].id === doc.id) {
+            exists = true;
+            break;
+          }
+        }
+
+        if (!exists) {
+          var sym = String(data.sym || "").toUpperCase();
+          var yahoo = sym + ".NS";
+          for (var s = 0; s < STOCK_DATA.length; s++) {
+            if (STOCK_DATA[s].sym === sym) { yahoo = STOCK_DATA[s].yahoo; break; }
+          }
+
+          activePositions.push({
+            id: doc.id,
+            firebaseId: doc.id,
+            sym: sym,
+            name: data.name || sym,
+            yahoo: yahoo,
+            entry: Math.round(parseNumber(data.entry) * 100) / 100,
+            qty: parseInt(parseNumber(data.qty), 10) || 0,
+            type: data.type || "BUY",
+            tradeType: data.tradeType || "intraday",
+            currentPrice: 0,
+            limitPrice: parseNumber(data.limitPrice) || 0,
+            addedAt: Date.now()
+          });
+        }
+      });
+
+      // Save merged list
+      try { localStorage.setItem("finzotalk_positions", JSON.stringify(activePositions)); } catch(e) {}
+      console.log("[POSITIONS] Loaded " + activePositions.length + " positions (Firebase + local)");
+
+    } catch (fbErr) {
+      console.error("[POSITIONS] Firebase load error:", fbErr);
+    }
+  }
+
+  if (activePositions.length > 0) {
+    renderPositions();
+    startPositionsRefresh();
   }
 }
   /* ================= AUTO SQUAREOFF ENGINE (3:30 PM IST) ================= */
@@ -11775,7 +11953,7 @@ function initAutoSquareoff() {
 }
 
 async function squareoffAllIntradayPositions() {
-  var intradayPos = activePositions.filter(function(p) { return p.tradeType === "intraday"; });
+  var intradayPos = activePositions.filter(function(p) { return !p.tradeType || p.tradeType === "intraday"; });
   if (intradayPos.length === 0) return;
 
   console.log("[SQUAREOFF] Closing " + intradayPos.length + " positions at market close");
@@ -11936,6 +12114,7 @@ showSettings = function() {
 </script>
 </body>
 </html>
+
 
 
 
