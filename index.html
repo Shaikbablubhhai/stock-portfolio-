@@ -3742,6 +3742,152 @@ body.dark-mode .add-money-btn{
   .balance-amount{font-size:13px}
   .add-money-btn{padding:4px 8px;font-size:10px}
 }
+
+/* ================= ADMIN SYSTEM ================= */
+.admin-notif-bell{
+  font-size:22px;
+  cursor:pointer;
+  padding:12px 14px;
+  border-radius:var(--radius-sm);
+  transition:var(--transition-smooth);
+  background:rgba(255,255,255,0.08);
+  border:none;
+  color:#fff;
+  outline:none;
+  min-width:46px;
+  min-height:46px;
+  display:none;
+  align-items:center;
+  justify-content:center;
+  position:relative;
+  -webkit-tap-highlight-color:transparent;
+}
+.admin-notif-bell:hover{
+  background:rgba(255,255,255,0.18);
+  transform:scale(1.08);
+}
+.admin-notif-badge{
+  position:absolute;
+  top:4px;right:4px;
+  background:#ef4444;
+  color:#fff;
+  font-size:10px;
+  font-weight:700;
+  min-width:18px;
+  height:18px;
+  border-radius:50%;
+  display:none;
+  align-items:center;
+  justify-content:center;
+  line-height:18px;
+  text-align:center;
+  box-shadow:0 2px 6px rgba(239,68,68,0.4);
+  animation:badgePulse 2s infinite;
+}
+.admin-request-card{
+  padding:16px;
+  background:var(--border-lighter);
+  border-radius:var(--radius-md);
+  margin-bottom:12px;
+  border:1px solid var(--border-light);
+  transition:var(--transition-fast);
+}
+.admin-request-card:hover{
+  border-color:var(--primary);
+  box-shadow:0 2px 12px rgba(79,70,229,0.08);
+}
+.admin-req-header{
+  display:flex;
+  justify-content:space-between;
+  align-items:flex-start;
+  margin-bottom:12px;
+  gap:12px;
+}
+.admin-req-user{flex:1;min-width:0}
+.admin-req-name{font-weight:700;font-size:15px;color:var(--text-primary)}
+.admin-req-details{font-size:12px;color:var(--text-secondary);margin-top:2px}
+.admin-req-time{font-size:11px;color:var(--text-muted);margin-top:2px}
+.admin-req-amount{
+  text-align:right;
+  flex-shrink:0;
+}
+.admin-req-amount-value{font-size:22px;font-weight:800;color:var(--success)}
+.admin-req-amount-sub{font-size:11px;color:var(--text-muted)}
+.admin-req-actions{display:flex;gap:8px}
+.admin-req-approve{
+  flex:1;padding:10px;border:none;border-radius:8px;
+  background:linear-gradient(135deg,#059669,#10b981);
+  color:#fff;font-weight:600;font-size:13px;cursor:pointer;
+  transition:var(--transition-smooth);
+}
+.admin-req-approve:hover{box-shadow:0 4px 14px rgba(16,185,129,0.4);transform:translateY(-1px)}
+.admin-req-reject{
+  flex:1;padding:10px;border:none;border-radius:8px;
+  background:var(--danger-light);color:var(--danger);
+  font-weight:600;font-size:13px;cursor:pointer;
+  transition:var(--transition-smooth);
+}
+.admin-req-reject:hover{background:#fecaca;transform:translateY(-1px)}
+.admin-user-card{
+  padding:20px;
+  background:var(--border-lighter);
+  border-radius:var(--radius-md);
+  border:1px solid var(--border-light);
+}
+.admin-user-header{
+  display:flex;align-items:center;gap:14px;margin-bottom:16px;
+}
+.admin-user-avatar{
+  width:56px;height:56px;border-radius:50%;
+  background:linear-gradient(135deg,var(--primary),var(--accent));
+  color:#fff;display:flex;align-items:center;justify-content:center;
+  font-weight:700;font-size:22px;flex-shrink:0;
+}
+.admin-user-info{flex:1;min-width:0}
+.admin-user-name{font-weight:700;font-size:18px;color:var(--text-primary)}
+.admin-user-email{font-size:13px;color:var(--text-secondary)}
+.admin-user-meta{font-size:12px;color:var(--text-muted)}
+.admin-status-active{
+  background:var(--success-light);color:#065f46;
+  padding:4px 10px;border-radius:6px;font-size:11px;font-weight:700;
+  display:inline-block;
+}
+.admin-status-temp{
+  background:var(--warning-light);color:#92400e;
+  padding:4px 10px;border-radius:6px;font-size:11px;font-weight:700;
+  display:inline-block;
+}
+.admin-status-perm{
+  background:var(--danger-light);color:var(--danger);
+  padding:4px 10px;border-radius:6px;font-size:11px;font-weight:700;
+  display:inline-block;
+}
+.admin-block-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px}
+.admin-block-btn{
+  padding:8px 16px;border:none;border-radius:8px;
+  font-weight:600;font-size:13px;cursor:pointer;
+  transition:var(--transition-smooth);
+}
+.admin-block-btn:hover{transform:translateY(-1px)}
+.admin-block-btn.temp{background:var(--warning-light);color:#92400e}
+.admin-block-btn.perm{background:var(--danger-light);color:var(--danger)}
+.admin-block-btn.unblock{background:var(--success-light);color:#065f46}
+body.dark-mode .admin-request-card{background:#0f172a;border-color:#334155}
+body.dark-mode .admin-user-card{background:#0f172a;border-color:#334155}
+body.dark-mode .admin-req-name{color:#f1f5f9}
+body.dark-mode .admin-user-name{color:#f1f5f9}
+body.dark-mode .admin-notif-bell{background:rgba(255,255,255,0.06)}
+body.dark-mode .admin-notif-bell:hover{background:rgba(255,255,255,0.12)}
+.blocked-login-msg{
+  background:linear-gradient(135deg,#fee2e2,#fef2f2);
+  border:1px solid #fecaca;
+  border-radius:12px;
+  padding:16px;
+  margin-top:12px;
+  text-align:center;
+}
+.blocked-login-msg .blocked-icon{font-size:28px;margin-bottom:8px}
+.blocked-login-msg .blocked-text{color:#dc2626;font-weight:600;font-size:14px}
 </style>
 </head>
 
@@ -3838,6 +3984,10 @@ body.dark-mode .add-money-btn{
     💰 <span class="balance-amount" id="navBalanceAmount">₹20,000</span>
     <button class="add-money-btn" onclick="showAddMoneyModal()" type="button">+ Add</button>
   </div>
+  <button class="admin-notif-bell" id="adminNotifBell" onclick="showAdminRequestsPanel()" type="button" title="Admin Notifications" aria-label="Admin Notifications">
+    🔔
+    <span class="admin-notif-badge" id="adminNotifBadge">0</span>
+  </button>
   <button class="settings-icon" onclick="showSettings()" type="button" aria-label="Settings" title="Settings">⚙️</button>
 </nav>
 <div class="main-content">
@@ -4320,7 +4470,51 @@ body.dark-mode .add-money-btn{
         </div>
       </div>
 
-      <!-- Action Buttons -->
+      <!-- Admin Controls Section (only visible for admin) -->
+      <div class="settings-section" id="settingsAdminSection" style="display:none">
+        <div class="settings-section-title">🛡️ Admin Controls</div>
+
+        <div class="settings-row" style="flex-direction:column;align-items:stretch;gap:8px">
+          <div class="settings-row-left">
+            <div class="settings-row-icon">🔐</div>
+            <div>
+              <div class="settings-row-label">Admin PIN</div>
+              <div class="settings-row-sublabel" id="adminPinStatus">Not set</div>
+            </div>
+          </div>
+          <div style="display:flex;gap:8px">
+            <input type="password" class="settings-input" id="adminPinInput1" placeholder="Enter 4-digit PIN" maxlength="4" oninput="this.value=this.value.replace(/[^0-9]/g,'')" style="flex:1">
+            <input type="password" class="settings-input" id="adminPinInput2" placeholder="Confirm PIN" maxlength="4" oninput="this.value=this.value.replace(/[^0-9]/g,'')" style="flex:1">
+            <button class="settings-btn settings-btn-primary" style="width:auto;padding:8px 16px;font-size:12px" onclick="saveAdminPin()">Set</button>
+          </div>
+        </div>
+
+        <div class="settings-row">
+          <div class="settings-row-left">
+            <div class="settings-row-icon">📋</div>
+            <div>
+              <div class="settings-row-label">Balance Requests</div>
+              <div class="settings-row-sublabel" id="adminPendingCount">0 pending</div>
+            </div>
+          </div>
+          <div class="settings-row-right">
+            <button class="settings-btn settings-btn-primary" style="width:auto;padding:8px 16px;font-size:12px" onclick="showAdminRequestsPanel()">View</button>
+          </div>
+        </div>
+
+        <div class="settings-row">
+          <div class="settings-row-left">
+            <div class="settings-row-icon">👥</div>
+            <div>
+              <div class="settings-row-label">User Management</div>
+              <div class="settings-row-sublabel">Search, block & manage users</div>
+            </div>
+          </div>
+          <div class="settings-row-right">
+            <button class="settings-btn settings-btn-primary" style="width:auto;padding:8px 16px;font-size:12px" onclick="showUserManagementPanel()">Manage</button>
+          </div>
+        </div>
+      </div>
 
       <!-- Action Buttons -->
       <div class="settings-btn-group">
@@ -4424,6 +4618,50 @@ body.dark-mode .add-money-btn{
       <button class="modal-secondary" onclick="hideAddMoneyModal()">Cancel</button>
     </div>
     <div id="addMoneyStatus" style="margin-top:12px;text-align:center;font-size:13px;min-height:18px"></div>
+  </div>
+</div>
+
+<!-- ================= ADMIN REQUESTS PANEL ================= -->
+<div class="modal-backdrop" id="adminRequestsModal">
+  <div class="modal-container" style="width:560px;max-width:95%;max-height:90vh">
+    <h3>📋 Pending Balance Requests</h3>
+    <div style="max-height:65vh;overflow-y:auto;padding-right:4px" id="adminRequestsList">
+      <div style="text-align:center;padding:40px;color:var(--text-muted)">Loading...</div>
+    </div>
+    <div class="modal-actions" style="margin-top:16px">
+      <button class="modal-secondary" onclick="hideAdminRequestsPanel()">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- ================= USER MANAGEMENT PANEL ================= -->
+<div class="modal-backdrop" id="userMgmtModal">
+  <div class="modal-container" style="width:560px;max-width:95%;max-height:90vh">
+    <h3>👥 User Management</h3>
+    <div style="display:flex;gap:10px;margin-bottom:16px">
+      <input type="text" id="userMgmtSearchInput" placeholder="Enter 5-digit User ID" maxlength="5" style="flex:1" oninput="this.value=this.value.replace(/[^0-9]/g,'')">
+      <button class="modal-primary" style="flex-shrink:0;padding:12px 20px" onclick="searchUserForMgmt()">🔍 Search</button>
+    </div>
+    <div id="userMgmtResults" style="max-height:55vh;overflow-y:auto">
+      <div style="text-align:center;padding:40px;color:var(--text-muted)">Enter a 5-digit User ID to search</div>
+    </div>
+    <div class="modal-actions" style="margin-top:16px">
+      <button class="modal-secondary" onclick="hideUserMgmtPanel()">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- ================= ADMIN PIN VERIFICATION ================= -->
+<div class="modal-backdrop" id="adminPinModal">
+  <div class="modal-container" style="width:360px">
+    <h3>🔐 Admin PIN Required</h3>
+    <p style="color:var(--text-secondary);font-size:14px;margin-bottom:16px">Enter your 4-digit admin PIN to confirm this action.</p>
+    <input type="password" id="adminPinVerifyInput" placeholder="Enter 4-digit PIN" maxlength="4" style="text-align:center;font-size:24px;letter-spacing:12px;font-weight:700" oninput="this.value=this.value.replace(/[^0-9]/g,'')">
+    <div class="modal-actions">
+      <button class="modal-primary" id="adminPinVerifyBtn" onclick="verifyAdminPinAndProceed()">Confirm</button>
+      <button class="modal-secondary" onclick="cancelAdminPinVerify()">Cancel</button>
+    </div>
+    <div id="adminPinVerifyError" style="margin-top:8px;text-align:center;color:var(--danger);font-size:13px;min-height:18px"></div>
   </div>
 </div>
 
@@ -8209,6 +8447,532 @@ function initButtonRipple() {
     }, 600);
   });
 }
+/* ================= ADMIN SYSTEM ================= */
+var ADMIN_USER_CODE = "86214";
+var isAdminUser = false;
+var adminPendingRequestsListener = null;
+var _adminPinCallback = null;
+
+// Check if current user is admin
+async function checkAdminStatus() {
+  if (!activeUser) return false;
+  try {
+    var userDoc = await db.collection("users").doc(activeUser.uid).get();
+    if (userDoc.exists) {
+      var data = userDoc.data();
+      isAdminUser = (data.usercode === ADMIN_USER_CODE);
+    }
+  } catch(e) {
+    isAdminUser = false;
+  }
+  return isAdminUser;
+}
+
+// Initialize admin UI elements
+function initAdminUI() {
+  if (!isAdminUser) return;
+
+  // Show notification bell
+  var bell = document.getElementById("adminNotifBell");
+  if (bell) bell.style.display = "flex";
+
+  // Show admin section in settings
+  var adminSection = document.getElementById("settingsAdminSection");
+  if (adminSection) adminSection.style.display = "block";
+
+  // Start listening for pending requests
+  startAdminRequestsListener();
+
+  console.log("[ADMIN] Admin UI initialized");
+}
+
+// Real-time listener for pending balance requests
+function startAdminRequestsListener() {
+  if (adminPendingRequestsListener) {
+    adminPendingRequestsListener();
+    adminPendingRequestsListener = null;
+  }
+
+  adminPendingRequestsListener = db.collection("balanceRequests")
+    .where("status", "==", "pending")
+    .onSnapshot(function(snapshot) {
+      var count = snapshot.size;
+
+      // Update bell badge
+      var badge = document.getElementById("adminNotifBadge");
+      if (badge) {
+        if (count > 0) {
+          badge.textContent = count;
+          badge.style.display = "flex";
+        } else {
+          badge.style.display = "none";
+        }
+      }
+
+      // Update settings count
+      var countEl = document.getElementById("adminPendingCount");
+      if (countEl) countEl.textContent = count + " pending";
+
+    }, function(error) {
+      console.error("[ADMIN] Requests listener error:", error);
+    });
+}
+
+// Show admin requests panel
+function showAdminRequestsPanel() {
+  // Close settings if open
+  document.getElementById("settingsModal").style.display = "none";
+  document.getElementById("adminRequestsModal").style.display = "flex";
+  loadAdminRequests();
+}
+
+function hideAdminRequestsPanel() {
+  document.getElementById("adminRequestsModal").style.display = "none";
+}
+
+// Load pending requests into panel
+async function loadAdminRequests() {
+  var container = document.getElementById("adminRequestsList");
+  if (!container) return;
+
+  container.innerHTML = '<div style="text-align:center;padding:30px;color:var(--text-muted)">Loading requests...</div>';
+
+  try {
+    var snapshot = await db.collection("balanceRequests")
+      .where("status", "==", "pending")
+      .get();
+
+    if (snapshot.empty) {
+      container.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text-muted)">✅ No pending requests</div>';
+      return;
+    }
+
+    // Sort by requestedAt descending (client side since Firestore needs index)
+    var docs = [];
+    snapshot.forEach(function(doc) { docs.push({ id: doc.id, data: doc.data() }); });
+    docs.sort(function(a, b) {
+      var timeA = a.data.requestedAt ? a.data.requestedAt.toMillis() : 0;
+      var timeB = b.data.requestedAt ? b.data.requestedAt.toMillis() : 0;
+      return timeB - timeA;
+    });
+
+    container.innerHTML = "";
+
+    docs.forEach(function(item) {
+      var req = item.data;
+      var reqId = item.id;
+
+      var timeStr = "Just now";
+      if (req.requestedAt && req.requestedAt.toDate) {
+        timeStr = req.requestedAt.toDate().toLocaleString("en-IN", {
+          day: "numeric", month: "short", hour: "2-digit", minute: "2-digit"
+        });
+      }
+
+      var card = document.createElement("div");
+      card.className = "admin-request-card";
+      card.innerHTML =
+        '<div class="admin-req-header">' +
+          '<div class="admin-req-user">' +
+            '<div class="admin-req-name">' + (req.userName || "Unknown") + '</div>' +
+            '<div class="admin-req-details">ID: ' + (req.userCode || "--") + ' • ' + (req.userEmail || "--") + '</div>' +
+            '<div class="admin-req-time">' + timeStr + '</div>' +
+          '</div>' +
+          '<div class="admin-req-amount">' +
+            '<div class="admin-req-amount-value">' + formatRupee(req.amount || 0) + '</div>' +
+            '<div class="admin-req-amount-sub">Balance: ' + formatRupee(req.currentBalance || 0) + '</div>' +
+          '</div>' +
+        '</div>' +
+        '<div class="admin-req-actions">' +
+          '<button class="admin-req-approve" onclick="approveRequest(\'' + reqId + '\',\'' + req.userId + '\',' + (req.amount || 0) + ')">✓ Approve</button>' +
+          '<button class="admin-req-reject" onclick="rejectRequest(\'' + reqId + '\')">✕ Reject</button>' +
+        '</div>';
+
+      container.appendChild(card);
+    });
+
+  } catch(e) {
+    console.error("[ADMIN] Load requests error:", e);
+    container.innerHTML = '<div style="text-align:center;padding:30px;color:var(--danger)">Error loading requests: ' + e.message + '</div>';
+  }
+}
+
+// Approve request — with PIN verification
+async function approveRequest(reqId, userId, amount) {
+  // Check if admin PIN is set
+  try {
+    var adminDoc = await db.collection("users").doc(activeUser.uid).get();
+    var adminData = adminDoc.exists ? adminDoc.data() : {};
+
+    if (adminData.adminPin) {
+      // PIN is set — verify before proceeding
+      showAdminPinPrompt(function() {
+        executeApproval(reqId, userId, amount);
+      });
+      return;
+    }
+  } catch(e) {
+    console.error("[ADMIN] PIN check error:", e);
+  }
+
+  // No PIN set — proceed directly
+  executeApproval(reqId, userId, amount);
+}
+
+// Execute the actual approval
+async function executeApproval(reqId, userId, amount) {
+  try {
+    // Get user's current balance
+    var userDoc = await db.collection("users").doc(userId).get();
+    if (!userDoc.exists) {
+      ToastManager.error("Error", "User not found");
+      return;
+    }
+
+    var userData = userDoc.data();
+    var currentBalance = parseNumber(userData.balance) || 0;
+    var newBalance = Math.round((currentBalance + parseNumber(amount)) * 100) / 100;
+
+    // Update user balance
+    await db.collection("users").doc(userId).update({
+      balance: newBalance
+    });
+
+    // Mark request as approved
+    await db.collection("balanceRequests").doc(reqId).update({
+      status: "approved",
+      approvedAt: firebase.firestore.FieldValue.serverTimestamp(),
+      approvedBy: activeUser.uid,
+      newBalance: newBalance
+    });
+
+    ToastManager.success("Approved ✓", formatRupee(amount) + " added to " + (userData.name || "user") + "'s balance");
+    loadAdminRequests();
+
+  } catch(e) {
+    console.error("[ADMIN] Approve error:", e);
+    ToastManager.error("Approval Failed", e.message || "Could not approve request");
+  }
+}
+
+// Reject request
+async function rejectRequest(reqId) {
+  if (!confirm("Reject this balance request?")) return;
+
+  try {
+    await db.collection("balanceRequests").doc(reqId).update({
+      status: "rejected",
+      rejectedAt: firebase.firestore.FieldValue.serverTimestamp(),
+      rejectedBy: activeUser.uid
+    });
+
+    ToastManager.info("Rejected", "Balance request has been rejected");
+    loadAdminRequests();
+
+  } catch(e) {
+    console.error("[ADMIN] Reject error:", e);
+    ToastManager.error("Failed", "Could not reject request");
+  }
+}
+
+// Admin PIN prompt system
+function showAdminPinPrompt(callback) {
+  _adminPinCallback = callback;
+  document.getElementById("adminPinVerifyInput").value = "";
+  document.getElementById("adminPinVerifyError").textContent = "";
+  document.getElementById("adminPinModal").style.display = "flex";
+
+  // Focus the input
+  setTimeout(function() {
+    document.getElementById("adminPinVerifyInput").focus();
+  }, 300);
+}
+
+function cancelAdminPinVerify() {
+  _adminPinCallback = null;
+  document.getElementById("adminPinModal").style.display = "none";
+}
+
+async function verifyAdminPinAndProceed() {
+  var enteredPin = document.getElementById("adminPinVerifyInput").value.trim();
+  var errorEl = document.getElementById("adminPinVerifyError");
+
+  if (!enteredPin || enteredPin.length !== 4) {
+    errorEl.textContent = "Enter a valid 4-digit PIN";
+    return;
+  }
+
+  try {
+    var adminDoc = await db.collection("users").doc(activeUser.uid).get();
+    var adminData = adminDoc.exists ? adminDoc.data() : {};
+
+    if (enteredPin !== adminData.adminPin) {
+      errorEl.textContent = "❌ Incorrect PIN. Try again.";
+      document.getElementById("adminPinVerifyInput").value = "";
+      document.getElementById("adminPinVerifyInput").focus();
+      return;
+    }
+
+    // PIN correct — close modal and run callback
+    document.getElementById("adminPinModal").style.display = "none";
+
+    if (_adminPinCallback) {
+      _adminPinCallback();
+      _adminPinCallback = null;
+    }
+
+  } catch(e) {
+    errorEl.textContent = "Error verifying PIN";
+    console.error("[ADMIN] PIN verify error:", e);
+  }
+}
+
+// Save admin PIN
+async function saveAdminPin() {
+  var pin1 = document.getElementById("adminPinInput1").value.trim();
+  var pin2 = document.getElementById("adminPinInput2").value.trim();
+
+  if (!pin1 || pin1.length !== 4 || !/^\d{4}$/.test(pin1)) {
+    ToastManager.warning("Invalid PIN", "PIN must be exactly 4 digits");
+    return;
+  }
+
+  if (pin1 !== pin2) {
+    ToastManager.warning("Mismatch", "PINs do not match. Please re-enter.");
+    return;
+  }
+
+  try {
+    await db.collection("users").doc(activeUser.uid).update({
+      adminPin: pin1
+    });
+
+    document.getElementById("adminPinStatus").textContent = "PIN is set ✓";
+    document.getElementById("adminPinInput1").value = "";
+    document.getElementById("adminPinInput2").value = "";
+    ToastManager.success("PIN Saved ✓", "Admin PIN has been set securely");
+
+  } catch(e) {
+    console.error("[ADMIN] Save PIN error:", e);
+    ToastManager.error("Failed", "Could not save PIN");
+  }
+}
+
+// Show user management panel
+function showUserManagementPanel() {
+  document.getElementById("settingsModal").style.display = "none";
+  document.getElementById("userMgmtModal").style.display = "flex";
+  document.getElementById("userMgmtSearchInput").value = "";
+  document.getElementById("userMgmtResults").innerHTML =
+    '<div style="text-align:center;padding:40px;color:var(--text-muted)">Enter a 5-digit User ID above to search</div>';
+}
+
+function hideUserMgmtPanel() {
+  document.getElementById("userMgmtModal").style.display = "none";
+}
+
+// Search user for management
+async function searchUserForMgmt() {
+  var code = document.getElementById("userMgmtSearchInput").value.trim();
+  var container = document.getElementById("userMgmtResults");
+
+  if (code.length !== 5 || !/^\d{5}$/.test(code)) {
+    container.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-muted)">Enter a valid 5-digit User ID</div>';
+    return;
+  }
+
+  container.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-muted)">🔍 Searching...</div>';
+
+  try {
+    var snapshot = await db.collection("users").where("usercode", "==", code).get();
+
+    if (snapshot.empty) {
+      container.innerHTML = '<div style="text-align:center;padding:20px;color:var(--danger)">❌ No user found with ID: ' + code + '</div>';
+      return;
+    }
+
+    container.innerHTML = "";
+
+    snapshot.forEach(function(doc) {
+      var user = doc.data();
+      var uid = doc.id;
+
+      var isBlocked = user.blocked === true;
+      var blockType = user.blockType || "";
+      var blockedUntil = user.blockedUntil || 0;
+
+      // Status badge
+      var statusHTML = "";
+      if (isBlocked && blockType === "permanent") {
+        statusHTML = '<span class="admin-status-perm">🔴 PERMANENTLY BLOCKED</span>';
+      } else if (isBlocked && blockType === "temporary") {
+        var daysLeft = blockedUntil > Date.now() ? Math.ceil((blockedUntil - Date.now()) / 86400000) : 0;
+        if (daysLeft > 0) {
+          statusHTML = '<span class="admin-status-temp">🟡 TEMP BLOCKED (' + daysLeft + ' day' + (daysLeft > 1 ? 's' : '') + ' left)</span>';
+        } else {
+          statusHTML = '<span class="admin-status-active">🟢 ACTIVE (block expired)</span>';
+        }
+      } else {
+        statusHTML = '<span class="admin-status-active">🟢 ACTIVE</span>';
+      }
+
+      var joinedStr = "--";
+      if (user.createdAt && user.createdAt.toDate) {
+        joinedStr = user.createdAt.toDate().toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
+      }
+
+      var card = document.createElement("div");
+      card.className = "admin-user-card";
+      card.innerHTML =
+        '<div class="admin-user-header">' +
+          '<div class="admin-user-avatar">' + ((user.name || "U").charAt(0).toUpperCase()) + '</div>' +
+          '<div class="admin-user-info">' +
+            '<div class="admin-user-name">' + (user.name || "Unknown") + '</div>' +
+            '<div class="admin-user-email">' + (user.email || "--") + '</div>' +
+            '<div class="admin-user-meta">ID: ' + (user.usercode || "--") + ' • Joined: ' + joinedStr + '</div>' +
+          '</div>' +
+        '</div>' +
+        '<div style="margin-bottom:12px">' + statusHTML + '</div>' +
+        '<div style="margin-bottom:16px;font-size:14px">' +
+          '<span style="color:var(--text-secondary)">Balance:</span> ' +
+          '<strong style="color:var(--success)">' + formatRupee(parseNumber(user.balance)) + '</strong>' +
+        '</div>' +
+        '<div class="admin-block-actions">' +
+          '<select id="tempBlockDuration" style="padding:8px 12px;border:1px solid var(--border-light);border-radius:8px;font-size:13px;background:var(--bg-card-solid);color:var(--text-primary)">' +
+            '<option value="1">1 Day</option>' +
+            '<option value="3">3 Days</option>' +
+            '<option value="7" selected>7 Days</option>' +
+          '</select>' +
+          '<button class="admin-block-btn temp" onclick="tempBlockUser(\'' + uid + '\')">⏱ Temp Block</button>' +
+          '<button class="admin-block-btn perm" onclick="permBlockUser(\'' + uid + '\')">🚫 Perm Block</button>' +
+          '<button class="admin-block-btn unblock" onclick="unblockUser(\'' + uid + '\')">✅ Unblock</button>' +
+        '</div>';
+
+      container.appendChild(card);
+    });
+
+  } catch(e) {
+    console.error("[ADMIN] User search error:", e);
+    container.innerHTML = '<div style="text-align:center;padding:20px;color:var(--danger)">Error: ' + e.message + '</div>';
+  }
+}
+
+// Temporary block user
+async function tempBlockUser(uid) {
+  var daysEl = document.getElementById("tempBlockDuration");
+  var days = parseInt(daysEl ? daysEl.value : "7") || 7;
+
+  if (!confirm("Temporarily block this user for " + days + " day(s)?\n\nThey will not be able to login during this period.")) return;
+
+  var blockedUntil = Date.now() + (days * 24 * 60 * 60 * 1000);
+
+  try {
+    await db.collection("users").doc(uid).update({
+      blocked: true,
+      blockType: "temporary",
+      blockedAt: firebase.firestore.FieldValue.serverTimestamp(),
+      blockedUntil: blockedUntil,
+      blockedByAdmin: activeUser.uid
+    });
+
+    ToastManager.success("User Blocked ⏱", "Temporarily blocked for " + days + " day(s)");
+    searchUserForMgmt();
+
+  } catch(e) {
+    console.error("[ADMIN] Temp block error:", e);
+    ToastManager.error("Block Failed", e.message);
+  }
+}
+
+// Permanent block user
+async function permBlockUser(uid) {
+  if (!confirm("⚠️ PERMANENTLY block this user?\n\nThey will not be able to login until you manually unblock them.")) return;
+
+  try {
+    await db.collection("users").doc(uid).update({
+      blocked: true,
+      blockType: "permanent",
+      blockedAt: firebase.firestore.FieldValue.serverTimestamp(),
+      blockedUntil: 0,
+      blockedByAdmin: activeUser.uid
+    });
+
+    ToastManager.success("User Blocked 🚫", "Account permanently blocked");
+    searchUserForMgmt();
+
+  } catch(e) {
+    console.error("[ADMIN] Perm block error:", e);
+    ToastManager.error("Block Failed", e.message);
+  }
+}
+
+// Unblock user
+async function unblockUser(uid) {
+  if (!confirm("Unblock this user?\n\nThey will be able to login again.")) return;
+
+  try {
+    await db.collection("users").doc(uid).update({
+      blocked: false,
+      blockType: "",
+      blockedUntil: 0
+    });
+
+    ToastManager.success("User Unblocked ✅", "User can now login again");
+    searchUserForMgmt();
+
+  } catch(e) {
+    console.error("[ADMIN] Unblock error:", e);
+    ToastManager.error("Unblock Failed", e.message);
+  }
+}
+
+// Check if user is blocked (called during login)
+async function checkUserBlocked(uid) {
+  try {
+    var userDoc = await db.collection("users").doc(uid).get();
+    if (!userDoc.exists) return { blocked: false };
+
+    var data = userDoc.data();
+
+    if (!data.blocked) return { blocked: false };
+
+    // Check temporary block expiry
+    if (data.blockType === "temporary" && data.blockedUntil) {
+      if (Date.now() > data.blockedUntil) {
+        // Block expired — auto unblock
+        await db.collection("users").doc(uid).update({
+          blocked: false,
+          blockType: "",
+          blockedUntil: 0
+        });
+        console.log("[BLOCK] Temp block expired for " + uid + ", auto-unblocked");
+        return { blocked: false };
+      }
+
+      var daysLeft = Math.ceil((data.blockedUntil - Date.now()) / 86400000);
+      return {
+        blocked: true,
+        type: "temporary",
+        message: "Your account is temporarily suspended for " + daysLeft + " more day(s). Please contact support."
+      };
+    }
+
+    if (data.blockType === "permanent") {
+      return {
+        blocked: true,
+        type: "permanent",
+        message: "Your account has been suspended. Please contact support."
+      };
+    }
+
+    return { blocked: false };
+
+  } catch(e) {
+    console.error("[BLOCK] Check error:", e);
+    return { blocked: false };
+  }
+}
+
 /* ================= PAPER TRADING BALANCE SYSTEM ================= */
 var userBalance = 0;
 var DEFAULT_BALANCE = 20000;
@@ -8715,6 +9479,30 @@ auth.onAuthStateChanged(async function(user) {
   }
 
   activeUser = user;
+
+  // ✅ CHECK IF USER IS BLOCKED
+  try {
+    var blockStatus = await checkUserBlocked(user.uid);
+    if (blockStatus.blocked) {
+      document.getElementById("loginError").innerHTML =
+        '<div class="blocked-login-msg">' +
+          '<div class="blocked-icon">🚫</div>' +
+          '<div class="blocked-text">' + blockStatus.message + '</div>' +
+        '</div>';
+      document.getElementById("loginWrapper").style.display = "flex";
+      document.getElementById("mainApp").style.display = "none";
+      if (loadingScreen) {
+        loadingScreen.style.opacity = "0";
+        setTimeout(function() { if (loadingScreen.parentElement) loadingScreen.style.display = "none"; }, 400);
+      }
+      activeUser = null;
+      auth.signOut();
+      return;
+    }
+  } catch(blockErr) {
+    console.error("[BLOCK] Check failed:", blockErr);
+  }
+
   document.getElementById("loginWrapper").style.display = "none";
   document.getElementById("mainApp").style.display = "block";
   
@@ -8782,6 +9570,14 @@ auth.onAuthStateChanged(async function(user) {
 
   // Load user preferences
   loadUserPreferences();
+
+  // ✅ Check admin status and initialize admin UI
+  checkAdminStatus().then(function(isAdmin) {
+    if (isAdmin) {
+      initAdminUI();
+      console.log("[ADMIN] Admin mode activated for usercode " + ADMIN_USER_CODE);
+    }
+  });
 
   // Apply default tab preference
   if (userPreferences.defaultTab && userPreferences.defaultTab !== "stocks") {
@@ -12418,10 +13214,25 @@ showSettings = function() {
     document.getElementById("settingsCurrentRefreshRate").textContent = "Every " + (userPreferences.refreshInterval || 15) + "s (" + getMarketStatusText() + ")";
     
     // Memory Usage
+    // Memory Usage
     var stockDataSize = Math.round(JSON.stringify(STOCK_DATA || []).length / 1024);
     var pricesSize = Math.round(JSON.stringify(pricesData || {}).length / 1024);
     var holdingsSize = Math.round(JSON.stringify(userHoldings || []).length / 1024);
     document.getElementById("settingsMemoryUsage").textContent = "Stocks: " + stockDataSize + "KB • Prices: " + pricesSize + "KB • Holdings: " + holdingsSize + "KB";
+
+    // ✅ Admin section updates
+    if (isAdminUser) {
+      var adminSection = document.getElementById("settingsAdminSection");
+      if (adminSection) adminSection.style.display = "block";
+
+      db.collection("users").doc(activeUser.uid).get().then(function(aDoc) {
+        if (aDoc.exists && aDoc.data().adminPin) {
+          document.getElementById("adminPinStatus").textContent = "PIN is set ✓";
+        } else {
+          document.getElementById("adminPinStatus").textContent = "Not set — please set a PIN";
+        }
+      }).catch(function(){});
+    }
     
   } catch (e) {
     console.error("Settings populate error:", e);
@@ -12430,6 +13241,7 @@ showSettings = function() {
 </script>
 </body>
 </html>
+
 
 
 
