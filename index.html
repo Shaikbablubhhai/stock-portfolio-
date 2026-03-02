@@ -3666,7 +3666,7 @@ body.dark-mode .position-exit-btn:hover {
 }
 body.dark-mode .empty-positions h3 { color: #f1f5f9; }
 body.dark-mode .empty-positions { color: #94a3b8; }
-  /* ================= APP LOADING SCREEN ================= */
+/* ================= APP LOADING SCREEN ================= */
 @keyframes loadingBar{
   0%{transform:translateX(-100%)}
   50%{transform:translateX(150%)}
@@ -3675,6 +3675,72 @@ body.dark-mode .empty-positions { color: #94a3b8; }
 #appLoadingScreen{
   user-select:none;
   -webkit-user-select:none;
+}
+
+/* ================= PAPER TRADING BALANCE ================= */
+.balance-display{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  padding:9px 16px;
+  background:rgba(255,255,255,0.1);
+  border-radius:var(--radius-md);
+  font-size:14px;
+  font-weight:600;
+  color:#fff;
+  transition:var(--transition-smooth);
+  white-space:nowrap;
+  border:1px solid rgba(255,255,255,0.08);
+}
+.balance-display:hover{
+  background:rgba(255,255,255,0.18);
+}
+.balance-amount{
+  color:#34d399;
+  font-weight:700;
+  font-size:15px;
+  letter-spacing:-0.3px;
+}
+.add-money-btn{
+  padding:5px 12px;
+  border:none;
+  border-radius:8px;
+  background:linear-gradient(135deg,#10b981,#059669);
+  color:#fff;
+  font-size:11px;
+  font-weight:700;
+  cursor:pointer;
+  transition:var(--transition-smooth);
+  letter-spacing:0.3px;
+}
+.add-money-btn:hover{
+  transform:scale(1.08);
+  box-shadow:0 4px 14px rgba(16,185,129,0.4);
+}
+.add-money-btn:active{
+  transform:scale(0.95);
+}
+body.dark-mode .balance-display{
+  background:rgba(255,255,255,0.06);
+  border-color:rgba(255,255,255,0.05);
+}
+body.dark-mode .balance-amount{
+  color:#34d399;
+}
+body.dark-mode .add-money-btn{
+  background:linear-gradient(135deg,#059669,#047857);
+}
+@media(max-width:1100px){
+  .balance-display{order:2;flex-shrink:0}
+}
+@media(max-width:680px){
+  .balance-display{
+    padding:6px 10px;
+    font-size:12px;
+    gap:6px;
+  }
+  .balance-amount{font-size:13px}
+  .add-money-btn{padding:4px 8px;font-size:10px}
 }
 </style>
 </head>
@@ -3767,6 +3833,10 @@ body.dark-mode .empty-positions { color: #94a3b8; }
   </div>
   <div class="nav-search">
     <input type="text" id="stockSearchInput" placeholder="Search 2000+ stocks & ETFs...">
+  </div>
+  <div class="balance-display" id="balanceDisplay" title="Paper Trading Balance">
+    💰 <span class="balance-amount" id="navBalanceAmount">₹20,000</span>
+    <button class="add-money-btn" onclick="showAddMoneyModal()" type="button">+ Add</button>
   </div>
   <button class="settings-icon" onclick="showSettings()" type="button" aria-label="Settings" title="Settings">⚙️</button>
 </nav>
@@ -4275,6 +4345,7 @@ body.dark-mode .empty-positions { color: #94a3b8; }
     <div class="modal-info-box">
       <p>Stock: <span id="modalStockName">--</span></p>
       <p>Current Price: <span id="modalStockPrice" style="color:#10b981">₹--</span></p>
+      <p>Your Balance: <span id="modalUserBalance" style="color:#10b981;font-weight:700">₹20,000</span></p>
     </div>
     <label>Buy Price (₹)</label>
     <input type="number" id="modalBuyPrice" placeholder="Enter your buy price" step="0.01" min="0">
@@ -4338,6 +4409,24 @@ body.dark-mode .empty-positions { color: #94a3b8; }
     <div class="chart-modal-stats" id="chartModalStats"></div>
   </div>
 </div>
+<!-- ================= ADD MONEY REQUEST MODAL ================= -->
+<div class="modal-backdrop" id="addMoneyModal">
+  <div class="modal-container">
+    <h3>💰 Add Money Request</h3>
+    <div class="modal-info-box">
+      <p>Current Balance: <span id="addMoneyCurrentBal" style="color:#10b981;font-weight:700">₹20,000</span></p>
+      <p style="font-size:13px;color:var(--text-muted);margin-top:4px">Requests are reviewed by the admin. You will receive the balance once approved.</p>
+    </div>
+    <label>Amount to Add (₹)</label>
+    <input type="number" id="addMoneyAmount" placeholder="Enter amount (min ₹100)" min="100" step="100">
+    <div class="modal-actions">
+      <button class="modal-primary" id="submitAddMoneyBtn" onclick="submitAddMoneyRequest()">📩 Submit Request</button>
+      <button class="modal-secondary" onclick="hideAddMoneyModal()">Cancel</button>
+    </div>
+    <div id="addMoneyStatus" style="margin-top:12px;text-align:center;font-size:13px;min-height:18px"></div>
+  </div>
+</div>
+
 <!-- ================= DELETE CONFIRMATION MODAL ================= -->
 <div class="modal-backdrop" id="deleteConfirmModal">
   <div class="modal-container">
@@ -8120,6 +8209,182 @@ function initButtonRipple() {
     }, 600);
   });
 }
+/* ================= PAPER TRADING BALANCE SYSTEM ================= */
+var userBalance = 0;
+var DEFAULT_BALANCE = 20000;
+
+// Load or initialize user balance from Firebase
+async function initUserBalance() {
+  if (!activeUser) return;
+
+  try {
+    var userDoc = await db.collection("users").doc(activeUser.uid).get();
+    if (userDoc.exists) {
+      var data = userDoc.data();
+      if (data.balance !== undefined && data.balance !== null) {
+        // Existing balance found
+        userBalance = parseNumber(data.balance);
+      } else {
+        // First time user — give default balance
+        userBalance = DEFAULT_BALANCE;
+        await db.collection("users").doc(activeUser.uid).update({
+          balance: DEFAULT_BALANCE
+        });
+        console.log("[BALANCE] Initialized new user with ₹" + DEFAULT_BALANCE);
+      }
+    }
+  } catch (e) {
+    console.error("[BALANCE] Init error:", e);
+    // Fallback to localStorage
+    var localBal = localStorage.getItem("finzotalk_balance");
+    if (localBal) {
+      userBalance = parseNumber(localBal);
+    } else {
+      userBalance = DEFAULT_BALANCE;
+    }
+  }
+
+  updateBalanceDisplay();
+  console.log("[BALANCE] Loaded: ₹" + userBalance.toFixed(2));
+}
+
+// Update all balance display elements on the page
+function updateBalanceDisplay() {
+  var navEl = document.getElementById("navBalanceAmount");
+  if (navEl) navEl.textContent = formatRupee(userBalance);
+
+  var modalEl = document.getElementById("modalUserBalance");
+  if (modalEl) modalEl.textContent = formatRupee(userBalance);
+
+  var addMoneyEl = document.getElementById("addMoneyCurrentBal");
+  if (addMoneyEl) addMoneyEl.textContent = formatRupee(userBalance);
+
+  // Save to localStorage as backup
+  try {
+    localStorage.setItem("finzotalk_balance", userBalance.toString());
+  } catch (e) {}
+}
+
+// Deduct from balance (returns false if insufficient)
+async function deductBalance(amount) {
+  var amountNum = Math.round(parseNumber(amount) * 100) / 100;
+  if (amountNum <= 0) return true; // Nothing to deduct
+
+  if (userBalance < amountNum) {
+    console.log("[BALANCE] Insufficient: need ₹" + amountNum + ", have ₹" + userBalance);
+    return false;
+  }
+
+  userBalance = Math.round((userBalance - amountNum) * 100) / 100;
+
+  try {
+    await db.collection("users").doc(activeUser.uid).update({
+      balance: userBalance
+    });
+  } catch (e) {
+    console.error("[BALANCE] Deduct save error:", e);
+  }
+
+  updateBalanceDisplay();
+  console.log("[BALANCE] Deducted ₹" + amountNum + " → New: ₹" + userBalance);
+  return true;
+}
+
+// Add to balance
+async function addToBalance(amount) {
+  var amountNum = Math.round(parseNumber(amount) * 100) / 100;
+  if (amountNum <= 0) return;
+
+  userBalance = Math.round((userBalance + amountNum) * 100) / 100;
+
+  try {
+    await db.collection("users").doc(activeUser.uid).update({
+      balance: userBalance
+    });
+  } catch (e) {
+    console.error("[BALANCE] Add save error:", e);
+  }
+
+  updateBalanceDisplay();
+  console.log("[BALANCE] Added ₹" + amountNum + " → New: ₹" + userBalance);
+}
+
+// Show Add Money request modal
+function showAddMoneyModal() {
+  document.getElementById("addMoneyCurrentBal").textContent = formatRupee(userBalance);
+  document.getElementById("addMoneyAmount").value = "";
+  document.getElementById("addMoneyStatus").textContent = "";
+  document.getElementById("addMoneyModal").style.display = "flex";
+}
+
+function hideAddMoneyModal() {
+  document.getElementById("addMoneyModal").style.display = "none";
+}
+
+// Submit add money request to Firebase for admin approval
+async function submitAddMoneyRequest() {
+  var amountEl = document.getElementById("addMoneyAmount");
+  var statusEl = document.getElementById("addMoneyStatus");
+  var submitBtn = document.getElementById("submitAddMoneyBtn");
+
+  var amount = parseFloat(amountEl.value);
+
+  if (!amount || amount < 100) {
+    statusEl.innerHTML = '<span style="color:var(--danger)">❌ Minimum request is ₹100</span>';
+    return;
+  }
+
+  if (amount > 1000000) {
+    statusEl.innerHTML = '<span style="color:var(--danger)">❌ Maximum request is ₹10,00,000</span>';
+    return;
+  }
+
+  if (!activeUser) {
+    statusEl.innerHTML = '<span style="color:var(--danger)">❌ Please login first</span>';
+    return;
+  }
+
+  submitBtn.disabled = true;
+  submitBtn.textContent = "Submitting...";
+  statusEl.textContent = "";
+
+  try {
+    // Get user info for admin panel display
+    var userDoc = await db.collection("users").doc(activeUser.uid).get();
+    var userData = userDoc.exists ? userDoc.data() : {};
+    var userName = userData.name || userData.firstName || activeUser.email.split("@")[0];
+    var userCode = userData.usercode || "--";
+
+    await db.collection("balanceRequests").add({
+      userId: activeUser.uid,
+      userName: userName,
+      userCode: userCode,
+      userEmail: activeUser.email,
+      amount: Math.round(amount * 100) / 100,
+      currentBalance: userBalance,
+      status: "pending",
+      requestedAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+
+    statusEl.innerHTML = '<span style="color:var(--success)">✅ Request submitted! Admin will review it shortly.</span>';
+    amountEl.value = "";
+    ToastManager.success("Request Submitted", "Your request for " + formatRupee(amount) + " has been sent to admin.");
+
+    // Auto close after 2 seconds
+    setTimeout(function() {
+      hideAddMoneyModal();
+    }, 2000);
+
+  } catch (e) {
+    console.error("[BALANCE] Request error:", e);
+    statusEl.innerHTML = '<span style="color:var(--danger)">❌ Failed to submit. Please try again.</span>';
+    ToastManager.error("Request Failed", e.message || "Could not submit request");
+  } finally {
+    submitBtn.disabled = false;
+    submitBtn.textContent = "📩 Submit Request";
+  }
+}
+
 /* ================= GLOBAL VARIABLES ================= */
 let activeUser = null;
 let userHoldings = [];
@@ -8511,6 +8776,9 @@ auth.onAuthStateChanged(async function(user) {
 
   // Setup real-time holdings listener
   setupHoldingsListener();
+
+  // Load user balance from Firebase
+  initUserBalance();
 
   // Load user preferences
   loadUserPreferences();
@@ -9972,7 +10240,7 @@ document.getElementById("modalQuantity").value = "";
   } else {
     document.getElementById("modalTradeType").value = "delivery";
   }
-
+document.getElementById("modalUserBalance").textContent = formatRupee(userBalance);
   document.getElementById("addStockModal").style.display = "flex";
 
   // Fetch price if not cached
@@ -10019,6 +10287,15 @@ async function confirmStockAdd() {
     return;
   }
 
+  // ✅ BALANCE CHECK — block buy if insufficient funds
+  var totalCost = Math.round(buyPrice * quantity * 100) / 100;
+  if (userBalance < totalCost) {
+    ToastManager.error("Insufficient Balance",
+      "You need " + formatRupee(totalCost) + " but only have " + formatRupee(userBalance) +
+      ". Use '+ Add' to request more funds.");
+    return;
+  }
+
   addBtn.disabled = true;
   addBtn.textContent = "Adding...";
 
@@ -10026,20 +10303,28 @@ async function confirmStockAdd() {
   var stockSym = String(pendingAddStock.sym).toUpperCase();
 
   try {
-const buyPriceRounded = Math.round(buyPrice * 100) / 100;
+    const buyPriceRounded = Math.round(buyPrice * 100) / 100;
     const _tradeTypeEl = document.getElementById("modalTradeType");
     const tradeType = _tradeTypeEl ? _tradeTypeEl.value : "delivery";
 
     if (tradeType === "intraday") {
       await saveIntradayPosition({ name: stockName, sym: stockSym, entry: buyPriceRounded, qty: quantity, type: "BUY" });
+
+      // ✅ DEDUCT BALANCE after successful intraday position
+      await deductBalance(totalCost);
+
       document.getElementById("addStockModal").style.display = "none";
       pendingAddStock = null;
-      ToastManager.success("Position Opened! ⚡", stockName + " added to intraday positions");
+      ToastManager.success("Position Opened! ⚡", stockName + " | " + formatRupee(totalCost) + " deducted from balance");
     } else {
       await saveHoldingToFirebase({ name: stockName, sym: stockSym, buyPrice: buyPriceRounded, qty: quantity });
+
+      // ✅ DEDUCT BALANCE after successful delivery buy
+      await deductBalance(totalCost);
+
       document.getElementById("addStockModal").style.display = "none";
       pendingAddStock = null;
-      ToastManager.success("Stock Added! 📦", stockName + " added to your holdings");
+      ToastManager.success("Stock Added! 📦", stockName + " | " + formatRupee(totalCost) + " deducted from balance");
     }
 
   } catch (error) {
@@ -10122,7 +10407,21 @@ function showDeleteModal(index) {
   if (!holding) return;
   
   pendingDeleteIndex = index;
-  document.getElementById("deleteStockName").textContent = holding.name + " (" + holding.sym + ")";
+
+  // Calculate sell value (current price if available, otherwise buy price)
+  var currentPrice = getStockPrice(holding.sym);
+  var sellValue = currentPrice > 0 ? currentPrice * holding.qty : holding.buyPrice * holding.qty;
+  sellValue = Math.round(sellValue * 100) / 100;
+
+  document.getElementById("deleteStockName").innerHTML =
+    holding.name + " (" + holding.sym + ")" +
+    '<br><small style="color:var(--success);font-weight:600;font-size:13px;margin-top:4px;display:block">' +
+    '💰 Sell value: ' + formatRupee(sellValue) + ' will be added to your balance</small>';
+
+  // Change button text to "Sell"
+  var deleteBtn = document.getElementById("confirmDeleteBtn");
+  if (deleteBtn) deleteBtn.textContent = "Yes, Sell & Remove";
+
   document.getElementById("deleteConfirmModal").style.display = "flex";
 }
 
@@ -10141,22 +10440,32 @@ async function confirmHoldingDelete() {
   }
   
   deleteBtn.disabled = true;
-  deleteBtn.textContent = "Deleting...";
+  deleteBtn.textContent = "Selling...";
   
   try {
+    // ✅ Calculate sell value and return to balance
+    var currentPrice = getStockPrice(holding.sym);
+    var sellValue = currentPrice > 0 ? currentPrice * holding.qty : holding.buyPrice * holding.qty;
+    sellValue = Math.round(sellValue * 100) / 100;
+
     if (holding.id && !holding.id.startsWith("local_")) {
       await deleteHoldingFromFirebase(holding.id);
     }
+
+    // ✅ ADD SELL VALUE TO BALANCE
+    if (sellValue > 0) {
+      await addToBalance(sellValue);
+    }
     
     hideDeleteModal();
-    ToastManager.success("Deleted!", `${holding.name} removed from holdings`);
+    ToastManager.success("Sold! 💰", holding.name + " sold for " + formatRupee(sellValue) + " — added to balance");
     
   } catch (error) {
-    console.error("Delete holding error:", error);
-    ToastManager.error("Delete Failed", "Could not delete holding. Please try again.");
+    console.error("Sell holding error:", error);
+    ToastManager.error("Sell Failed", "Could not complete sale. Please try again.");
   } finally {
     deleteBtn.disabled = false;
-    deleteBtn.textContent = "Yes, Delete";
+    deleteBtn.textContent = "Yes, Sell & Remove";
   }
 }
 
@@ -11658,8 +11967,15 @@ async function closePositionWithPnl(posId, exitPrice, reason) {
   }
 
   removePosition(posId);
+
+  // ✅ RETURN BALANCE: invested amount + profit/loss
+  var returnAmount = Math.max(0, Math.round((pos.entry * pos.qty + pnl) * 100) / 100);
+  if (returnAmount > 0) {
+    await addToBalance(returnAmount);
+  }
+
   var pnlStr = (pnl >= 0 ? "+" : "") + "₹" + Math.abs(pnl).toFixed(2);
-  ToastManager.success("Position Closed ✓", pos.sym + " | P&L: " + pnlStr);
+  ToastManager.success("Position Closed ✓", pos.sym + " | P&L: " + pnlStr + " | ₹" + returnAmount.toFixed(2) + " returned");
 }
 function renderPositions() {
   var container = document.getElementById("positionsTableContainer");
@@ -12114,6 +12430,7 @@ showSettings = function() {
 </script>
 </body>
 </html>
+
 
 
 
