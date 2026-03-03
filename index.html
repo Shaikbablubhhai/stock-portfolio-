@@ -7071,25 +7071,9 @@ function renderIndicesLoadingState() {
     container.appendChild(card);
   }
 }
-// Show skeleton loading state for indices
-function renderIndicesLoadingState() {
-  var container = document.getElementById("indicesBar");
-  if (!container) return;
-  container.innerHTML = "";
+// (Duplicate renderIndicesLoadingState removed — using first definition above)
 
-  for (var i = 0; i < MARKET_INDICES.length; i++) {
-    var idx = MARKET_INDICES[i];
-    var card = document.createElement("div");
-    card.className = "index-card idx-neutral";
-    card.dataset.indexSymbol = idx.symbol;
-    card.innerHTML =
-      '<div class="index-card-name">' + idx.shortName + '</div>' +
-      '<div style="margin-bottom:8px"><div style="height:22px;width:80%;border-radius:6px" class="skeleton"></div></div>' +
-      '<div style="display:flex;gap:8px"><div style="height:14px;width:50px;border-radius:4px" class="skeleton"></div><div style="height:14px;width:60px;border-radius:4px" class="skeleton"></div></div>';
-    container.appendChild(card);
-  }
-}
-
+// Update the "Updated Xs ago" timestamp display for indices
 // Update the "Updated Xs ago" timestamp display for indices
 function updateIndicesTimestamp() {
   var el = document.getElementById("indicesLastUpdate");
@@ -12216,6 +12200,47 @@ function showSettings() {
   } catch (e) {}
   document.getElementById("settingsCacheSize").textContent = cacheSize + " KB stored • " + Object.keys(pricesData).length + " prices";
 
+  // === Advanced Settings Fields ===
+  try {
+    // Indices info
+    var indicesCount = Object.keys(indicesData).length;
+    var indicesAge = indicesLastFetchTime > 0 ? Math.floor((Date.now() - indicesLastFetchTime) / 1000) + "s ago" : "Never";
+    var indicesInfoEl = document.getElementById("settingsIndicesCacheInfo");
+    if (indicesInfoEl) indicesInfoEl.textContent = indicesCount + " indices • " + indicesAge;
+
+    // API Breakdown
+    var apiBreakdownEl = document.getElementById("settingsApiBreakdown");
+    if (apiBreakdownEl) apiBreakdownEl.textContent =
+      "Yahoo: " + (apiCallCounts.yahoo || 0) + " • Twelve: " + (apiCallCounts.twelveData || 0) + " • Alpha: " + (apiCallCounts.alphaVantage || 0);
+
+    // Refresh Rate
+    var refreshRateEl = document.getElementById("settingsCurrentRefreshRate");
+    if (refreshRateEl) refreshRateEl.textContent = "Every " + (userPreferences.refreshInterval || 15) + "s (" + getMarketStatusText() + ")";
+
+    // Memory Usage
+    var stockDataSize = Math.round(JSON.stringify(STOCK_DATA || []).length / 1024);
+    var pricesSize = Math.round(JSON.stringify(pricesData || {}).length / 1024);
+    var holdingsSize = Math.round(JSON.stringify(userHoldings || []).length / 1024);
+    var memEl = document.getElementById("settingsMemoryUsage");
+    if (memEl) memEl.textContent = "Stocks: " + stockDataSize + "KB • Prices: " + pricesSize + "KB • Holdings: " + holdingsSize + "KB";
+
+    // Admin section updates
+    if (isAdminUser) {
+      var adminSection = document.getElementById("settingsAdminSection");
+      if (adminSection) adminSection.style.display = "block";
+
+      db.collection("users").doc(activeUser.uid).get().then(function(aDoc) {
+        if (aDoc.exists && aDoc.data().adminPin) {
+          document.getElementById("adminPinStatus").textContent = "PIN is set ✓";
+        } else {
+          document.getElementById("adminPinStatus").textContent = "Not set — please set a PIN";
+        }
+      }).catch(function(){});
+    }
+  } catch (e) {
+    console.error("Settings populate error:", e);
+  }
+
   // Show modal
   document.getElementById("settingsModal").style.display = "flex";
 }
@@ -13087,43 +13112,8 @@ async function squareoffAllIntradayPositions() {
   ToastManager.info("Squareoff Complete ✓", "All intraday positions closed");
 }
 // ================= NEW SETTINGS FUNCTIONS =================
-
-function getMarketStatusText() {
-  var now = new Date();
-  var utc = now.getTime() + (now.getTimezoneOffset() * 60000);
-  var ist = new Date(utc + (5.5 * 3600000));
-  var day = ist.getDay();
-  var hours = ist.getHours();
-  var minutes = ist.getMinutes();
-  var totalMinutes = hours * 60 + minutes;
-
-  if (day === 0 || day === 6) return "🔴 Market Closed (Weekend)";
-  if (totalMinutes >= 555 && totalMinutes <= 930) return "🟢 Market Open";
-  if (totalMinutes >= 540 && totalMinutes < 555) return "🟡 Pre-Market";
-  if (totalMinutes > 930 && totalMinutes <= 960) return "🟠 Post-Market";
-  return "🔴 Market Closed";
-}
-
-function clearPriceCache() {
-  if (!confirm("Clear all cached stock prices? They will re-fetch on next load.")) return;
-  
-  pricesData = {};
-  prevPricesData = {};
-  
-  try {
-    localStorage.removeItem("stockPricesCache");
-    localStorage.removeItem("lastPriceUpdate");
-  } catch (e) {}
-  
-  // Update display
-  document.getElementById("settingsCacheSize").textContent = "0 KB • 0 prices";
-  ToastManager.success("Cache Cleared", "Prices will refresh shortly.");
-  
-  // Trigger a refresh
-  setTimeout(function() {
-    fetchLatestPrices();
-  }, 500);
-}
+// (Duplicate getMarketStatusText removed — using definition above)
+// (Duplicate clearPriceCache removed — using definition above)
 
 function clearIndicesCache() {
   if (!confirm("Clear cached index data?")) return;
@@ -13185,62 +13175,11 @@ function clearAllAppData() {
   }, 1000);
 }
 
-// Update showSettings to populate the new fields
-var originalShowSettings = showSettings;
-showSettings = function() {
-  // Run the original function first
-  if (originalShowSettings) originalShowSettings();
-  
-  // Now populate the new advanced fields
-  try {
-    // Cache size
-    var cacheSize = 0;
-    try {
-      var cacheStr = localStorage.getItem("stockPricesCache") || "";
-      cacheSize = Math.round(cacheStr.length / 1024);
-    } catch (e) {}
-    document.getElementById("settingsCacheSize").textContent = cacheSize + " KB • " + Object.keys(pricesData).length + " prices";
-    
-    // Indices info
-    var indicesCount = Object.keys(indicesData).length;
-    var indicesAge = indicesLastFetchTime > 0 ? Math.floor((Date.now() - indicesLastFetchTime) / 1000) + "s ago" : "Never";
-    document.getElementById("settingsIndicesCacheInfo").textContent = indicesCount + " indices • " + indicesAge;
-    
-    // API Breakdown
-    document.getElementById("settingsApiBreakdown").textContent = 
-      "Yahoo: " + (apiCallCounts.yahoo || 0) + " • Twelve: " + (apiCallCounts.twelveData || 0) + " • Alpha: " + (apiCallCounts.alphaVantage || 0);
-    
-    // Refresh Rate
-    document.getElementById("settingsCurrentRefreshRate").textContent = "Every " + (userPreferences.refreshInterval || 15) + "s (" + getMarketStatusText() + ")";
-    
-    // Memory Usage
-    // Memory Usage
-    var stockDataSize = Math.round(JSON.stringify(STOCK_DATA || []).length / 1024);
-    var pricesSize = Math.round(JSON.stringify(pricesData || {}).length / 1024);
-    var holdingsSize = Math.round(JSON.stringify(userHoldings || []).length / 1024);
-    document.getElementById("settingsMemoryUsage").textContent = "Stocks: " + stockDataSize + "KB • Prices: " + pricesSize + "KB • Holdings: " + holdingsSize + "KB";
-
-    // ✅ Admin section updates
-    if (isAdminUser) {
-      var adminSection = document.getElementById("settingsAdminSection");
-      if (adminSection) adminSection.style.display = "block";
-
-      db.collection("users").doc(activeUser.uid).get().then(function(aDoc) {
-        if (aDoc.exists && aDoc.data().adminPin) {
-          document.getElementById("adminPinStatus").textContent = "PIN is set ✓";
-        } else {
-          document.getElementById("adminPinStatus").textContent = "Not set — please set a PIN";
-        }
-      }).catch(function(){});
-    }
-    
-  } catch (e) {
-    console.error("Settings populate error:", e);
-  }
-};
+// (showSettings override removed — merged into main showSettings function above)
 </script>
 </body>
 </html>
+
 
 
 
