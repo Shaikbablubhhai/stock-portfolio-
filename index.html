@@ -28,6 +28,173 @@ const rtdb = firebase.database();
 </script>
 
 <style>
+  /* ═══ PERFORMANCE LAYER ═══
+   Added: CSS containment, content-visibility, backdrop-filter removal
+   These prevent the browser from re-calculating layout/paint for off-screen cards */
+
+/* Containment on all card types — tells browser each card is an isolated island */
+.stock-card,
+.index-card,
+.stat-card {
+  contain: layout style paint;
+}
+
+/* Cards below the fold don't render until scrolled into view */
+.stock-card-flipper:nth-child(n+5) {
+  content-visibility: auto;
+  contain-intrinsic-size: 0 380px; /* estimated card height so scrollbar doesn't jump */
+}
+
+/* Remove ALL backdrop-filter (forces GPU compositing layer PER element = huge cost) */
+.stock-card,
+.index-card,
+.stat-card,
+.modal-backdrop,
+.settings-modal,
+.admin-request-card {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+/* Replace blur backgrounds with solid semi-transparent */
+.modal-backdrop {
+  background: rgba(0, 0, 0, 0.6) !important;
+}
+
+/* Remove will-change from static elements (wastes VRAM) */
+.stock-card,
+.index-card,
+.stat-card,
+.flip-front,
+.flip-back,
+.flip-inner {
+  will-change: auto !important;
+}
+
+/* Remove heavy hover transforms */
+.stock-card:hover {
+  transform: none !important;
+  /* Keep only simple visual feedback */
+  box-shadow: 0 2px 12px rgba(0,0,0,0.08) !important;
+}
+
+/* Remove price flash background animations */
+@keyframes priceUpFlash { from{} to{} }
+@keyframes priceDownFlash { from{} to{} }
+@keyframes glowPulse2 { from{} to{} }
+@keyframes borderGlow { from{} to{} }
+@keyframes floatUpDown { from{} to{} }
+@keyframes subtleBreathe { from{} to{} }
+@keyframes textShine { from{} to{} }
+
+/* Price flash: use simple border color instead of background animation */
+.stock-card.price-up {
+  border-left: 3px solid #10b981;
+  transition: border-color 0.3s;
+}
+.stock-card.price-down {
+  border-left: 3px solid #ef4444;
+  transition: border-color 0.3s;
+}
+
+/* Static shadows only — no transitions */
+.stock-card {
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  transition: border-color 0.2s, opacity 0.2s;
+}
+
+/* Hover: only color/opacity changes (GPU-free) */
+@media (hover: hover) {
+  .stock-card:hover {
+    border-color: rgba(99,102,241,0.3);
+    opacity: 0.97;
+  }
+  .stock-buy-btn:hover {
+    opacity: 0.85;
+  }
+}
+  /* ═══════════════════════════════════════════════════════════
+   MOBILE PERFORMANCE OPTIMIZATIONS
+   ═══════════════════════════════════════════════════════════ */
+
+/* Disable ALL hover effects on touch devices */
+@media (hover: none) {
+  .stock-card:hover,
+  .index-card:hover,
+  .stat-card:hover {
+    transform: none !important;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06) !important;
+  }
+  .tilt-shine {
+    display: none !important;
+  }
+}
+
+/* Mobile-specific layout optimizations */
+@media screen and (max-width: 768px) {
+  /* Reduce card padding */
+  .stock-card {
+    padding: 16px !important;
+  }
+
+  /* Remove ALL backdrop-filter on mobile (massive GPU cost) */
+  * {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+
+  /* Smaller fonts on mobile */
+  .stock-title {
+    font-size: 13px !important;
+  }
+  .stock-symbol {
+    font-size: 11px !important;
+  }
+  .current-price {
+    font-size: 18px !important;
+  }
+  .change-value, .change-badge {
+    font-size: 11px !important;
+  }
+
+  /* Containment on all interactive elements */
+  .stock-card,
+  .index-card,
+  .stat-card,
+  .chat-list-item,
+  .admin-request-card {
+    contain: layout style paint !important;
+  }
+
+  /* Holdings table: make it scroll horizontally */
+  .holdings-table {
+    font-size: 12px !important;
+  }
+  .holdings-table th,
+  .holdings-table td {
+    padding: 8px 6px !important;
+  }
+
+  /* Reduce stat card padding */
+  .stat-card {
+    padding: 16px !important;
+  }
+  .stat-value {
+    font-size: 20px !important;
+  }
+
+  /* Mini chart: slightly smaller */
+  .stock-chart-container {
+    height: 50px !important;
+  }
+}
+
+/* Tablet: moderate adjustments */
+@media screen and (max-width: 1024px) and (min-width: 769px) {
+  .stock-card {
+    padding: 20px !important;
+  }
+}
 /* ================= RESET & BASE ================= */
 *{box-sizing:border-box;margin:0;padding:0} *::selection{background:rgba(79,70,229,0.2);color:inherit}
 :root{
@@ -4759,8 +4926,11 @@ const ToastManager = {
 /* SIMPLIFIED: 1 Alpha Vantage + 1 Twelve Data + Yahoo fallback */
 
 // Alpha Vantage - PRIMARY (1 key)
-var ALPHA_VANTAGE_KEYS = [
-  "30X7621M8XHIDT2W"
+// ═══ API KEYS REMOVED — All API calls now route through backend ═══
+// Keys are stored as environment variables on Render.com server
+// Frontend NEVER handles or sees API keys
+var ALPHA_VANTAGE_KEYS = []; // Empty — backend handles all API calls
+var TWELVE_DATA_KEYS = []; // Empty — backend handles all API calls  "30X7621M8XHIDT2W"
 ];
 
 // Twelve Data - SECONDARY (1 key)
@@ -6760,6 +6930,19 @@ STOCK_DATA.length = 0;
 STOCK_DATA.push(...STOCK_DATA_CLEAN);
 console.log("Total unique stocks after dedup: " + STOCK_DATA.length);
 
+/* ═══════════════════════════════════════════════════════════
+   BACKEND API CONFIGURATION
+   ═══════════════════════════════════════════════════════════ */
+var BACKEND_URL = "https://finzotalk-backend.onrender.com"; // Your Render URL
+var _backendHealthy = true; // Falls back to direct Yahoo if backend is down
+
+// ─── XSS Sanitization Helper ─────────────────────────────
+function sanitizeText(str) {
+  if (!str) return "";
+  var div = document.createElement("div");
+  div.textContent = str;
+  return div.innerHTML;
+}
 /* ================= INDICES FETCH ENGINE (STABLE v6) ================= */
 /*
  * Architecture:
@@ -7661,7 +7844,41 @@ function refreshVisibleMiniCharts() {
   });
 }
   /* ================= CHART SYSTEM ================= */
-var chartDataCache = {};
+/* ═══ LRU CACHE with size limits ═══ */
+function createLRUCache(maxSize) {
+  var cache = {};
+  var keys = [];
+  return {
+    get: function(key) {
+      if (cache[key] !== undefined) {
+        // Move to end (most recently used)
+        var idx = keys.indexOf(key);
+        if (idx > -1) { keys.splice(idx, 1); keys.push(key); }
+        return cache[key];
+      }
+      return undefined;
+    },
+    set: function(key, value) {
+      if (cache[key] !== undefined) {
+        var idx = keys.indexOf(key);
+        if (idx > -1) { keys.splice(idx, 1); }
+      }
+      keys.push(key);
+      cache[key] = value;
+      // Evict oldest if over limit
+      while (keys.length > maxSize) {
+        var evictKey = keys.shift();
+        delete cache[evictKey];
+      }
+    },
+    has: function(key) { return cache[key] !== undefined; },
+    clear: function() { cache = {}; keys = []; },
+    size: function() { return keys.length; }
+  };
+}
+
+var chartDataCache = createLRUCache(100);
+var stockFundamentalsCache = createLRUCache(50);
 var activeChartSymbol = null;
 var activeChartRange = "1d";
 var chartAnimationFrame = null;
@@ -7671,11 +7888,12 @@ async function fetchChartData(yahooSymbol, range) {
   var cacheKey = yahooSymbol + "_" + range;
   
   // Check cache (5 min for 1d, 30 min for others)
-  if (chartDataCache[cacheKey]) {
-    var cacheAge = Date.now() - chartDataCache[cacheKey].fetchedAt;
+var cachedChart = chartDataCache.get(cacheKey);
+  if (cachedChart) {
+    var cacheAge = Date.now() - cachedChart.fetchedAt;
     var maxAge = (range === "1d") ? 300000 : 1800000;
     if (cacheAge < maxAge) {
-      return chartDataCache[cacheKey].data;
+      return cachedChart.data;
     }
   }
   
@@ -7749,10 +7967,10 @@ async function fetchChartData(yahooSymbol, range) {
             range: range
           };
           
-          chartDataCache[cacheKey] = {
+        chartDataCache.set(cacheKey, {
             data: chartResult,
             fetchedAt: Date.now()
-          };
+          });
           
           console.log("[CHART] ✓ " + yahooSymbol + " " + range + " = " + cleanData.length + " points via proxy " + (p + 1));
           return chartResult;
@@ -8296,12 +8514,14 @@ function updateCardPriceDisplay(symbol, newPrice, priceChange, changePercent, ol
   }
 }
 /* ================= 3D TILT HOVER EFFECT ================= */
+// REMOVED: 3D tilt was adding a global mousemove listener that fired on every
+// pixel of mouse movement, querying ALL stock cards via querySelectorAll each time.
+// This caused massive layout thrashing (forced reflow per card) and GPU overhead
+// from perspective() transforms on dozens of elements simultaneously.
 function init3DTilt() {
-  // Apply to stock cards, index cards, and stat cards
-var _tiltThrottle = false;
-  document.addEventListener("mousemove", function(e) {
-    if (_tiltThrottle) return;
-    _tiltThrottle = true;
+  // Intentionally disabled — was the #1 performance bottleneck
+  console.log("[PERF] 3D tilt disabled for performance");
+}
     requestAnimationFrame(function() { _tiltThrottle = false; });
     if (!init3DTilt._cards || Date.now() - (init3DTilt._t || 0) > 2000) {
       init3DTilt._cards = Array.from(document.querySelectorAll(".stock-card, .index-card, .stat-card"));
@@ -9167,10 +9387,8 @@ document.addEventListener("DOMContentLoaded", function() {
   })();
   // Initialize toast manager
   ToastManager.init();  
-  // Initialize 3D tilt effect (desktop only)
-  if (!isTouchDevice()) {
-    init3DTilt();
-  } 
+ // 3D tilt REMOVED for performance — was causing layout thrashing on every mousemove
+  // init3DTilt() no longer does anything 
     // Initialize button ripple effect
   initButtonRipple();
   // Load cached prices
@@ -9207,13 +9425,38 @@ document.addEventListener("DOMContentLoaded", function() {
     // Stock search with price fetching
   var searchDebounceTimer = null;
 
+var _searchDebounceTimer = null;
   document.getElementById("stockSearchInput").addEventListener("input", function() {
     var query = this.value.toLowerCase().trim();
+
+    // Clear previous debounce
+    clearTimeout(_searchDebounceTimer);
 
     if (query.length === 0) {
       displayStocks(STOCK_DATA, false);
       return;
     }
+
+    // Debounce: wait 600ms before processing search
+    _searchDebounceTimer = setTimeout(function() {
+      var currentQuery = document.getElementById("stockSearchInput").value.toLowerCase().trim();
+      if (currentQuery.length < 2) {
+        var partial = STOCK_DATA.filter(function(s) {
+          return s.name.toLowerCase().indexOf(currentQuery) !== -1 || s.sym.toLowerCase().indexOf(currentQuery) !== -1;
+        });
+        displayStocks(partial, true);
+        return;
+      }
+      var matches = STOCK_DATA.filter(function(s) {
+        return s.name.toLowerCase().indexOf(currentQuery) !== -1 || s.sym.toLowerCase().indexOf(currentQuery) !== -1;
+      });
+      displayStocks(matches, true);
+    }, 600);
+    return; // Exit early — debounce handles the rest
+  });
+
+  // REMOVE the old inline logic below — it's now inside the debounce above
+  // (The original code that was here is replaced by the debounced version)
 
     if (query.length < 2) {
       var partial = STOCK_DATA.filter(function(s) {
@@ -9977,6 +10220,24 @@ function switchTab(tabName) {
   var sections = ["stocksSection","holdingsSection","positionsSection","mfSection","chatSection"];
   var tabMap = {stocks:"stocksSection",holdings:"holdingsSection",positions:"positionsSection",mf:"mfSection",chat:"chatSection"};
   
+  // ═══ CLEANUP: Disconnect observers and clear timers when leaving stocks tab ═══
+  if (tabName !== "stocks") {
+    if (_vsCardObserver) {
+      _vsCardObserver.disconnect();
+    }
+    for (var timerKey in _vsChartTimers) {
+      clearTimeout(_vsChartTimers[timerKey]);
+    }
+    _vsChartTimers = {};
+    vsPriceFetchQueue = [];
+    vsChartFetchQueue = [];
+  }
+
+  // ═══ CLEANUP: Stop position refresh when leaving positions tab ═══
+  if (tabName !== "positions") {
+    stopPositionsRefresh();
+  }
+
   sections.forEach(function(id) {
     var el = document.getElementById(id);
     if (!el) return;
@@ -10183,12 +10444,57 @@ async function fetchAlphaVantagePrice(symbol) {
   return null;
 }
 // Combined fetch with fallback chain
-// MASTER PRICE FUNCTION - Alpha first, race mode for speed
+// ═══ MASTER PRICE FUNCTION — routes through backend ═══
+// Backend is the single source of truth. Falls back to direct Yahoo only if backend is down.
 async function fetchStockPrice(stock, reason) {
   reason = reason || "unknown";
 
-  // Cache check - avoid hitting APIs repeatedly
+  // Cache check
   var cached = pricesData[stock.sym];
+  if (cached && cached.price > 0 && cached.fetchedAt) {
+    var age = Date.now() - cached.fetchedAt;
+    var market = getMarketInfo();
+    var maxAge;
+    if (reason === "search") maxAge = 120000;
+    else if (reason === "holdings" && market.isOpen) maxAge = 8000;
+    else if (reason === "holdings") maxAge = 120000;
+    else if (reason === "priority") maxAge = market.isOpen ? 12000 : 300000;
+    else maxAge = 30000;
+    if (age < maxAge) return cached;
+  }
+
+  // Try backend first
+  try {
+    var data = await fetchPriceFromBackend([stock.sym]);
+    if (data && data[stock.sym] && data[stock.sym].price > 0) {
+      var result = data[stock.sym];
+      result.fetchedAt = Date.now();
+      pricesData[stock.sym] = result;
+      _backendHealthy = true;
+      return result;
+    }
+  } catch (e) {
+    console.log("[FETCH] Backend failed for " + stock.sym + ", trying direct Yahoo...");
+    _backendHealthy = false;
+  }
+
+  // Fallback: direct Yahoo (no API key needed)
+  try {
+    var yahooResult = await fetchYahooPrice(stock.yahoo);
+    if (yahooResult && yahooResult.price > 0) {
+      yahooResult.fetchedAt = Date.now();
+      yahooResult.source = "Yahoo-Direct";
+      pricesData[stock.sym] = yahooResult;
+      return yahooResult;
+    }
+  } catch (e) {
+    console.log("[FETCH] Direct Yahoo also failed for " + stock.sym);
+  }
+
+  // Return stale cache as last resort
+  if (cached && cached.price > 0) return cached;
+  return null;
+}
   if (cached && cached.price > 0 && cached.fetchedAt) {
     var age = Date.now() - cached.fetchedAt;
     var market = getMarketInfo();
@@ -10208,7 +10514,95 @@ async function fetchStockPrice(stock, reason) {
       return cached;
     }
   }
+/* ═══ Backend API Fetch Functions ═══ */
 
+async function fetchPriceFromBackend(symbols) {
+  if (!symbols || symbols.length === 0) return {};
+  var url = BACKEND_URL + "/api/prices?symbols=" + symbols.join(",");
+  try {
+    var controller = new AbortController();
+    var timeoutId = setTimeout(function() { controller.abort(); }, 8000);
+    var resp = await fetch(url, { signal: controller.signal });
+    clearTimeout(timeoutId);
+    if (!resp.ok) throw new Error("HTTP " + resp.status);
+    var json = await resp.json();
+    if (json.success && json.data) {
+      return json.data;
+    }
+  } catch (e) {
+    console.log("[BACKEND] Price fetch failed:", e.message);
+    throw e; // Let caller handle fallback
+  }
+  return {};
+}
+
+async function fetchIndicesFromBackend() {
+  try {
+    var controller = new AbortController();
+    var timeoutId = setTimeout(function() { controller.abort(); }, 8000);
+    var resp = await fetch(BACKEND_URL + "/api/indices", { signal: controller.signal });
+    clearTimeout(timeoutId);
+    if (!resp.ok) throw new Error("HTTP " + resp.status);
+    var json = await resp.json();
+    if (json.success && json.data) {
+      return json.data;
+    }
+  } catch (e) {
+    console.log("[BACKEND] Indices fetch failed:", e.message);
+    throw e;
+  }
+  return {};
+}
+
+async function fetchFundamentalsFromBackend(symbol) {
+  // Check client-side cache (24 hour TTL)
+  var cacheKey = "fund_" + symbol;
+  if (stockFundamentalsCache[cacheKey] && stockFundamentalsCache[cacheKey]._fetchedAt &&
+      Date.now() - stockFundamentalsCache[cacheKey]._fetchedAt < 86400000) {
+    return stockFundamentalsCache[cacheKey];
+  }
+
+  try {
+    var controller = new AbortController();
+    var timeoutId = setTimeout(function() { controller.abort(); }, 12000);
+    var resp = await fetch(BACKEND_URL + "/api/fundamentals/" + symbol, { signal: controller.signal });
+    clearTimeout(timeoutId);
+    if (!resp.ok) throw new Error("HTTP " + resp.status);
+    var json = await resp.json();
+    if (json.success && json.data) {
+      json.data._fetchedAt = Date.now();
+      stockFundamentalsCache[cacheKey] = json.data;
+      return json.data;
+    }
+  } catch (e) {
+    console.log("[BACKEND] Fundamentals fetch failed for " + symbol + ":", e.message);
+  }
+  return null;
+}
+
+async function fetchChartFromBackend(symbol, range) {
+  try {
+    var controller = new AbortController();
+    var timeoutId = setTimeout(function() { controller.abort(); }, 10000);
+    var resp = await fetch(BACKEND_URL + "/api/chart/" + symbol + "?range=" + range, { signal: controller.signal });
+    clearTimeout(timeoutId);
+    if (!resp.ok) throw new Error("HTTP " + resp.status);
+    var json = await resp.json();
+    if (json.success && json.points) {
+      return {
+        points: json.points.map(function(p) {
+          return { time: p.t, open: p.o, high: p.h, low: p.l, close: p.c, volume: p.v };
+        }),
+        previousClose: json.previousClose || 0,
+        symbol: symbol,
+        range: range
+      };
+    }
+  } catch (e) {
+    console.log("[BACKEND] Chart fetch failed:", e.message);
+  }
+  return null;
+}
   // PRIORITY 1: Alpha Vantage (primary API)
   if (isApiAvailable("alpha")) {
     try {
@@ -10802,18 +11196,335 @@ function formatRupeeFromPaise(paise) {
  *   - Cards update in-place (no full re-render)
  */
 
+/* ═══════════════════════════════════════════════════════════
+   VIRTUAL SCROLLER + LAZY LOAD STOCK DISPLAY ENGINE v3
+   ═══════════════════════════════════════════════════════════
+   Architecture:
+   - Shows max 10 cards initially (not 25)
+   - "Load More" button adds 10 more each click
+   - Cards render skeleton first, then price, then chart
+   - Maximum 15 rendered cards in DOM at any time via pooling
+   - IntersectionObserver triggers data fetch at 50% visibility
+   - Chart loads 3s after card becomes visible
+   - Max 3 concurrent price fetches + 3 chart fetches
+   ═══════════════════════════════════════════════════════════ */
+
+var VS_CARDS_PER_PAGE = 10;
+var VS_MAX_DOM_CARDS = 15;
+var vsCurrentPage = 0;
+var vsCurrentList = [];
+var vsVisibleCount = 0;
+var vsPriceFetchQueue = [];
+var vsChartFetchQueue = [];
+var _vsPriceFetching = 0;
+var _vsChartFetching = 0;
+var VS_MAX_CONCURRENT_PRICES = 3;
+var VS_MAX_CONCURRENT_CHARTS = 3;
+var _vsCardObserver = null;
+var _vsChartTimers = {}; // sym -> setTimeout id (3s delay)
+
 function displayStocks(stockList, showAll) {
   var container = document.getElementById("stocksContainer");
   if (!container) return;
+
+  // Disconnect old observer
+  if (_vsCardObserver) {
+    _vsCardObserver.disconnect();
+    _vsCardObserver = null;
+  }
+  // Clear chart timers
+  for (var key in _vsChartTimers) {
+    clearTimeout(_vsChartTimers[key]);
+  }
+  _vsChartTimers = {};
+  vsPriceFetchQueue = [];
+  vsChartFetchQueue = [];
+
   container.innerHTML = "";
 
-  var displayList;
   if (showAll) {
-    displayList = stockList;
+    vsCurrentList = stockList.slice(0, 20); // Search: max 20 results
   } else {
-    displayList = stockList.slice(0, 25);
+    vsCurrentList = stockList;
   }
 
+  vsCurrentPage = 0;
+  vsVisibleCount = 0;
+
+  // Render first page
+  vsRenderNextPage(container, showAll);
+
+  // Setup IntersectionObserver for lazy loading
+  _vsCardObserver = new IntersectionObserver(function(entries) {
+    entries.forEach(function(entry) {
+      var card = entry.target;
+      var sym = card.dataset.symbol;
+      if (!sym) return;
+
+      if (entry.isIntersecting) {
+        card.dataset.vsVisible = "true";
+        card.dataset.vsVisibleAt = Date.now().toString();
+        // Queue price fetch if needed
+        var existing = pricesData[sym];
+        if (!existing || !existing.price || existing.price <= 0 ||
+            (existing.fetchedAt && Date.now() - existing.fetchedAt > 30000)) {
+          vsQueuePriceFetch(sym);
+        } else {
+          // Price exists, queue chart after 3s
+          vsScheduleChartFetch(sym);
+        }
+      } else {
+        card.dataset.vsVisible = "false";
+        // Cancel pending chart timer
+        if (_vsChartTimers[sym]) {
+          clearTimeout(_vsChartTimers[sym]);
+          delete _vsChartTimers[sym];
+        }
+      }
+    });
+  }, {
+    root: null,
+    rootMargin: "50px",
+    threshold: 0.5 // 50% visible before triggering
+  });
+
+  // Observe all rendered cards
+  var cards = container.querySelectorAll(".stock-card[data-symbol]");
+  cards.forEach(function(card) { _vsCardObserver.observe(card); });
+}
+
+function vsRenderNextPage(container, showAll) {
+  var start = vsCurrentPage * VS_CARDS_PER_PAGE;
+  var end = Math.min(start + VS_CARDS_PER_PAGE, vsCurrentList.length);
+  var fragment = document.createDocumentFragment();
+
+  for (var i = start; i < end; i++) {
+    var stock = vsCurrentList[i];
+    fragment.appendChild(vsCreateStockCard(stock));
+    vsVisibleCount++;
+  }
+
+  // Remove "Load More" button if exists
+  var oldBtn = container.querySelector(".vs-load-more");
+  if (oldBtn) oldBtn.remove();
+
+  container.appendChild(fragment);
+  vsCurrentPage++;
+
+  // Add "Load More" if there are more stocks
+  if (end < vsCurrentList.length && !showAll) {
+    var loadMoreDiv = document.createElement("div");
+    loadMoreDiv.className = "vs-load-more";
+    loadMoreDiv.style.cssText = "grid-column:1/-1;text-align:center;padding:24px;";
+    loadMoreDiv.innerHTML =
+      '<button onclick="vsLoadMore()" style="padding:12px 32px;border-radius:12px;border:1px solid var(--border-light,#e2e8f0);' +
+      'background:var(--bg-card-solid,#fff);color:var(--text-primary,#0f172a);font-size:14px;font-weight:600;cursor:pointer;' +
+      'transition:opacity 0.2s">' +
+      '📦 Load More (' + (vsCurrentList.length - end) + ' remaining)</button>';
+    container.appendChild(loadMoreDiv);
+  }
+
+  // Observe new cards
+  if (_vsCardObserver) {
+    var newCards = container.querySelectorAll(".stock-card[data-symbol]");
+    newCards.forEach(function(card) {
+      if (!card.dataset.vsObserved) {
+        _vsCardObserver.observe(card);
+        card.dataset.vsObserved = "true";
+      }
+    });
+  }
+
+  // Enforce DOM limit: remove excess old cards
+  vsEnforceDomLimit(container);
+}
+
+function vsLoadMore() {
+  var container = document.getElementById("stocksContainer");
+  if (!container) return;
+  vsRenderNextPage(container, false);
+}
+
+function vsEnforceDomLimit(container) {
+  var allCards = container.querySelectorAll(".stock-card-flipper");
+  if (allCards.length <= VS_MAX_DOM_CARDS) return;
+
+  // Remove oldest cards that are not visible
+  var removed = 0;
+  for (var i = 0; i < allCards.length && allCards.length - removed > VS_MAX_DOM_CARDS; i++) {
+    var card = allCards[i].querySelector(".stock-card");
+    if (card && card.dataset.vsVisible !== "true") {
+      if (_vsCardObserver) _vsCardObserver.unobserve(card);
+      allCards[i].remove();
+      removed++;
+    }
+  }
+}
+
+function vsCreateStockCard(stock) {
+  var priceInfo = getStockData(stock.sym);
+  var currentPrice = priceInfo && priceInfo.price ? priceInfo.price : 0;
+  var priceChange = priceInfo && priceInfo.change ? priceInfo.change : 0;
+  var changePercent = priceInfo && priceInfo.changePercent ? priceInfo.changePercent : 0;
+  var isPositive = priceChange >= 0;
+  var hasCachedPrice = currentPrice > 0;
+
+  var flipper = document.createElement("div");
+  flipper.className = "stock-card-flipper";
+  flipper.dataset.flipSym = stock.sym;
+
+  var flipInner = document.createElement("div");
+  flipInner.className = "flip-inner";
+
+  var flipFront = document.createElement("div");
+  flipFront.className = "flip-front";
+
+  var card = document.createElement("div");
+  card.className = "stock-card";
+  card.dataset.symbol = stock.sym;
+  card.dataset.yahoo = stock.yahoo;
+  card.style.contain = "layout style paint";
+
+  // Build price HTML
+  var priceHTML, changeHTML;
+  if (hasCachedPrice) {
+    priceHTML = '<span class="current-price">₹' + currentPrice.toFixed(2) + '</span>';
+    changeHTML =
+      '<span class="change-value ' + (isPositive ? 'positive' : 'negative') + '">' +
+        (isPositive ? '+' : '') + '₹' + Math.abs(priceChange).toFixed(2) + '</span>' +
+      '<span class="change-badge ' + (isPositive ? 'positive' : 'negative') + '">' +
+        (isPositive ? '▲' : '▼') + ' ' + Math.abs(changePercent).toFixed(2) + '%</span>';
+  } else {
+    priceHTML = '<span class="current-price"><span class="skeleton" style="display:inline-block;width:90px;height:24px;border-radius:6px"></span></span>';
+    changeHTML = '<span class="skeleton" style="display:inline-block;width:65px;height:16px;border-radius:4px"></span>';
+  }
+
+  card.innerHTML =
+    '<div class="stock-header">' +
+      '<div class="stock-logo">' +
+        '<img src="https://logo.clearbit.com/' + stock.logo + '" ' +
+             'onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'block\'" ' +
+             'alt="" loading="lazy" width="36" height="36">' +
+        '<div class="stock-logo-fallback" style="display:none">' + stock.sym.charAt(0) + '</div>' +
+      '</div>' +
+      '<div class="stock-meta">' +
+        '<div class="stock-title">' + sanitizeText(stock.name) + '</div>' +
+        '<div class="stock-symbol">' + sanitizeText(stock.sym) + '</div>' +
+      '</div>' +
+    '</div>' +
+    '<div class="stock-chart-container" id="minichart_' + stock.sym + '" onclick="openChartModal(\'' + stock.sym + '\')" title="Click to expand chart"></div>' +
+    '<div class="price-display">' +
+      '<div>' + priceHTML + '</div>' +
+      '<div style="display:flex;align-items:center;gap:10px">' +
+        '<div class="price-change">' + changeHTML + '</div>' +
+        '<button class="stock-buy-btn" onclick="event.stopPropagation();showAddStockModal(\'' + stock.sym + '\')">Buy</button>' +
+      '</div>' +
+    '</div>';
+
+  // Info flip button
+  var infoBtn = document.createElement("button");
+  infoBtn.className = "flip-trigger-btn";
+  infoBtn.textContent = "ℹ";
+  infoBtn.title = "View stock details";
+  infoBtn.setAttribute("onclick", "toggleCardFlip('" + stock.sym + "', event)");
+  card.appendChild(infoBtn);
+
+  var flipBack = document.createElement("div");
+  flipBack.className = "flip-back";
+  flipBack.id = "flipback_" + stock.sym;
+
+  flipFront.appendChild(card);
+  flipInner.appendChild(flipFront);
+  flipInner.appendChild(flipBack);
+  flipper.appendChild(flipInner);
+
+  return flipper;
+}
+
+// ─── Priority Queue: Price Fetches ─────────────────────
+function vsQueuePriceFetch(sym) {
+  // Avoid duplicates
+  if (vsPriceFetchQueue.indexOf(sym) !== -1) return;
+  // Holdings get priority
+  var isHolding = userHoldings.some(function(h) { return h.sym === sym; });
+  if (isHolding) {
+    vsPriceFetchQueue.unshift(sym); // front of queue
+  } else {
+    vsPriceFetchQueue.push(sym);
+  }
+  vsProcessPriceQueue();
+}
+
+async function vsProcessPriceQueue() {
+  while (_vsPriceFetching < VS_MAX_CONCURRENT_PRICES && vsPriceFetchQueue.length > 0) {
+    var sym = vsPriceFetchQueue.shift();
+    _vsPriceFetching++;
+
+    (async function(symbol) {
+      try {
+        var data = await fetchPriceFromBackend([symbol]);
+        if (data && data[symbol] && data[symbol].price > 0) {
+          pricesData[symbol] = data[symbol];
+          var oldPrice = 0;
+          updateCardPriceDisplay(symbol, data[symbol].price, data[symbol].change || 0, data[symbol].changePercent || 0, oldPrice);
+          // Price loaded — schedule chart fetch after 3s
+          vsScheduleChartFetch(symbol);
+        }
+      } catch (e) {
+        // silent
+      } finally {
+        _vsPriceFetching--;
+        vsProcessPriceQueue(); // process next in queue
+      }
+    })(sym);
+  }
+}
+
+// ─── Delayed Chart Fetch (3s after visible) ────────────
+function vsScheduleChartFetch(sym) {
+  if (_vsChartTimers[sym]) return; // already scheduled
+  _vsChartTimers[sym] = setTimeout(function() {
+    delete _vsChartTimers[sym];
+    // Check if card is still visible
+    var card = document.querySelector('[data-symbol="' + sym + '"]');
+    if (card && card.dataset.vsVisible === "true") {
+      vsQueueChartFetch(sym);
+    }
+  }, 3000);
+}
+
+function vsQueueChartFetch(sym) {
+  if (vsChartFetchQueue.indexOf(sym) !== -1) return;
+  vsChartFetchQueue.push(sym);
+  vsProcessChartQueue();
+}
+
+async function vsProcessChartQueue() {
+  while (_vsChartFetching < VS_MAX_CONCURRENT_CHARTS && vsChartFetchQueue.length > 0) {
+    var sym = vsChartFetchQueue.shift();
+    _vsChartFetching++;
+
+    (async function(symbol) {
+      try {
+        var stock = null;
+        for (var i = 0; i < STOCK_DATA.length; i++) {
+          if (STOCK_DATA[i].sym === symbol) { stock = STOCK_DATA[i]; break; }
+        }
+        if (stock) {
+          var container = document.getElementById("minichart_" + symbol);
+          if (container) {
+            await loadMiniChart(symbol, stock.yahoo, container);
+          }
+        }
+      } catch (e) {
+        // silent
+      } finally {
+        _vsChartFetching--;
+        vsProcessChartQueue();
+      }
+    })(sym);
+  }
+}
   displayList.forEach(function(stock, index) {
     var priceInfo = getStockData(stock.sym);
     var currentPrice = priceInfo && priceInfo.price ? priceInfo.price : 0;
@@ -11485,12 +12196,14 @@ async function performUserSearch() {
       const userName = userData.name || "User";
       const userCode = userData.usercode || searchCode;
       
+     var safeUserName = sanitizeText(userName);
+      var safeUserCode = sanitizeText(userCode);
       resultsDiv.innerHTML = `
         <div class="search-result-card">
-          <div class="search-result-avatar">${userName.charAt(0).toUpperCase()}</div>
+          <div class="search-result-avatar">${safeUserName.charAt(0).toUpperCase()}</div>
           <div class="search-result-info">
-            <div class="search-result-name">${userName}</div>
-            <div class="search-result-code">ID: ${userCode}</div>
+            <div class="search-result-name">${safeUserName}</div>
+            <div class="search-result-code">ID: ${safeUserCode}</div>
           </div>
           <button class="send-request-btn" id="sendReqBtn_${targetUid}" onclick="sendFriendReq('${targetUid}', '${userName.replace(/'/g, "\\'")}')">Send Request</button>
         </div>
@@ -11959,9 +12672,10 @@ function openChatConversation(friendId, friendName) {
           }
         }
 
-        var msgEl = document.createElement("div");
+var msgEl = document.createElement("div");
         msgEl.className = "chat-message " + (isMine ? "outgoing" : "incoming");
-        msgEl.innerHTML = msg.text + '<span class="msg-time">' + timeStr + statusHTML + '</span>';
+        // XSS: sanitize message text. Status HTML is safe (generated by our code).
+        msgEl.innerHTML = sanitizeText(msg.text) + '<span class="msg-time">' + timeStr + statusHTML + '</span>';
         messagesArea.appendChild(msgEl);
       });
       
@@ -12441,18 +13155,81 @@ async function loadStockFundamentals(symbol) {
   var backEl = document.getElementById("flipback_" + symbol);
   if (!backEl) return;
 
-  backEl.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--text-muted)">Loading details...</div>';
+  backEl.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--text-muted)">Loading risk analysis...</div>';
 
-  var stock = null;
-  for (var i = 0; i < STOCK_DATA.length; i++) {
-    if (STOCK_DATA[i].sym === symbol) { stock = STOCK_DATA[i]; break; }
+  // Fetch fundamentals from backend
+  var fundamentals = await fetchFundamentalsFromBackend(symbol);
+  var priceData = pricesData[symbol] || {};
+
+  // Calculate risk score
+  var riskResult = calculateRiskScore(fundamentals, priceData);
+  var f = fundamentals || {};
+
+  // Build riskometer SVG
+  var gaugeHTML = buildRiskometerSVG(riskResult);
+
+  // Build metrics grid
+  var metricsHTML = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px 16px;font-size:12px;padding:0 4px">';
+  var metrics = [
+    { label: "PE Ratio", value: f.pe !== null ? f.pe.toFixed(1) : "--" },
+    { label: "PB Ratio", value: f.pb !== null ? f.pb.toFixed(1) : "--" },
+    { label: "Debt/Equity", value: f.debtToEquity !== null ? f.debtToEquity.toFixed(2) : "--" },
+    { label: "ROE", value: f.roe !== null ? f.roe.toFixed(1) + "%" : "--" },
+    { label: "Beta", value: f.beta !== null ? f.beta.toFixed(2) : "--" },
+    { label: "EPS", value: f.eps !== null ? "₹" + f.eps.toFixed(2) : "--" },
+    { label: "Div Yield", value: f.dividendYield !== null ? f.dividendYield.toFixed(1) + "%" : "--" },
+    { label: "Market Cap", value: formatMarketCap(f.marketCap) },
+    { label: "52W High", value: f.high52w ? "₹" + f.high52w.toFixed(2) : "--" },
+    { label: "52W Low", value: f.low52w ? "₹" + f.low52w.toFixed(2) : "--" }
+  ];
+  for (var m = 0; m < metrics.length; m++) {
+    metricsHTML += '<div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid var(--border-lighter,#f8fafc)">' +
+      '<span style="color:var(--text-secondary,#64748b)">' + metrics[m].label + '</span>' +
+      '<span style="font-weight:600;color:var(--text-primary,#0f172a)">' + metrics[m].value + '</span></div>';
   }
-  if (!stock) return;
+  metricsHTML += '</div>';
 
-  try {
-    // Use Yahoo chart API with more data
-    var yahooUrl = "https://query1.finance.yahoo.com/v8/finance/chart/" +
-      encodeURIComponent(stock.yahoo) + "?interval=1d&range=1y";
+  // AI-like summary
+  var summary = generateRiskSummary(riskResult, f);
+
+  // Factor bars
+  var factorBarsHTML = buildFactorBarsHTML(riskResult.factors);
+
+  backEl.innerHTML =
+    '<div class="flip-back-header">' +
+      '<span class="flip-back-title">📊 ' + sanitizeText(symbol) + ' Risk Analysis</span>' +
+      '<button class="flip-back-close" onclick="toggleCardFlip(\'' + symbol + '\', event)">✕</button>' +
+    '</div>' +
+    '<div style="text-align:center;padding:4px 0">' + gaugeHTML + '</div>' +
+    metricsHTML +
+    factorBarsHTML +
+    '<div style="margin-top:8px;padding:8px 10px;background:var(--bg-input,#f8fafc);border-radius:8px;font-size:11px;color:var(--text-secondary,#64748b);line-height:1.4">' +
+      '💡 ' + summary +
+    '</div>';
+}
+
+function generateRiskSummary(riskResult, fundamentals) {
+  var parts = [];
+  var f = fundamentals || {};
+
+  if (riskResult.score <= 3.5) parts.push("Strong fundamentals with low overall risk.");
+  else if (riskResult.score <= 5.5) parts.push("Moderate risk profile — balanced metrics.");
+  else if (riskResult.score <= 7.5) parts.push("Elevated risk — review before investing.");
+  else parts.push("High risk — proceed with caution.");
+
+  if (f.debtToEquity !== null && f.debtToEquity < 0.3) parts.push("Very low debt.");
+  else if (f.debtToEquity !== null && f.debtToEquity > 2) parts.push("High debt levels are a concern.");
+
+  if (f.pe !== null && f.pe > 50) parts.push("Expensive valuation (high PE).");
+  else if (f.pe !== null && f.pe > 0 && f.pe < 15) parts.push("Attractively valued.");
+
+  if (f.roe !== null && f.roe > 20) parts.push("Strong profitability.");
+  else if (f.roe !== null && f.roe < 5 && f.roe >= 0) parts.push("Weak profitability.");
+
+  if (riskResult.isPartial) parts.push("Some data unavailable — score based on " + riskResult.availableFactors + "/" + riskResult.totalFactors + " factors.");
+
+  return parts.join(" ");
+}
 
 var proxies = [
       "https://api.allorigins.win/raw?url=",
@@ -13173,6 +13950,292 @@ function clearAllAppData() {
   setTimeout(function() {
     location.reload();
   }, 1000);
+}
+/* ═══════════════════════════════════════════════════════════
+   RISKOMETER ENGINE — 10-Factor Weighted Risk Scoring
+   ═══════════════════════════════════════════════════════════
+   Based on SEBI Riskometer categories.
+   Each factor scores 1-10 (1 = safest, 10 = riskiest).
+   Final score = weighted average.
+   ═══════════════════════════════════════════════════════════ */
+
+function calculateRiskScore(fundamentals, priceData) {
+  var factors = [];
+  var totalWeight = 0;
+  var weightedSum = 0;
+
+  // Helper: score a value against thresholds
+  function scoreThresholds(value, thresholds, defaultScore) {
+    if (value === null || value === undefined || isNaN(value)) return { score: defaultScore, available: false };
+    for (var i = 0; i < thresholds.length; i++) {
+      if (value <= thresholds[i][0]) return { score: thresholds[i][1], available: true };
+    }
+    return { score: thresholds[thresholds.length - 1][1], available: true };
+  }
+
+  var f = fundamentals || {};
+  var p = priceData || {};
+
+  // FACTOR 1: PE Ratio (Weight: 12%)
+  var peScore;
+  if (f.pe !== null && f.pe !== undefined) {
+    if (f.pe < 0) peScore = { score: 9, available: true };
+    else peScore = scoreThresholds(f.pe, [[10,2],[15,3],[20,4],[25,5],[35,6],[50,7],[80,8],[Infinity,9]], 5);
+  } else { peScore = { score: 5, available: false }; }
+  factors.push({ name: "PE Ratio", value: f.pe, score: peScore.score, weight: 0.12, available: peScore.available });
+
+  // FACTOR 2: PB Ratio (Weight: 8%)
+  var pbScore;
+  if (f.pb !== null && f.pb !== undefined) {
+    pbScore = scoreThresholds(f.pb, [[1,2],[2,3],[3,4],[5,5],[8,6],[15,7],[Infinity,8]], 5);
+  } else { pbScore = { score: 5, available: false }; }
+  factors.push({ name: "PB Ratio", value: f.pb, score: pbScore.score, weight: 0.08, available: pbScore.available });
+
+  // FACTOR 3: Debt to Equity (Weight: 12%)
+  var deScore;
+  if (f.debtToEquity !== null && f.debtToEquity !== undefined) {
+    if (f.debtToEquity < 0) deScore = { score: 1, available: true };
+    else deScore = scoreThresholds(f.debtToEquity, [[0.3,2],[0.5,3],[1.0,4],[1.5,5],[2.0,6],[3.0,7],[5.0,8],[Infinity,9]], 5);
+  } else { deScore = { score: 5, available: false }; }
+  factors.push({ name: "Debt/Equity", value: f.debtToEquity, score: deScore.score, weight: 0.12, available: deScore.available });
+
+  // FACTOR 4: Return on Equity (Weight: 10%)
+  var roeScore;
+  if (f.roe !== null && f.roe !== undefined) {
+    if (f.roe < 0) roeScore = { score: 9, available: true };
+    else if (f.roe > 25) roeScore = { score: 2, available: true };
+    else roeScore = scoreThresholds(f.roe, [[5,7],[10,6],[15,5],[20,4],[25,3],[Infinity,2]], 5);
+    // Invert: higher ROE = lower risk. Use reverse thresholds
+    if (f.roe >= 0) {
+      if (f.roe > 25) roeScore.score = 2;
+      else if (f.roe > 20) roeScore.score = 3;
+      else if (f.roe > 15) roeScore.score = 4;
+      else if (f.roe > 10) roeScore.score = 5;
+      else if (f.roe > 5) roeScore.score = 6;
+      else roeScore.score = 7;
+    }
+  } else { roeScore = { score: 5, available: false }; }
+  factors.push({ name: "ROE", value: f.roe !== null ? f.roe + "%" : null, score: roeScore.score, weight: 0.10, available: roeScore.available });
+
+  // FACTOR 5: Beta (Weight: 10%)
+  var betaScore;
+  if (f.beta !== null && f.beta !== undefined) {
+    betaScore = scoreThresholds(f.beta, [[0.5,2],[0.8,3],[1.0,4],[1.2,5],[1.5,6],[2.0,7],[Infinity,9]], 5);
+  } else { betaScore = { score: 5, available: false }; }
+  factors.push({ name: "Beta", value: f.beta, score: betaScore.score, weight: 0.10, available: betaScore.available });
+
+  // FACTOR 6: 52W Volatility (Weight: 12%)
+  var vol52w = null;
+  var h52 = f.high52w || (p.dayHigh || 0);
+  var l52 = f.low52w || (p.dayLow || 0);
+  if (h52 > 0 && l52 > 0) {
+    vol52w = ((h52 - l52) / l52) * 100;
+  }
+  var volScore;
+  if (vol52w !== null) {
+    volScore = scoreThresholds(vol52w, [[15,2],[25,3],[35,4],[50,5],[70,6],[100,7],[150,8],[Infinity,9]], 5);
+  } else { volScore = { score: 5, available: false }; }
+  factors.push({ name: "52W Volatility", value: vol52w !== null ? vol52w.toFixed(1) + "%" : null, score: volScore.score, weight: 0.12, available: volScore.available });
+
+  // FACTOR 7: Distance from 52W High (Weight: 8%)
+  var distFromHigh = null;
+  var currentPrice = p.price || 0;
+  if (h52 > 0 && currentPrice > 0) {
+    distFromHigh = ((h52 - currentPrice) / h52) * 100;
+  }
+  var distScore;
+  if (distFromHigh !== null) {
+    if (distFromHigh <= 5) distScore = { score: 7, available: true };
+    else if (distFromHigh <= 10) distScore = { score: 6, available: true };
+    else if (distFromHigh <= 20) distScore = { score: 5, available: true };
+    else if (distFromHigh <= 30) distScore = { score: 4, available: true };
+    else if (distFromHigh <= 50) distScore = { score: 3, available: true };
+    else distScore = { score: 8, available: true }; // >50% below = trouble
+  } else { distScore = { score: 5, available: false }; }
+  factors.push({ name: "Price vs 52W High", value: distFromHigh !== null ? distFromHigh.toFixed(1) + "% below" : null, score: distScore.score, weight: 0.08, available: distScore.available });
+
+  // FACTOR 8: EPS Growth (Weight: 8%)
+  var epsGrowthScore;
+  if (f.epsGrowth !== null && f.epsGrowth !== undefined) {
+    if (f.eps !== null && f.eps < 0) epsGrowthScore = { score: 9, available: true };
+    else if (f.epsGrowth > 20) epsGrowthScore = { score: 2, available: true };
+    else if (f.epsGrowth > 10) epsGrowthScore = { score: 3, available: true };
+    else if (f.epsGrowth > 0) epsGrowthScore = { score: 4, available: true };
+    else if (f.epsGrowth >= -10) epsGrowthScore = { score: 6, available: true };
+    else if (f.epsGrowth >= -25) epsGrowthScore = { score: 7, available: true };
+    else epsGrowthScore = { score: 8, available: true };
+  } else { epsGrowthScore = { score: 5, available: false }; }
+  factors.push({ name: "EPS Growth", value: f.epsGrowth !== null ? f.epsGrowth + "%" : null, score: epsGrowthScore.score, weight: 0.08, available: epsGrowthScore.available });
+
+  // FACTOR 9: Volume Liquidity (Weight: 8%)
+  var vol = f.avgVolume || p.volume || 0;
+  var volLiqScore;
+  if (vol > 0) {
+    if (vol > 10000000) volLiqScore = { score: 2, available: true };      // > 1Cr
+    else if (vol > 5000000) volLiqScore = { score: 3, available: true };   // 50L - 1Cr
+    else if (vol > 1000000) volLiqScore = { score: 4, available: true };   // 10L - 50L
+    else if (vol > 500000) volLiqScore = { score: 5, available: true };    // 5L - 10L
+    else if (vol > 100000) volLiqScore = { score: 6, available: true };    // 1L - 5L
+    else if (vol > 10000) volLiqScore = { score: 7, available: true };     // 10K - 1L
+    else volLiqScore = { score: 9, available: true };                       // < 10K
+  } else { volLiqScore = { score: 5, available: false }; }
+  factors.push({ name: "Liquidity", value: vol > 0 ? formatVolume(vol) : null, score: volLiqScore.score, weight: 0.08, available: volLiqScore.available });
+
+  // FACTOR 10: Promoter Holding (Weight: 12%)
+  var promScore;
+  if (f.promoterHolding !== null && f.promoterHolding !== undefined) {
+    if (f.promoterHolding > 70) promScore = { score: 2, available: true };
+    else if (f.promoterHolding > 60) promScore = { score: 3, available: true };
+    else if (f.promoterHolding > 50) promScore = { score: 4, available: true };
+    else if (f.promoterHolding > 40) promScore = { score: 5, available: true };
+    else if (f.promoterHolding > 30) promScore = { score: 6, available: true };
+    else if (f.promoterHolding > 20) promScore = { score: 7, available: true };
+    else promScore = { score: 8, available: true };
+  } else { promScore = { score: 5, available: false }; }
+  factors.push({ name: "Promoter Holding", value: f.promoterHolding !== null ? f.promoterHolding + "%" : null, score: promScore.score, weight: 0.12, available: promScore.available });
+
+  // Calculate weighted average
+  var availableCount = 0;
+  for (var i = 0; i < factors.length; i++) {
+    weightedSum += factors[i].score * factors[i].weight;
+    totalWeight += factors[i].weight;
+    if (factors[i].available) availableCount++;
+  }
+
+  var finalScore = totalWeight > 0 ? Math.round((weightedSum / totalWeight) * 10) / 10 : 5.0;
+
+  // Determine category
+  var category, color;
+  if (finalScore <= 2.5) { category = "LOW RISK"; color = "#059669"; }
+  else if (finalScore <= 4.0) { category = "LOW TO MODERATE"; color = "#10b981"; }
+  else if (finalScore <= 5.5) { category = "MODERATE"; color = "#f59e0b"; }
+  else if (finalScore <= 7.0) { category = "MODERATELY HIGH"; color = "#f97316"; }
+  else if (finalScore <= 8.5) { category = "HIGH"; color = "#ef4444"; }
+  else { category = "VERY HIGH"; color = "#991b1b"; }
+
+  return {
+    score: finalScore,
+    category: category,
+    color: color,
+    factors: factors,
+    availableFactors: availableCount,
+    totalFactors: factors.length,
+    isPartial: availableCount < 7
+  };
+}
+
+function formatVolume(vol) {
+  if (vol >= 10000000) return (vol / 10000000).toFixed(2) + " Cr";
+  if (vol >= 100000) return (vol / 100000).toFixed(1) + " L";
+  if (vol >= 1000) return (vol / 1000).toFixed(1) + " K";
+  return vol.toString();
+}
+
+function formatMarketCap(cap) {
+  if (!cap || cap <= 0) return "--";
+  if (cap >= 10000000000000) return "₹" + (cap / 10000000000000).toFixed(1) + "L Cr";
+  if (cap >= 100000000000) return "₹" + (cap / 100000000000).toFixed(1) + "K Cr";
+  if (cap >= 10000000) return "₹" + (cap / 10000000).toFixed(0) + " Cr";
+  return "₹" + cap.toLocaleString("en-IN");
+}
+  /* ═══ SVG RISKOMETER GAUGE ═══ */
+function buildRiskometerSVG(riskResult) {
+  var score = riskResult.score;
+  var category = riskResult.category;
+  var color = riskResult.color;
+
+  // SVG semi-circle gauge
+  // Arc from 180° (left) to 0° (right), center at (100, 90)
+  var cx = 100, cy = 90, r = 75;
+  var startAngle = Math.PI; // 180° (left)
+  var endAngle = 0;        // 0° (right)
+
+  // Zone colors (6 zones, each 30° of the 180° arc)
+  var zones = [
+    { color: "#059669", label: "Low" },
+    { color: "#10b981", label: "Low-Mod" },
+    { color: "#f59e0b", label: "Moderate" },
+    { color: "#f97316", label: "Mod-High" },
+    { color: "#ef4444", label: "High" },
+    { color: "#991b1b", label: "V.High" }
+  ];
+
+  var arcPaths = "";
+  for (var z = 0; z < zones.length; z++) {
+    var a1 = Math.PI - (z * Math.PI / 6);
+    var a2 = Math.PI - ((z + 1) * Math.PI / 6);
+    var x1 = cx + r * Math.cos(a1);
+    var y1 = cy - r * Math.sin(a1);
+    var x2 = cx + r * Math.cos(a2);
+    var y2 = cy - r * Math.sin(a2);
+    arcPaths += '<path d="M ' + x1.toFixed(1) + ' ' + y1.toFixed(1) +
+      ' A ' + r + ' ' + r + ' 0 0 1 ' + x2.toFixed(1) + ' ' + y2.toFixed(1) + '"' +
+      ' fill="none" stroke="' + zones[z].color + '" stroke-width="12" stroke-linecap="round" opacity="0.35"/>';
+  }
+
+  // Needle angle: score 1-10 maps to 180°-0°
+  var needleAngle = Math.PI - ((score - 1) / 9) * Math.PI;
+  var needleLen = r - 10;
+  var nx = cx + needleLen * Math.cos(needleAngle);
+  var ny = cy - needleLen * Math.sin(needleAngle);
+
+  // Active arc highlight (thicker, brighter) up to needle position
+  var activeEndAngle = needleAngle;
+  var ax1 = cx + r * Math.cos(Math.PI);
+  var ay1 = cy - r * Math.sin(Math.PI);
+  var ax2 = cx + r * Math.cos(activeEndAngle);
+  var ay2 = cy - r * Math.sin(activeEndAngle);
+  var largeArc = (Math.PI - activeEndAngle) > Math.PI ? 1 : 0;
+
+  var activeArc = '<path d="M ' + ax1.toFixed(1) + ' ' + ay1.toFixed(1) +
+    ' A ' + r + ' ' + r + ' 0 ' + largeArc + ' 1 ' + ax2.toFixed(1) + ' ' + ay2.toFixed(1) + '"' +
+    ' fill="none" stroke="' + color + '" stroke-width="12" stroke-linecap="round"/>';
+
+  var partialBadge = riskResult.isPartial ?
+    '<text x="100" y="60" text-anchor="middle" font-size="8" fill="#94a3b8" font-family="Inter,sans-serif">LIMITED DATA</text>' : '';
+
+  var svg =
+    '<svg viewBox="0 0 200 110" width="200" height="110" xmlns="http://www.w3.org/2000/svg">' +
+      arcPaths +
+      activeArc +
+      // Needle
+      '<line x1="' + cx + '" y1="' + cy + '" x2="' + nx.toFixed(1) + '" y2="' + ny.toFixed(1) + '"' +
+      ' stroke="' + color + '" stroke-width="2.5" stroke-linecap="round"/>' +
+      // Center dot
+      '<circle cx="' + cx + '" cy="' + cy + '" r="4" fill="' + color + '"/>' +
+      '<circle cx="' + cx + '" cy="' + cy + '" r="2" fill="white"/>' +
+      // Score text
+      '<text x="100" y="82" text-anchor="middle" font-size="18" font-weight="700" fill="' + color + '" font-family="Inter,system-ui,sans-serif">' + score.toFixed(1) + '</text>' +
+      '<text x="100" y="94" text-anchor="middle" font-size="8" fill="#64748b" font-family="Inter,sans-serif">/ 10</text>' +
+      // Category label
+      '<text x="100" y="108" text-anchor="middle" font-size="9" font-weight="600" fill="' + color + '" font-family="Inter,sans-serif">' + category + '</text>' +
+      partialBadge +
+    '</svg>';
+
+  return svg;
+}
+
+/* ═══ Factor Mini Bars ═══ */
+function buildFactorBarsHTML(factors) {
+  var html = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:4px 12px;font-size:11px;margin-top:8px">';
+  for (var i = 0; i < factors.length; i++) {
+    var f = factors[i];
+    var barWidth = Math.round((f.score / 10) * 100);
+    var barColor = f.score <= 3 ? "#10b981" : f.score <= 5 ? "#f59e0b" : f.score <= 7 ? "#f97316" : "#ef4444";
+    var valueStr = f.available ? (f.value !== null ? f.value : "--") : '<span style="color:#94a3b8">N/A</span>';
+
+    html += '<div style="display:flex;flex-direction:column;gap:2px" title="' + f.name + ': Score ' + f.score + '/10">' +
+      '<div style="display:flex;justify-content:space-between;align-items:center">' +
+        '<span style="color:var(--text-secondary,#64748b);font-size:10px">' + f.name + '</span>' +
+        '<span style="font-weight:600;font-size:10px;color:' + barColor + '">' + f.score + '</span>' +
+      '</div>' +
+      '<div style="height:3px;background:var(--border-lighter,#f1f5f9);border-radius:2px;overflow:hidden">' +
+        '<div style="width:' + barWidth + '%;height:100%;background:' + barColor + ';border-radius:2px;transition:width 0.5s"></div>' +
+      '</div>' +
+    '</div>';
+  }
+  html += '</div>';
+  return html;
 }
 
 // (showSettings override removed — merged into main showSettings function above)
