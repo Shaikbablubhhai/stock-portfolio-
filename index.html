@@ -4929,11 +4929,7 @@ const ToastManager = {
 // ═══ API KEYS REMOVED — All API calls now route through backend ═══
 // Keys are stored as environment variables on Render.com server
 // Frontend NEVER handles or sees API keys
-var ALPHA_VANTAGE_KEYS = []; // Empty — backend handles all API calls
-var TWELVE_DATA_KEYS = []; // Empty — backend handles all API calls  "30X7621M8XHIDT2W"
-];
-
-// Twelve Data - SECONDARY (1 key)
+var ALPHA_VANTAGE_KEYS = [];
 var TWELVE_DATA_KEYS = [
   "849b655fa36e4a7aa07e5636fb46455b"
 ];
@@ -8522,98 +8518,11 @@ function init3DTilt() {
   // Intentionally disabled — was the #1 performance bottleneck
   console.log("[PERF] 3D tilt disabled for performance");
 }
-    requestAnimationFrame(function() { _tiltThrottle = false; });
-    if (!init3DTilt._cards || Date.now() - (init3DTilt._t || 0) > 2000) {
       init3DTilt._cards = Array.from(document.querySelectorAll(".stock-card, .index-card, .stat-card"));
       init3DTilt._t = Date.now();
     }
     var cards = init3DTilt._cards;
     
-cards.forEach(function(card) {
-      var flipper = card.closest ? card.closest(".stock-card-flipper") : null;
-      if (flipper && flipper.classList.contains("flipped")) {
-        card.style.transform = "";
-        var sh = card.querySelector(".tilt-shine");
-        if (sh) sh.style.opacity = "0";
-        return;
-      }
-      var rect = card.getBoundingClientRect();
-      var cardCenterX = rect.left + rect.width / 2;
-      var cardCenterY = rect.top + rect.height / 2;
-      
-      // Check if mouse is near the card (within card bounds + small margin)
-      var isHovering = (
-        e.clientX >= rect.left &&
-        e.clientX <= rect.right &&
-        e.clientY >= rect.top &&
-        e.clientY <= rect.bottom
-      );
-      
-      if (isHovering) {
-        // Calculate rotation based on mouse position relative to card center
-        var mouseX = e.clientX - cardCenterX;
-        var mouseY = e.clientY - cardCenterY;
-        
-        // Max rotation in degrees (subtle = premium feel)
-        var maxRotate = 8;
-        
-        var rotateY = (mouseX / (rect.width / 2)) * maxRotate;
-        var rotateX = -(mouseY / (rect.height / 2)) * maxRotate;
-        
-        // Clamp values
-        rotateX = Math.max(-maxRotate, Math.min(maxRotate, rotateX));
-        rotateY = Math.max(-maxRotate, Math.min(maxRotate, rotateY));
-        
-        // Calculate shine position
-        var shineX = ((e.clientX - rect.left) / rect.width) * 100;
-        var shineY = ((e.clientY - rect.top) / rect.height) * 100;
-        
-        card.style.transform = "perspective(800px) rotateX(" + rotateX + "deg) rotateY(" + rotateY + "deg) translateY(-8px) scale(1.02)";
-        
-        // Add dynamic shine/glare effect
-        card.style.background = card.dataset.originalBg || "";
-        
-        // Store the shine overlay
-        if (!card.querySelector(".tilt-shine")) {
-          var shineDiv = document.createElement("div");
-          shineDiv.className = "tilt-shine";
-          shineDiv.style.cssText = "position:absolute;top:0;left:0;right:0;bottom:0;border-radius:inherit;pointer-events:none;z-index:2;transition:opacity 0.2s;";
-          card.appendChild(shineDiv);
-        }
-        
-        var shine = card.querySelector(".tilt-shine");
-        if (shine) {
-          shine.style.background = "radial-gradient(circle at " + shineX + "% " + shineY + "%, rgba(255,255,255,0.12) 0%, transparent 60%)";
-          shine.style.opacity = "1";
-        }
-        
-      } else {
-        // Reset when not hovering
-        // Only reset if card was previously tilted
-        if (card.style.transform && card.style.transform.indexOf("rotateX") !== -1) {
-          card.style.transform = "";
-          
-          var shine = card.querySelector(".tilt-shine");
-          if (shine) {
-            shine.style.opacity = "0";
-          }
-        }
-      }
-    });
-  });
-  
-  // Reset all cards when mouse leaves the document
-  document.addEventListener("mouseleave", function() {
-    var cards = document.querySelectorAll(".stock-card, .index-card, .stat-card");
-    cards.forEach(function(card) {
-      card.style.transform = "";
-      var shine = card.querySelector(".tilt-shine");
-      if (shine) shine.style.opacity = "0";
-    });
-  });
-}
-
-// Disable 3D tilt on touch devices (phones/tablets) for better performance
 function isTouchDevice() {
   return ("ontouchstart" in window) || (navigator.maxTouchPoints > 0);
 }
@@ -9423,8 +9332,6 @@ document.addEventListener("DOMContentLoaded", function() {
   });
   
     // Stock search with price fetching
-  var searchDebounceTimer = null;
-
 var _searchDebounceTimer = null;
   document.getElementById("stockSearchInput").addEventListener("input", function() {
     var query = this.value.toLowerCase().trim();
@@ -9452,40 +9359,7 @@ var _searchDebounceTimer = null;
       });
       displayStocks(matches, true);
     }, 600);
-    return; // Exit early — debounce handles the rest
-  });
-
-  // REMOVE the old inline logic below — it's now inside the debounce above
-  // (The original code that was here is replaced by the debounced version)
-
-    if (query.length < 2) {
-      var partial = STOCK_DATA.filter(function(s) {
-        return s.name.toLowerCase().indexOf(query) !== -1 || s.sym.toLowerCase().indexOf(query) !== -1;
-      });
-      displayStocks(partial, true);
-      return;
-    }
-
-    var matches = STOCK_DATA.filter(function(s) {
-      return s.name.toLowerCase().indexOf(query) !== -1 || s.sym.toLowerCase().indexOf(query) !== -1;
-    });
-    displayStocks(matches, true);
-
-       clearTimeout(searchDebounceTimer);
-    searchDebounceTimer = setTimeout(function() {
-      var toFetch = [];
-      // Only fetch top 5 missing prices (conservative with 1 key)
-      for (var i = 0; i < matches.length && toFetch.length < 5; i++) {
-        var existing = pricesData[matches[i].sym];
-        if (!existing || !existing.price || existing.price <= 0) {
-          toFetch.push(matches[i]);
-        }
-      }
-
-      if (toFetch.length > 0) {
-        fetchSearchResults(toFetch, query);
-      }
-    }, 800);
+ return; // Exit early — debounce handles the rest
   });
   
   // Close modals on backdrop click
@@ -10495,25 +10369,7 @@ async function fetchStockPrice(stock, reason) {
   if (cached && cached.price > 0) return cached;
   return null;
 }
-  if (cached && cached.price > 0 && cached.fetchedAt) {
-    var age = Date.now() - cached.fetchedAt;
-    var market = getMarketInfo();
-    var maxAge;
-    if (reason === "search") {
-      maxAge = 120000; // 2 min for search
-    } else if (reason === "holdings" && market.isOpen) {
-      maxAge = 8000; // 8s for holdings during market
-    } else if (reason === "holdings") {
-      maxAge = 120000; // 2 min for holdings when closed
-    } else if (reason === "priority") {
-      maxAge = market.isOpen ? 12000 : 300000; // 12s live, 5min closed
-    } else {
-      maxAge = 30000; // 30s default
-    }
-    if (age < maxAge) {
-      return cached;
-    }
-  }
+
 /* ═══ Backend API Fetch Functions ═══ */
 
 async function fetchPriceFromBackend(symbols) {
@@ -10601,60 +10457,6 @@ async function fetchChartFromBackend(symbol, range) {
   } catch (e) {
     console.log("[BACKEND] Chart fetch failed:", e.message);
   }
-  return null;
-}
-  // PRIORITY 1: Alpha Vantage (primary API)
-  if (isApiAvailable("alpha")) {
-    try {
-      var alphaResult = await fetchAlphaVantagePrice(stock.sym);
-      if (alphaResult && alphaResult.price > 0) {
-        alphaResult.fetchedAt = Date.now();
-        alphaResult.source = "Alpha";
-        lastUsedAPI = "Alpha";
-        pricesData[stock.sym] = alphaResult;
-        return alphaResult;
-      }
-    } catch(e) {
-      console.log("[FETCH] Alpha failed for " + stock.sym);
-    }
-  }
-
-  // PRIORITY 2: Twelve Data (secondary)
-  if (isApiAvailable("twelve")) {
-    try {
-      var twelveResult = await fetchTwelveDataPrice(stock.sym);
-      if (twelveResult && twelveResult.price > 0) {
-        twelveResult.fetchedAt = Date.now();
-        twelveResult.source = "Twelve";
-        lastUsedAPI = "Twelve";
-        pricesData[stock.sym] = twelveResult;
-        return twelveResult;
-      }
-    } catch(e) {
-      console.log("[FETCH] Twelve failed for " + stock.sym);
-    }
-  }
-
-  // PRIORITY 3: Yahoo Finance (fallback, no key needed)
-  try {
-    var yahooResult = await fetchYahooPrice(stock.yahoo);
-    if (yahooResult && yahooResult.price > 0) {
-      yahooResult.fetchedAt = Date.now();
-      yahooResult.source = "Yahoo";
-      lastUsedAPI = "Yahoo";
-      pricesData[stock.sym] = yahooResult;
-      return yahooResult;
-    }
-  } catch(e) {
-    console.log("[FETCH] Yahoo failed for " + stock.sym);
-  }
-
-  // All failed - return stale cache if any
-  if (cached && cached.price > 0) {
-    console.log("[FETCH] " + stock.sym + " using stale cache");
-    return cached;
-  }
-
   return null;
 }
 
@@ -13125,8 +12927,6 @@ async function updateNameInFriendsList(newName) {
  * Data source: Yahoo Finance chart API meta (already available).
  */
 
-var stockFundamentalsCache = {};
-
 function toggleCardFlip(symbol, event) {
   if (event) event.stopPropagation();
 
@@ -13229,111 +13029,6 @@ function generateRiskSummary(riskResult, fundamentals) {
   if (riskResult.isPartial) parts.push("Some data unavailable — score based on " + riskResult.availableFactors + "/" + riskResult.totalFactors + " factors.");
 
   return parts.join(" ");
-}
-
-var proxies = [
-      "https://api.allorigins.win/raw?url=",
-      "https://corsproxy.io/?",
-      "https://api.codetabs.com/v1/proxy?quest="
-    ];
-    var text = null;
-    for (var px = 0; px < proxies.length; px++) {
-      text = await fetchWithHardTimeout(proxies[px] + encodeURIComponent(yahooUrl), 8000);
-      if (text && text.charAt(0) === '{') break;
-      text = null;
-    }
-
-    if (text && text.charAt(0) === '{') {
-      var data = JSON.parse(text);
-      if (data.chart && data.chart.result && data.chart.result[0]) {
-        var meta = data.chart.result[0].meta;
-        var quotes = data.chart.result[0].indicators.quote[0];
-        var highs = (quotes.high || []).filter(function(v) { return v !== null; });
-        var lows = (quotes.low || []).filter(function(v) { return v !== null; });
-
-        var high52w = highs.length > 0 ? Math.max.apply(null, highs) : 0;
-        var low52w = lows.length > 0 ? Math.min.apply(null, lows) : 0;
-        var currentPrice = meta.regularMarketPrice || 0;
-        var prevClose = meta.previousClose || 0;
-
-        // Estimate risk based on 52w range position
-        var rangePosition = (high52w > low52w) ? ((currentPrice - low52w) / (high52w - low52w)) : 0.5;
-        var volatility = (high52w > 0 && low52w > 0) ? ((high52w - low52w) / low52w * 100) : 0;
-
-        var riskLevel = "Low";
-        if (volatility > 60 || rangePosition > 0.85) riskLevel = "High";
-        else if (volatility > 30 || rangePosition > 0.7) riskLevel = "Medium";
-
-        var fundamentals = {
-          exchange: meta.exchangeName || "NSE",
-          currency: meta.currency || "INR",
-          type: meta.instrumentType || "EQUITY",
-          high52w: high52w,
-          low52w: low52w,
-          rangePosition: rangePosition,
-          volatility: volatility.toFixed(1),
-          riskLevel: riskLevel,
-          prevClose: prevClose,
-          dayHigh: meta.regularMarketDayHigh || 0,
-          dayLow: meta.regularMarketDayLow || 0,
-          volume: meta.regularMarketVolume || 0
-        };
-
-        stockFundamentalsCache[symbol] = fundamentals;
-        renderFlipBack(symbol, fundamentals);
-        return;
-      }
-    }
-  } catch (e) {
-    console.log("[FLIP] Failed to load fundamentals for " + symbol);
-  }
-
-  // Fallback: build from local cached price data
-  var fallbackData = pricesData[symbol];
-  if (fallbackData && fallbackData.price > 0) {
-    var fbPrice = fallbackData.price;
-    var fbPrev = fallbackData.prevClose || fbPrice;
-    var fbChange = fallbackData.change || 0;
-    var fbPct = fallbackData.changePercent || 0;
-    var fbFundamentals = {
-      exchange: "NSE",
-      currency: "INR",
-      type: "EQUITY",
-      high52w: 0,
-      low52w: 0,
-      rangePosition: 0,
-      volatility: "--",
-      riskLevel: "N/A",
-      prevClose: fbPrev,
-      dayHigh: fbPrice,
-      dayLow: fbPrice,
-      volume: 0
-    };
-    // Check chartDataCache for 1y data
-    var chartKey = (stock ? stock.yahoo : symbol + ".NS") + "_1y";
-    var cachedChart = chartDataCache[chartKey];
-    if (cachedChart && cachedChart.data && cachedChart.data.points && cachedChart.data.points.length > 10) {
-      var pts = cachedChart.data.points;
-      var cHighs = pts.map(function(p){ return p.high; }).filter(function(v){ return v > 0; });
-      var cLows = pts.map(function(p){ return p.low; }).filter(function(v){ return v > 0; });
-      if (cHighs.length > 0) fbFundamentals.high52w = Math.max.apply(null, cHighs);
-      if (cLows.length > 0) fbFundamentals.low52w = Math.min.apply(null, cLows);
-      if (fbFundamentals.high52w > fbFundamentals.low52w) {
-        fbFundamentals.rangePosition = (fbPrice - fbFundamentals.low52w) / (fbFundamentals.high52w - fbFundamentals.low52w);
-        fbFundamentals.volatility = ((fbFundamentals.high52w - fbFundamentals.low52w) / fbFundamentals.low52w * 100).toFixed(1);
-        if (parseFloat(fbFundamentals.volatility) > 60) fbFundamentals.riskLevel = "High";
-        else if (parseFloat(fbFundamentals.volatility) > 30) fbFundamentals.riskLevel = "Medium";
-        else fbFundamentals.riskLevel = "Low";
-      }
-    }
-    stockFundamentalsCache[symbol] = fbFundamentals;
-    renderFlipBack(symbol, fbFundamentals);
-  } else {
-    backEl.innerHTML =
-      '<div class="flip-back-header"><span class="flip-back-title">' + symbol + '</span>' +
-      '<button class="flip-back-close" onclick="toggleCardFlip(\'' + symbol + '\')">✕</button></div>' +
-      '<div style="padding:20px;text-align:center;color:var(--text-muted)">Details unavailable. Try again later.</div>';
-  }
 }
 
 function renderFlipBack(symbol, data) {
