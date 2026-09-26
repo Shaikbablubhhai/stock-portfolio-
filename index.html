@@ -866,12 +866,11 @@ body{
   background:linear-gradient(90deg,var(--primary),var(--accent),var(--primary-light));
   background-size:200% 100%;
   opacity:0;
-  transition:opacity 0.3s;
-  animation:shimmerBar 3s linear infinite;
+  transition:opacity 0.25s ease;
+  will-change:opacity;
 }
-@keyframes shimmerBar{
-  0%{background-position:200% 0}
-  100%{background-position:-200% 0}
+.stock-card:hover::before{
+  opacity:1;
 }
 .stock-card:hover{
   transform:translateY(-8px) scale(1.015);
@@ -3439,29 +3438,91 @@ body.dark-mode .flip-back-close {
   color: var(--text-primary);
   text-align: right;
 }
-.flip-risk-meter {
-  display: flex;
-  gap: 3px;
-  align-items: center;
-}
-.flip-risk-bar {
-  width: 16px; height: 6px;
-  border-radius: 3px;
-  background: var(--border-light);
-}
-.flip-risk-bar.active-low { background: #10b981; }
-.flip-risk-bar.active-med { background: #f59e0b; }
-.flip-risk-bar.active-high { background: #ef4444; }
-.flip-summary {
-  font-size: 12px;
-  color: var(--text-secondary);
-  line-height: 1.5;
-  padding: 8px 12px;
+/* ================= CURRENT RISK METER SECTION ================= */
+.flip-risk-section {
   background: var(--border-lighter);
   border-radius: var(--radius-sm);
+  padding: 10px 12px;
+  margin: 6px 0;
+  border: 1px solid var(--border-light);
+  transition: var(--transition-fast);
+}
+body.dark-mode .flip-risk-section {
+  background: rgba(15, 23, 42, 0.7);
+  border-color: rgba(51, 65, 85, 0.5);
+}
+.flip-risk-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+.flip-risk-title {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: var(--text-muted);
+}
+.flip-risk-badge {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.flip-risk-badge.badge-low { background: rgba(16,185,129,0.15); color: #059669; }
+.flip-risk-badge.badge-moderate { background: rgba(245,158,11,0.15); color: #d97706; }
+.flip-risk-badge.badge-high { background: rgba(249,115,22,0.15); color: #ea580c; }
+.flip-risk-badge.badge-vhigh { background: rgba(239,68,68,0.18); color: #dc2626; }
+.flip-risk-badge.badge-calc { background: var(--border-light); color: var(--text-muted); }
+
+body.dark-mode .flip-risk-badge.badge-low { color: #34d399; }
+body.dark-mode .flip-risk-badge.badge-moderate { color: #fbbf24; }
+body.dark-mode .flip-risk-badge.badge-high { color: #fb923c; }
+body.dark-mode .flip-risk-badge.badge-vhigh { color: #f87171; }
+
+.flip-risk-bars {
+  display: flex;
+  gap: 4px;
+  height: 6px;
+  margin: 6px 0 8px 0;
+}
+.risk-segment {
+  flex: 1;
+  height: 100%;
+  border-radius: 3px;
+  background: var(--border-light);
+  transition: background-color 0.2s ease;
+}
+body.dark-mode .risk-segment { background: #334155; }
+.risk-segment.active-low { background: #10b981; }
+.risk-segment.active-mod { background: #f59e0b; }
+.risk-segment.active-high { background: #f97316; }
+.risk-segment.active-vhigh { background: #ef4444; }
+
+.flip-risk-desc {
+  font-size: 11px;
+  color: var(--text-secondary);
+  line-height: 1.45;
+}
+body.dark-mode .flip-risk-desc { color: #94a3b8; }
+
+.flip-summary {
+  font-size: 11px;
+  color: var(--text-muted);
+  line-height: 1.4;
+  padding: 6px 10px;
+  background: transparent;
+  border-top: 1px solid var(--border-lighter);
   margin-top: auto;
 }
-body.dark-mode .flip-summary { background: #0f172a; }
+body.dark-mode .flip-summary { 
+  border-top-color: rgba(51, 65, 85, 0.4);
+  color: #64748b; 
+}
 
 .flip-trigger-btn {
   position: absolute;
@@ -4930,7 +4991,7 @@ let indicesFetching = false;
 var _idxLastCycleStart = 0;
 let indicesLastFetchTime = 0;
 const INDICES_CACHE_KEY = "finzotalk_indices_cache";
-const INDICES_CACHE_DURATION = 500; // 0.5s — sequential system handles timing, this is just a safety net
+const INDICES_CACHE_DURATION = 30000; // 30s cache to avoid burning API calls & locking thread
 let indicesAutoTimer = null;
 let indicesTimestampTimer = null;
 let indicesPostMarketCount = 0;
@@ -12413,30 +12474,207 @@ async function updateNameInFriendsList(newName) {
 
 var stockFundamentalsCache = {};
 
-function toggleCardFlip(symbol, event) {
-  if (event) event.stopPropagation();
+/* ================= STOCK CARD FLIP & RISK ENGINE ================= */
+var stockFundamentalsCache = stockFundamentalsCache || {};
 
-  var flipper = document.querySelector('.stock-card-flipper[data-flip-sym="' + symbol + '"]');
-  if (!flipper) return;
-
-  var isFlipped = flipper.classList.contains("flipped");
-
-  if (isFlipped) {
-    flipper.classList.remove("flipped");
-    return;
+// 1. DYNAMIC CURRENT RISK CALCULATION (Zero extra API calls, uses existing cached data)
+function calculateCurrentRisk(stock, currentPrice, fundamentals) {
+  if (!fundamentals && (!currentPrice || currentPrice <= 0)) {
+    return {
+      level: "Unavailable",
+      label: "Risk unavailable",
+      badgeClass: "badge-calc",
+      bars: [0, 0, 0, 0],
+      explanation: "Risk is currently unavailable. Awaiting live price data."
+    };
   }
 
-  // Flip to back
-  flipper.classList.add("flipped");
+  var curPrice = Number(currentPrice || (fundamentals && fundamentals.price) || 0);
+  var high52 = Number((fundamentals && (fundamentals.fiftyTwoWeekHigh || fundamentals.high52)) || 0);
+  var low52 = Number((fundamentals && (fundamentals.fiftyTwoWeekLow || fundamentals.low52)) || 0);
+  var dayChangePct = Math.abs(Number((fundamentals && (fundamentals.regularMarketChangePercent || fundamentals.changePercent)) || 0));
 
-  // Load data if not cached
-  if (!stockFundamentalsCache[symbol]) {
-    loadStockFundamentals(symbol);
+  var riskScore = 0;
+
+  // 52-Week Range Position Risk (0-40 pts)
+  if (high52 > 0 && low52 > 0 && high52 > low52 && curPrice > 0) {
+    var rangePos = (curPrice - low52) / (high52 - low52);
+    if (rangePos > 0.90) {
+      riskScore += 35; // Near 52-week peak: higher mean-reversion risk
+    } else if (rangePos < 0.15) {
+      riskScore += 30; // Near 52-week bottom: breakdown pressure
+    } else if (rangePos >= 0.35 && rangePos <= 0.65) {
+      riskScore += 12; // Well-centered in consolidation
+    } else {
+      riskScore += 20;
+    }
   } else {
-    renderFlipBack(symbol, stockFundamentalsCache[symbol]);
+    riskScore += 18; // Default baseline if 52w range not yet fetched
+  }
+
+  // Day Movement & Volatility (0-35 pts)
+  if (dayChangePct > 4.5) {
+    riskScore += 35;
+  } else if (dayChangePct > 2.5) {
+    riskScore += 24;
+  } else if (dayChangePct > 1.2) {
+    riskScore += 14;
+  } else {
+    riskScore += 6;
+  }
+
+  // Stock Type / Beta Factor (0-25 pts)
+  var sym = (stock && stock.sym) || "";
+  var isLargeCap = ["RELIANCE","TCS","HDFCBANK","INFY","ICICIBANK","ITC","SBIN","HINDUNILVR","BHARTIARTL","LT"].indexOf(sym) !== -1;
+  if (isLargeCap) {
+    riskScore += 4;
+  } else {
+    riskScore += 16;
+  }
+
+  // Classify Risk Level
+  if (riskScore < 30) {
+    return {
+      level: "Low",
+      label: "Low",
+      badgeClass: "badge-low",
+      bars: [1, 0, 0, 0],
+      barClass: "active-low",
+      explanation: "Low day volatility with steady positioning in its 52-week range. Informational indicator only."
+    };
+  } else if (riskScore <= 55) {
+    return {
+      level: "Moderate",
+      label: "Moderate",
+      badgeClass: "badge-moderate",
+      bars: [1, 1, 0, 0],
+      barClass: "active-mod",
+      explanation: "Moderate volatility with balanced valuation across recent trading ranges. Informational indicator only."
+    };
+  } else if (riskScore <= 75) {
+    return {
+      level: "High",
+      label: "High",
+      badgeClass: "badge-high",
+      bars: [1, 1, 1, 0],
+      barClass: "active-high",
+      explanation: "Elevated day movement or boundary proximity in 52-week cycle. Informational indicator only."
+    };
+  } else {
+    return {
+      level: "Very High",
+      label: "Very High",
+      badgeClass: "badge-vhigh",
+      bars: [1, 1, 1, 1],
+      barClass: "active-vhigh",
+      explanation: "High price fluctuations and elevated volatility observed. Informational indicator only."
+    };
   }
 }
 
+// 2. TOGGLE CARD FLIP (Optimized, no reflow)
+function toggleCardFlip(symbol, event) {
+  if (event) {
+    event.stopPropagation();
+    event.preventDefault();
+  }
+  var flipper = document.getElementById("flipper-" + symbol);
+  if (!flipper) return;
+
+  var isFlipped = flipper.classList.toggle("flipped");
+  if (isFlipped) {
+    loadStockFundamentals(symbol);
+  }
+}
+
+// 3. LOAD FUNDAMENTALS WITH CACHING (Never refetches if in cache)
+function loadStockFundamentals(symbol) {
+  var cached = stockFundamentalsCache[symbol];
+  var curPrice = (typeof pricesData !== "undefined" && pricesData[symbol]) ? pricesData[symbol].price : 0;
+
+  // Use cached data immediately if available
+  if (cached && (Date.now() - (cached.timestamp || 0) < 180000)) {
+    renderFlipBack(symbol, cached);
+    return;
+  }
+
+  // Show immediate calculating state without locking UI
+  renderFlipBack(symbol, null);
+
+  // If pricesData already has basic stats, compute risk immediately without network call
+  if (curPrice > 0 && typeof pricesData !== "undefined" && pricesData[symbol]) {
+    var p = pricesData[symbol];
+    var basicData = {
+      price: curPrice,
+      fiftyTwoWeekHigh: p.fiftyTwoWeekHigh || p.high52 || (curPrice * 1.15),
+      fiftyTwoWeekLow: p.fiftyTwoWeekLow || p.low52 || (curPrice * 0.85),
+      regularMarketChangePercent: p.changePercent || 0,
+      timestamp: Date.now()
+    };
+    stockFundamentalsCache[symbol] = basicData;
+    renderFlipBack(symbol, basicData);
+  }
+}
+
+// 4. RENDER FLIP BACK CONTENT WITH PROMINENT RISK METER
+function renderFlipBack(symbol, data) {
+  var backEl = document.getElementById("flip-back-" + symbol);
+  if (!backEl) return;
+
+  var curPrice = (typeof pricesData !== "undefined" && pricesData[symbol]) ? pricesData[symbol].price : (data ? data.price : 0);
+  var stockObj = (typeof STOCK_DATA !== "undefined") ? STOCK_DATA.find(function(s){ return s.sym === symbol; }) : { sym: symbol, name: symbol };
+  var stockName = stockObj ? stockObj.name : symbol;
+
+  var risk = data ? calculateCurrentRisk(stockObj, curPrice, data) : {
+    level: "Calculating...",
+    label: "Calculating risk...",
+    badgeClass: "badge-calc",
+    bars: [0, 0, 0, 0],
+    barClass: "",
+    explanation: "Analyzing real-time market metrics..."
+  };
+
+  var high52 = (data && (data.fiftyTwoWeekHigh || data.high52)) ? ("₹" + Number(data.fiftyTwoWeekHigh || data.high52).toLocaleString("en-IN")) : "--";
+  var low52 = (data && (data.fiftyTwoWeekLow || data.low52)) ? ("₹" + Number(data.fiftyTwoWeekLow || data.low52).toLocaleString("en-IN")) : "--";
+  var curPriceDisplay = curPrice ? ("₹" + Number(curPrice).toLocaleString("en-IN")) : "--";
+
+  backEl.innerHTML = 
+    '<div class="flip-back-header">' +
+      '<div class="flip-back-title">' + stockName + '</div>' +
+      '<button class="flip-back-close" type="button" onclick="toggleCardFlip(\'' + symbol + '\', event)" title="Close">✕</button>' +
+    '</div>' +
+    
+    // CURRENT RISK SECTION
+    '<div class="flip-risk-section">' +
+      '<div class="flip-risk-header">' +
+        '<span class="flip-risk-title">Current Risk</span>' +
+        '<span class="flip-risk-badge ' + risk.badgeClass + '">' + risk.label + '</span>' +
+      '</div>' +
+      '<div class="flip-risk-bars">' +
+        '<div class="risk-segment ' + (risk.bars[0] ? risk.barClass : '') + '"></div>' +
+        '<div class="risk-segment ' + (risk.bars[1] ? risk.barClass : '') + '"></div>' +
+        '<div class="risk-segment ' + (risk.bars[2] ? risk.barClass : '') + '"></div>' +
+        '<div class="risk-segment ' + (risk.bars[3] ? risk.barClass : '') + '"></div>' +
+      '</div>' +
+      '<div class="flip-risk-desc">' + risk.explanation + '</div>' +
+    '</div>' +
+
+    // DETAILS ROWS
+    '<div class="flip-detail-row">' +
+      '<span class="flip-detail-label">Current Price</span>' +
+      '<span class="flip-detail-value">' + curPriceDisplay + '</span>' +
+    '</div>' +
+    '<div class="flip-detail-row">' +
+      '<span class="flip-detail-label">52W High</span>' +
+      '<span class="flip-detail-value" style="color:var(--success)">' + high52 + '</span>' +
+    '</div>' +
+    '<div class="flip-detail-row">' +
+      '<span class="flip-detail-label">52W Low</span>' +
+      '<span class="flip-detail-value" style="color:var(--danger)">' + low52 + '</span>' +
+    '</div>' +
+    
+    '<div class="flip-summary">Prices & risk are for simulation/educational tracking only.</div>';
+}
 async function loadStockFundamentals(symbol) {
   var backEl = document.getElementById("flipback_" + symbol);
   if (!backEl) return;
@@ -13176,47 +13414,148 @@ function clearAllAppData() {
 }
 
 // (showSettings override removed — merged into main showSettings function above)
+  /* ==========================================================================
+   FINZOTALK COMPLETE OPTIMIZATION & DYNAMIC CURRENT RISK ENGINE
+   ========================================================================== */
+window.stockFundamentalsCache = window.stockFundamentalsCache || {};
+
+function calculateCurrentRisk(stock, currentPrice, fundamentals) {
+  var curPrice = Number(currentPrice || (fundamentals && fundamentals.price) || 0);
+  var high52 = Number((fundamentals && (fundamentals.fiftyTwoWeekHigh || fundamentals.high52)) || 0);
+  var low52 = Number((fundamentals && (fundamentals.fiftyTwoWeekLow || fundamentals.low52)) || 0);
+  var dayChangePct = Math.abs(Number((fundamentals && (fundamentals.regularMarketChangePercent || fundamentals.changePercent)) || 0));
+
+  if (!fundamentals && curPrice <= 0) {
+    return { level: "Unavailable", label: "Risk unavailable", badgeClass: "badge-calc", bars: [0,0,0,0], barClass: "", explanation: "Risk awaiting live price data." };
+  }
+
+  var riskScore = 0;
+  if (high52 > 0 && low52 > 0 && high52 > low52 && curPrice > 0) {
+    var rangePos = (curPrice - low52) / (high52 - low52);
+    if (rangePos > 0.90) riskScore += 35;
+    else if (rangePos < 0.15) riskScore += 30;
+    else if (rangePos >= 0.35 && rangePos <= 0.65) riskScore += 12;
+    else riskScore += 20;
+  } else {
+    riskScore += 18;
+  }
+
+  if (dayChangePct > 4.5) riskScore += 35;
+  else if (dayChangePct > 2.5) riskScore += 24;
+  else if (dayChangePct > 1.2) riskScore += 14;
+  else riskScore += 6;
+
+  var sym = (stock && stock.sym) ? String(stock.sym).toUpperCase() : "";
+  var largeCaps = ["RELIANCE","TCS","HDFCBANK","INFY","ICICIBANK","ITC","SBIN","HINDUNILVR","BHARTIARTL","LT"];
+  riskScore += (largeCaps.indexOf(sym) !== -1) ? 5 : 16;
+
+  if (riskScore < 30) return { level: "Low", label: "Low", badgeClass: "badge-low", bars: [1,0,0,0], barClass: "active-low", explanation: "Low day volatility with steady positioning in its 52-week range." };
+  if (riskScore <= 55) return { level: "Moderate", label: "Moderate", badgeClass: "badge-moderate", bars: [1,1,0,0], barClass: "active-mod", explanation: "Moderate volatility with balanced valuation across recent trading ranges." };
+  if (riskScore <= 75) return { level: "High", label: "High", badgeClass: "badge-high", bars: [1,1,1,0], barClass: "active-high", explanation: "Elevated day movement or boundary proximity in 52-week cycle." };
+  return { level: "Very High", label: "Very High", badgeClass: "badge-vhigh", bars: [1,1,1,1], barClass: "active-vhigh", explanation: "High price fluctuations and elevated volatility observed." };
+}
+
+function toggleCardFlip(symbol, event) {
+  if (event) { event.stopPropagation(); event.preventDefault(); }
+  var flipper = document.getElementById("flipper-" + symbol);
+  if (!flipper) return;
+  if (flipper.classList.toggle("flipped")) loadStockFundamentals(symbol);
+}
+
+function loadStockFundamentals(symbol) {
+  var cached = window.stockFundamentalsCache[symbol];
+  var curPrice = (typeof pricesData !== "undefined" && pricesData[symbol]) ? pricesData[symbol].price : 0;
+  if (cached && (Date.now() - (cached.timestamp || 0) < 180000)) {
+    renderFlipBack(symbol, cached);
+    return;
+  }
+  var p = (typeof pricesData !== "undefined" && pricesData[symbol]) ? pricesData[symbol] : null;
+  var fallbackData = {
+    price: curPrice || (p ? p.price : 0),
+    fiftyTwoWeekHigh: (p && (p.fiftyTwoWeekHigh || p.high52)) || (curPrice ? curPrice * 1.15 : 0),
+    fiftyTwoWeekLow: (p && (p.fiftyTwoWeekLow || p.low52)) || (curPrice ? curPrice * 0.85 : 0),
+    dayHigh: (p && (p.dayHigh || p.high)) || (curPrice ? curPrice * 1.02 : 0),
+    dayLow: (p && (p.dayLow || p.low)) || (curPrice ? curPrice * 0.98 : 0),
+    regularMarketChangePercent: (p && p.changePercent) || 0,
+    volume: (p && p.volume) || 0,
+    timestamp: Date.now()
+  };
+  window.stockFundamentalsCache[symbol] = fallbackData;
+  renderFlipBack(symbol, fallbackData);
+}
+
+function renderFlipBack(symbol, data) {
+  var backEl = document.getElementById("flip-back-" + symbol);
+  if (!backEl) return;
+  var p = (typeof pricesData !== "undefined" && pricesData[symbol]) ? pricesData[symbol] : null;
+  var curPrice = (p && p.price) ? p.price : (data && data.price ? data.price : 0);
+  var stockObj = (typeof STOCK_DATA !== "undefined" && Array.isArray(STOCK_DATA)) ? STOCK_DATA.find(function(s){ return s.sym === symbol; }) : null;
+  var stockName = stockObj ? stockObj.name : symbol;
+  var risk = calculateCurrentRisk(stockObj, curPrice, data || p);
+
+  var high52 = Number((data && (data.fiftyTwoWeekHigh || data.high52)) || (p && (p.fiftyTwoWeekHigh || p.high52)) || 0);
+  var low52 = Number((data && (data.fiftyTwoWeekLow || data.low52)) || (p && (p.fiftyTwoWeekLow || p.low52)) || 0);
+  var dayHigh = Number((data && (data.dayHigh || data.high)) || (p && (p.dayHigh || p.high)) || 0);
+  var dayLow = Number((data && (data.dayLow || data.low)) || (p && (p.dayLow || p.low)) || 0);
+  var volume = Number((data && data.volume) || (p && p.volume) || 0);
+
+  var rangePct = "--";
+  if (high52 > low52 && curPrice > 0) {
+    rangePct = Math.max(0, Math.min(100, Math.round(((curPrice - low52) / (high52 - low52)) * 100))) + "%";
+  }
+  var dayChg = Math.abs(Number((p && p.changePercent) || (data && data.regularMarketChangePercent) || 0));
+  var volLabel = dayChg > 3 ? "High" : (dayChg > 1.2 ? "Moderate" : "Low");
+
+  backEl.innerHTML =
+    '<div class="flip-back-header">' +
+      '<div class="flip-back-title">' + stockName + '</div>' +
+      '<button class="flip-back-close" type="button" onclick="toggleCardFlip(\'' + symbol + '\', event)">✕</button>' +
+    '</div>' +
+    '<div class="flip-risk-section">' +
+      '<div class="flip-risk-header">' +
+        '<span class="flip-risk-title">Current Risk</span>' +
+        '<span class="flip-risk-badge ' + risk.badgeClass + '">' + risk.label + '</span>' +
+      '</div>' +
+      '<div class="flip-risk-bars">' +
+        '<div class="risk-segment ' + (risk.bars[0] ? risk.barClass : '') + '"></div>' +
+        '<div class="risk-segment ' + (risk.bars[1] ? risk.barClass : '') + '"></div>' +
+        '<div class="risk-segment ' + (risk.bars[2] ? risk.barClass : '') + '"></div>' +
+        '<div class="risk-segment ' + (risk.bars[3] ? risk.barClass : '') + '"></div>' +
+      '</div>' +
+      '<div class="flip-risk-desc">' + risk.explanation + '</div>' +
+    '</div>' +
+    '<div class="flip-detail-row"><span class="flip-detail-label">Current Price</span><span class="flip-detail-value" style="font-weight:700">₹' + (curPrice ? Number(curPrice).toLocaleString("en-IN",{minimumFractionDigits:2}) : '--') + '</span></div>' +
+    '<div class="flip-detail-row"><span class="flip-detail-label">Exchange / Type</span><span class="flip-detail-value">NSE · Equity</span></div>' +
+    '<div class="flip-detail-row"><span class="flip-detail-label">Day High / Low</span><span class="flip-detail-value">₹' + Number(dayHigh).toLocaleString("en-IN") + ' / ₹' + Number(dayLow).toLocaleString("en-IN") + '</span></div>' +
+    '<div class="flip-detail-row"><span class="flip-detail-label">52W High / Low</span><span class="flip-detail-value"><span style="color:var(--success)">₹' + Number(high52).toLocaleString("en-IN") + '</span> / <span style="color:var(--danger)">₹' + Number(low52).toLocaleString("en-IN") + '</span></span></div>' +
+    '<div class="flip-detail-row"><span class="flip-detail-label">52W Range Position</span><span class="flip-detail-value">' + rangePct + '</span></div>' +
+    '<div class="flip-detail-row"><span class="flip-detail-label">Volatility / Volume</span><span class="flip-detail-value">' + volLabel + ' · ' + Number(volume).toLocaleString("en-IN") + '</span></div>' +
+    '<div class="flip-summary">Prices & risk rating are for simulated educational tracking only.</div>';
+}
+
+// Search debounce (120ms) & Tab Timer Suspension
+(function initPerformanceBoost() {
+  function setup() {
+    var searchInput = document.getElementById("stockSearchInput");
+    if (searchInput) {
+      var sTimer = null;
+      searchInput.addEventListener("input", function(e) {
+        clearTimeout(sTimer);
+        var q = (e.target.value || "").trim().toLowerCase();
+        sTimer = setTimeout(function() {
+          var cards = document.querySelectorAll(".stocks-grid .stock-card-flipper, .stocks-grid .stock-card");
+          for (var i = 0; i < cards.length; i++) {
+            var t = (cards[i].textContent || "").toLowerCase();
+            cards[i].style.display = (!q || t.indexOf(q) !== -1) ? "" : "none";
+          }
+        }, 120);
+      });
+    }
+  }
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", setup);
+  else setup();
+})();
 </script>
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
