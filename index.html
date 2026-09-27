@@ -9752,25 +9752,7 @@ function setupPresenceSystem() {
     });
   });
 
-  // Mark messages as seen when user returns to tab
-document.addEventListener("visibilitychange", function() {
-  if (document.visibilityState === "visible" && activeChatWith) {
-    var chatDocId = [activeUser.uid, activeChatWith].sort().join("_");
-    db.collection("chats").doc(chatDocId)
-      .collection("messages")
-      .where("from", "==", activeChatWith)
-      .where("seen", "==", false)
-      .get()
-      .then(function(snapshot) {
-        snapshot.forEach(function(doc) {
-          doc.ref.update({seen: true}).catch(function(e) {});
-        });
-      })
-      .catch(function(e) {
-        console.error("Mark seen error:", e);
-      });
-  }
-});
+  // Mark messages as seen when user returns to tab (moved to combined handler below)
   
   // Keep updating online status every 30 seconds
   setInterval(function() {
@@ -12472,10 +12454,9 @@ async function updateNameInFriendsList(newName) {
  * Data source: Yahoo Finance chart API meta (already available).
  */
 
-var stockFundamentalsCache = {};
+var stockFundamentalsCache = window.stockFundamentalsCache || {};
 
 /* ================= STOCK CARD FLIP & RISK ENGINE ================= */
-var stockFundamentalsCache = stockFundamentalsCache || {};
 
 // 1. DYNAMIC CURRENT RISK CALCULATION (Zero extra API calls, uses existing cached data)
 function calculateCurrentRisk(stock, currentPrice, fundamentals) {
@@ -12572,20 +12553,7 @@ function calculateCurrentRisk(stock, currentPrice, fundamentals) {
   }
 }
 
-// 2. TOGGLE CARD FLIP (Optimized, no reflow)
-function toggleCardFlip(symbol, event) {
-  if (event) {
-    event.stopPropagation();
-    event.preventDefault();
-  }
-  var flipper = document.getElementById("flipper-" + symbol);
-  if (!flipper) return;
-
-  var isFlipped = flipper.classList.toggle("flipped");
-  if (isFlipped) {
-    loadStockFundamentals(symbol);
-  }
-}
+// toggleCardFlip defined below
 
 // 3. LOAD FUNDAMENTALS WITH CACHING (Never refetches if in cache)
 function loadStockFundamentals(symbol) {
@@ -12675,166 +12643,8 @@ function renderFlipBack(symbol, data) {
     
     '<div class="flip-summary">Prices & risk are for simulation/educational tracking only.</div>';
 }
-async function loadStockFundamentals(symbol) {
-  var backEl = document.getElementById("flipback_" + symbol);
-  if (!backEl) return;
-
-  backEl.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--text-muted)">Loading details...</div>';
-
-  var stock = null;
-  for (var i = 0; i < STOCK_DATA.length; i++) {
-    if (STOCK_DATA[i].sym === symbol) { stock = STOCK_DATA[i]; break; }
-  }
-  if (!stock) return;
-
-  try {
-    // Use Yahoo chart API with more data
-    var yahooUrl = "https://query1.finance.yahoo.com/v8/finance/chart/" +
-      encodeURIComponent(stock.yahoo) + "?interval=1d&range=1y";
-
-var proxies = [
-      "https://api.allorigins.win/raw?url=",
-      "https://corsproxy.io/?",
-      "https://api.codetabs.com/v1/proxy?quest="
-    ];
-    var text = null;
-    for (var px = 0; px < proxies.length; px++) {
-      text = await fetchWithHardTimeout(proxies[px] + encodeURIComponent(yahooUrl), 8000);
-      if (text && text.charAt(0) === '{') break;
-      text = null;
-    }
-
-    if (text && text.charAt(0) === '{') {
-      var data = JSON.parse(text);
-      if (data.chart && data.chart.result && data.chart.result[0]) {
-        var meta = data.chart.result[0].meta;
-        var quotes = data.chart.result[0].indicators.quote[0];
-        var highs = (quotes.high || []).filter(function(v) { return v !== null; });
-        var lows = (quotes.low || []).filter(function(v) { return v !== null; });
-
-        var high52w = highs.length > 0 ? Math.max.apply(null, highs) : 0;
-        var low52w = lows.length > 0 ? Math.min.apply(null, lows) : 0;
-        var currentPrice = meta.regularMarketPrice || 0;
-        var prevClose = meta.previousClose || 0;
-
-        // Estimate risk based on 52w range position
-        var rangePosition = (high52w > low52w) ? ((currentPrice - low52w) / (high52w - low52w)) : 0.5;
-        var volatility = (high52w > 0 && low52w > 0) ? ((high52w - low52w) / low52w * 100) : 0;
-
-        var riskLevel = "Low";
-        if (volatility > 60 || rangePosition > 0.85) riskLevel = "High";
-        else if (volatility > 30 || rangePosition > 0.7) riskLevel = "Medium";
-
-        var fundamentals = {
-          exchange: meta.exchangeName || "NSE",
-          currency: meta.currency || "INR",
-          type: meta.instrumentType || "EQUITY",
-          high52w: high52w,
-          low52w: low52w,
-          rangePosition: rangePosition,
-          volatility: volatility.toFixed(1),
-          riskLevel: riskLevel,
-          prevClose: prevClose,
-          dayHigh: meta.regularMarketDayHigh || 0,
-          dayLow: meta.regularMarketDayLow || 0,
-          volume: meta.regularMarketVolume || 0
-        };
-
-        stockFundamentalsCache[symbol] = fundamentals;
-        renderFlipBack(symbol, fundamentals);
-        return;
-      }
-    }
-  } catch (e) {
-    console.log("[FLIP] Failed to load fundamentals for " + symbol);
-  }
-
-  // Fallback: build from local cached price data
-  var fallbackData = pricesData[symbol];
-  if (fallbackData && fallbackData.price > 0) {
-    var fbPrice = fallbackData.price;
-    var fbPrev = fallbackData.prevClose || fbPrice;
-    var fbChange = fallbackData.change || 0;
-    var fbPct = fallbackData.changePercent || 0;
-    var fbFundamentals = {
-      exchange: "NSE",
-      currency: "INR",
-      type: "EQUITY",
-      high52w: 0,
-      low52w: 0,
-      rangePosition: 0,
-      volatility: "--",
-      riskLevel: "N/A",
-      prevClose: fbPrev,
-      dayHigh: fbPrice,
-      dayLow: fbPrice,
-      volume: 0
-    };
-    // Check chartDataCache for 1y data
-    var chartKey = (stock ? stock.yahoo : symbol + ".NS") + "_1y";
-    var cachedChart = chartDataCache[chartKey];
-    if (cachedChart && cachedChart.data && cachedChart.data.points && cachedChart.data.points.length > 10) {
-      var pts = cachedChart.data.points;
-      var cHighs = pts.map(function(p){ return p.high; }).filter(function(v){ return v > 0; });
-      var cLows = pts.map(function(p){ return p.low; }).filter(function(v){ return v > 0; });
-      if (cHighs.length > 0) fbFundamentals.high52w = Math.max.apply(null, cHighs);
-      if (cLows.length > 0) fbFundamentals.low52w = Math.min.apply(null, cLows);
-      if (fbFundamentals.high52w > fbFundamentals.low52w) {
-        fbFundamentals.rangePosition = (fbPrice - fbFundamentals.low52w) / (fbFundamentals.high52w - fbFundamentals.low52w);
-        fbFundamentals.volatility = ((fbFundamentals.high52w - fbFundamentals.low52w) / fbFundamentals.low52w * 100).toFixed(1);
-        if (parseFloat(fbFundamentals.volatility) > 60) fbFundamentals.riskLevel = "High";
-        else if (parseFloat(fbFundamentals.volatility) > 30) fbFundamentals.riskLevel = "Medium";
-        else fbFundamentals.riskLevel = "Low";
-      }
-    }
-    stockFundamentalsCache[symbol] = fbFundamentals;
-    renderFlipBack(symbol, fbFundamentals);
-  } else {
-    backEl.innerHTML =
-      '<div class="flip-back-header"><span class="flip-back-title">' + symbol + '</span>' +
-      '<button class="flip-back-close" onclick="toggleCardFlip(\'' + symbol + '\')">✕</button></div>' +
-      '<div style="padding:20px;text-align:center;color:var(--text-muted)">Details unavailable. Try again later.</div>';
-  }
-}
-
-function renderFlipBack(symbol, data) {
-  var backEl = document.getElementById("flipback_" + symbol);
-  if (!backEl) return;
-
-  var riskBars = '';
-  var riskColors = data.riskLevel === "High" ? ["active-high","active-high","active-high","active-high","active-high"] :
-                   data.riskLevel === "Medium" ? ["active-low","active-med","active-med","",""] :
-                   ["active-low","active-low","","",""];
-
-  for (var r = 0; r < 5; r++) {
-    riskBars += '<div class="flip-risk-bar ' + (riskColors[r] || '') + '"></div>';
-  }
-
-  var volStr = "";
-  if (data.volume >= 10000000) volStr = (data.volume / 10000000).toFixed(2) + " Cr";
-  else if (data.volume >= 100000) volStr = (data.volume / 100000).toFixed(1) + " L";
-  else if (data.volume >= 1000) volStr = (data.volume / 1000).toFixed(1) + " K";
-  else volStr = (data.volume || 0).toString();
-
-  var rangePercent = Math.round(data.rangePosition * 100);
-
-  backEl.innerHTML =
-    '<div class="flip-back-header">' +
-      '<span class="flip-back-title">📋 ' + symbol + ' Details</span>' +
-      '<button class="flip-back-close" onclick="toggleCardFlip(\'' + symbol + '\')">✕</button>' +
-    '</div>' +
-    '<div class="flip-detail-row"><span class="flip-detail-label">Exchange</span><span class="flip-detail-value">' + data.exchange + '</span></div>' +
-    '<div class="flip-detail-row"><span class="flip-detail-label">Type</span><span class="flip-detail-value">' + data.type + '</span></div>' +
-    '<div class="flip-detail-row"><span class="flip-detail-label">52W High</span><span class="flip-detail-value" style="color:var(--success)">₹' + data.high52w.toFixed(2) + '</span></div>' +
-    '<div class="flip-detail-row"><span class="flip-detail-label">52W Low</span><span class="flip-detail-value" style="color:var(--danger)">₹' + data.low52w.toFixed(2) + '</span></div>' +
-    '<div class="flip-detail-row"><span class="flip-detail-label">52W Range Position</span><span class="flip-detail-value">' + rangePercent + '% from low</span></div>' +
-    '<div class="flip-detail-row"><span class="flip-detail-label">Volatility (52W)</span><span class="flip-detail-value">' + data.volatility + '%</span></div>' +
-    '<div class="flip-detail-row"><span class="flip-detail-label">Day High / Low</span><span class="flip-detail-value">₹' + data.dayHigh.toFixed(2) + ' / ₹' + data.dayLow.toFixed(2) + '</span></div>' +
-    '<div class="flip-detail-row"><span class="flip-detail-label">Volume</span><span class="flip-detail-value">' + volStr + '</span></div>' +
-    '<div class="flip-detail-row"><span class="flip-detail-label">Risk</span><span class="flip-detail-value"><div class="flip-risk-meter">' + riskBars + ' <span style="margin-left:6px;font-size:12px;color:' + (data.riskLevel === "High" ? "var(--danger)" : data.riskLevel === "Medium" ? "var(--warning)" : "var(--success)") + '">' + data.riskLevel + '</span></div></span></div>' +
-    '<div class="flip-summary">💡 This stock is trading at ' + rangePercent + '% of its 52-week range with ' + data.volatility + '% volatility. ' +
-    (data.riskLevel === "High" ? "Higher risk — consider position sizing carefully." : data.riskLevel === "Medium" ? "Moderate risk profile." : "Relatively stable within its range.") + '</div>';
-}
+// loadStockFundamentals defined below (canonical cached version)
+// renderFlipBack defined below (canonical version)
 
 /* ================= POSITIONS SYSTEM (INTRADAY SIMULATOR) ================= */
 /*
